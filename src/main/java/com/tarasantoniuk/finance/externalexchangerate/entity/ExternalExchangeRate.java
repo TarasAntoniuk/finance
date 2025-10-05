@@ -1,0 +1,189 @@
+package com.tarasantoniuk.finance.externalexchangerate.entity;
+
+
+import com.tarasantoniuk.finance.currency.entity.Currency;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+@Entity
+@Table(name = "external_exchange_rates",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"exchange_date", "currency_from_id", "currency_to_id", "source"}))
+public class ExternalExchangeRate {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "exchange_date", nullable = false)
+    private LocalDate exchangeDate;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_from_id", nullable = false)
+    private Currency currencyFrom;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_to_id", nullable = false)
+    private Currency currencyTo;
+
+    @Column(name = "rate", nullable = false, precision = 19, scale = 6)
+    private BigDecimal rate;
+
+    @Column(name = "source", nullable = false, length = 100)
+    private String source; // ECB, NBU, MONOBANK, PRIVATBANK, etc.
+
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public ExternalExchangeRate() {
+    }
+
+    public ExternalExchangeRate(Long id, LocalDate exchangeDate, Currency currencyFrom,
+                                Currency currencyTo, BigDecimal rate, String source,
+                                String sourceUrl, Boolean isActive, LocalDateTime createdAt,
+                                LocalDateTime updatedAt) {
+        this.id = id;
+        this.exchangeDate = exchangeDate;
+        this.currencyFrom = currencyFrom;
+        this.currencyTo = currencyTo;
+        this.rate = rate;
+        this.source = source;
+        this.sourceUrl = sourceUrl;
+        this.isActive = isActive;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (isActive == null) {
+            isActive = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDate getExchangeDate() {
+        return exchangeDate;
+    }
+
+    public void setExchangeDate(LocalDate exchangeDate) {
+        this.exchangeDate = exchangeDate;
+    }
+
+    public Currency getCurrencyFrom() {
+        return currencyFrom;
+    }
+
+    public void setCurrencyFrom(Currency currencyFrom) {
+        this.currencyFrom = currencyFrom;
+    }
+
+    public Currency getCurrencyTo() {
+        return currencyTo;
+    }
+
+    public void setCurrencyTo(Currency currencyTo) {
+        this.currencyTo = currencyTo;
+    }
+
+    public BigDecimal getRate() {
+        return rate;
+    }
+
+    public void setRate(BigDecimal rate) {
+        this.rate = rate;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExternalExchangeRate that = (ExternalExchangeRate) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(exchangeDate, that.exchangeDate) &&
+                Objects.equals(currencyFrom, that.currencyFrom) &&
+                Objects.equals(currencyTo, that.currencyTo) &&
+                Objects.equals(source, that.source);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, exchangeDate, currencyFrom, currencyTo, source);
+    }
+
+    @Override
+    public String toString() {
+        return "ExternalExchangeRate{" +
+                "id=" + id +
+                ", exchangeDate=" + exchangeDate +
+                ", rate=" + rate +
+                ", source='" + source + '\'' +
+                '}';
+    }
+}
