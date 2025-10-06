@@ -1,4 +1,5 @@
 package com.tarasantoniuk.finance.common.exeption;
+
 /**
  * Base exception for resource not found errors
  */

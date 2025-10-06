@@ -1,4 +1,5 @@
 package com.tarasantoniuk.finance.country.dto;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 

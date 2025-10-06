@@ -1,4 +1,5 @@
 package com.tarasantoniuk.finance.common.exeption;
+
 /**
  * Base exception for resource already exists errors
  */

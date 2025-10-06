@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.currency.exception;
 
 import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
+
 /**
  * Exception thrown when a currency already exists
  */

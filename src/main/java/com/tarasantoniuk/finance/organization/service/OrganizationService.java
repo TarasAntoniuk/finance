@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.organization.service;
 
+import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.country.repository.CountryRepository;
 import com.tarasantoniuk.finance.organization.dto.OrganizationRequestDTO;
 import com.tarasantoniuk.finance.organization.dto.OrganizationResponseDTO;
@@ -10,8 +11,6 @@ import com.tarasantoniuk.finance.organization.mapper.OrganizationMapper;
 import com.tarasantoniuk.finance.organization.repository.OrganizationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;
-
 
 import java.util.List;
 

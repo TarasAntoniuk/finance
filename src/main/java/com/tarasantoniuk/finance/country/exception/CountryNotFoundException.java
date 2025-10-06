@@ -2,9 +2,7 @@ package com.tarasantoniuk.finance.country.exception;
 
 import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
 
-/**
- * Exception thrown when a country is not found
- */
+
 /**
  * Exception thrown when a country is not found
  */

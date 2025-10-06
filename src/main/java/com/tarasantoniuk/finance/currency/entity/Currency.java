@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.currency.entity;
 
 
-
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;

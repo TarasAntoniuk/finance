@@ -1,4 +1,5 @@
 package com.tarasantoniuk.finance.externalexchangerate.exception;
+
 import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
 
 import java.time.LocalDate;

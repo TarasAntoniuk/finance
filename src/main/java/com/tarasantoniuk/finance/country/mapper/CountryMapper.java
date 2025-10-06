@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.country.mapper;
 
 
-
 import com.tarasantoniuk.finance.country.dto.CountryRequestDTO;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
 import com.tarasantoniuk.finance.country.entity.Country;
@@ -29,6 +28,6 @@ public interface CountryMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    //@Mapping(target = "organizations", ignore = true)
+        //@Mapping(target = "organizations", ignore = true)
     void updateEntityFromDTO(CountryRequestDTO requestDTO, @MappingTarget Country country);
 }

@@ -1,8 +1,9 @@
 package com.tarasantoniuk.finance.accountingpolicy.dto;
 
-import jakarta.validation.constraints.*;
-
-import java.time.LocalDateTime;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class AccountingPolicyRequestDTO {
 
