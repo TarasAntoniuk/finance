@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.common.exeption;
 /**
  * Base exception for resource already exists errors
  */
-class ResourceAlreadyExistsException extends RuntimeException {
+public class ResourceAlreadyExistsException extends RuntimeException {
 
     public ResourceAlreadyExistsException(String message) {
         super(message);
