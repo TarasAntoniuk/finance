@@ -2,16 +2,22 @@ package com.tarasantoniuk.finance.country.exception;
 
 import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
 
-/**
-        * Exception thrown when a country already exists
- */
-class CountryAlreadyExistsException extends ResourceAlreadyExistsException {
 
-    public CountryAlreadyExistsException(String isoCode) {
-        super("Country", "isoCode", isoCode);
-    }
+/**
+ * Exception thrown when a country already exists
+ */
+public class CountryAlreadyExistsException extends ResourceAlreadyExistsException {
 
     public CountryAlreadyExistsException(String fieldName, String fieldValue) {
         super("Country", fieldName, fieldValue);
+    }
+
+    // Статичні фабричні методи
+    public static CountryAlreadyExistsException byIsoCode(String isoCode) {
+        return new CountryAlreadyExistsException("isoCode", isoCode);
+    }
+
+    public static CountryAlreadyExistsException byName(String name) {
+        return new CountryAlreadyExistsException("name", name);
     }
 }

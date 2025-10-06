@@ -1,11 +1,10 @@
 package com.tarasantoniuk.finance.country.service;
 
-
-
-
 import com.tarasantoniuk.finance.country.dto.CountryRequestDTO;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
 import com.tarasantoniuk.finance.country.entity.Country;
+import com.tarasantoniuk.finance.country.exception.CountryAlreadyExistsException;
+import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.country.mapper.CountryMapper;
 import com.tarasantoniuk.finance.country.repository.CountryRepository;
 import org.springframework.stereotype.Service;
@@ -33,21 +32,21 @@ public class CountryService {
     @Transactional(readOnly = true)
     public CountryResponseDTO getCountryById(Long id) {
         Country country = countryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
+                .orElseThrow(() -> CountryNotFoundException.byId(id));
         return countryMapper.toResponseDTO(country);
     }
 
     @Transactional(readOnly = true)
     public CountryResponseDTO getCountryByIsoCode(String isoCode) {
         Country country = countryRepository.findByIsoCode(isoCode)
-                .orElseThrow(() -> new RuntimeException("Country not found with ISO code: " + isoCode));
+                .orElseThrow(() -> CountryNotFoundException.byIsoCode(isoCode));
         return countryMapper.toResponseDTO(country);
     }
 
     @Transactional
     public CountryResponseDTO createCountry(CountryRequestDTO requestDTO) {
         if (countryRepository.existsByIsoCode(requestDTO.getIsoCode())) {
-            throw new RuntimeException("Country with ISO code " + requestDTO.getIsoCode() + " already exists");
+            throw CountryAlreadyExistsException.byIsoCode(requestDTO.getIsoCode());
         }
 
         Country country = countryMapper.toEntity(requestDTO);
@@ -58,11 +57,11 @@ public class CountryService {
     @Transactional
     public CountryResponseDTO updateCountry(Long id, CountryRequestDTO requestDTO) {
         Country country = countryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
+                .orElseThrow(() -> CountryNotFoundException.byId(id));
 
         if (!country.getIsoCode().equals(requestDTO.getIsoCode())
                 && countryRepository.existsByIsoCode(requestDTO.getIsoCode())) {
-            throw new RuntimeException("Country with ISO code " + requestDTO.getIsoCode() + " already exists");
+            throw CountryAlreadyExistsException.byIsoCode(requestDTO.getIsoCode());
         }
 
         countryMapper.updateEntityFromDTO(requestDTO, country);
@@ -73,7 +72,7 @@ public class CountryService {
     @Transactional
     public void deleteCountry(Long id) {
         if (!countryRepository.existsById(id)) {
-            throw new RuntimeException("Country not found with id: " + id);
+            throw CountryNotFoundException.byId(id);
         }
         countryRepository.deleteById(id);
     }

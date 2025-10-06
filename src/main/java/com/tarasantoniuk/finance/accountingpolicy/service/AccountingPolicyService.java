@@ -3,9 +3,13 @@ package com.tarasantoniuk.finance.accountingpolicy.service;
 import com.tarasantoniuk.finance.accountingpolicy.dto.AccountingPolicyRequestDTO;
 import com.tarasantoniuk.finance.accountingpolicy.dto.AccountingPolicyResponseDTO;
 import com.tarasantoniuk.finance.accountingpolicy.entity.AccountingPolicy;
+import com.tarasantoniuk.finance.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
+import com.tarasantoniuk.finance.accountingpolicy.exception.AccountingPolicyNotFoundException;
 import com.tarasantoniuk.finance.accountingpolicy.mapper.AccountingPolicyMapper;
 import com.tarasantoniuk.finance.accountingpolicy.repository.AccountingPolicyRepository;
+import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
+import com.tarasantoniuk.finance.organization.exeption.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.organization.repository.OrganizationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,15 +43,14 @@ public class AccountingPolicyService {
     @Transactional(readOnly = true)
     public AccountingPolicyResponseDTO getAccountingPolicyById(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Accounting policy not found with id: " + id));
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         return accountingPolicyMapper.toResponseDTO(policy);
     }
 
     @Transactional(readOnly = true)
     public AccountingPolicyResponseDTO getAccountingPolicyByOrganizationAndYear(Long organizationId, Integer year) {
         AccountingPolicy policy = accountingPolicyRepository.findByOrganizationIdAndYear(organizationId, year)
-                .orElseThrow(() -> new RuntimeException(
-                        "Accounting policy not found for organization " + organizationId + " and year " + year));
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byOrganizationAndYear(organizationId, year));
         return accountingPolicyMapper.toResponseDTO(policy);
     }
 
@@ -84,17 +87,17 @@ public class AccountingPolicyService {
     @Transactional
     public AccountingPolicyResponseDTO createAccountingPolicy(AccountingPolicyRequestDTO requestDTO) {
         if (!organizationRepository.existsById(requestDTO.getOrganizationId())) {
-            throw new RuntimeException("Organization not found with id: " + requestDTO.getOrganizationId());
+            throw OrganizationNotFoundException.byId(requestDTO.getOrganizationId());
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyId())) {
-            throw new RuntimeException("Currency not found with id: " + requestDTO.getCurrencyId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyId());
         }
 
         if (accountingPolicyRepository.existsByOrganizationIdAndYear(
                 requestDTO.getOrganizationId(), requestDTO.getYear())) {
-            throw new RuntimeException("Accounting policy already exists for organization "
-                    + requestDTO.getOrganizationId() + " and year " + requestDTO.getYear());
+            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(
+                    requestDTO.getOrganizationId(), requestDTO.getYear());
         }
 
         AccountingPolicy policy = accountingPolicyMapper.toEntity(requestDTO);
@@ -105,14 +108,14 @@ public class AccountingPolicyService {
     @Transactional
     public AccountingPolicyResponseDTO updateAccountingPolicy(Long id, AccountingPolicyRequestDTO requestDTO) {
         AccountingPolicy policy = accountingPolicyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Accounting policy not found with id: " + id));
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
 
         if (!organizationRepository.existsById(requestDTO.getOrganizationId())) {
-            throw new RuntimeException("Organization not found with id: " + requestDTO.getOrganizationId());
+            throw OrganizationNotFoundException.byId(requestDTO.getOrganizationId());
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyId())) {
-            throw new RuntimeException("Currency not found with id: " + requestDTO.getCurrencyId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyId());
         }
 
         // Check if trying to change organization or year to existing combination
@@ -120,8 +123,8 @@ public class AccountingPolicyService {
                 || !policy.getYear().equals(requestDTO.getYear()))
                 && accountingPolicyRepository.existsByOrganizationIdAndYear(
                 requestDTO.getOrganizationId(), requestDTO.getYear())) {
-            throw new RuntimeException("Accounting policy already exists for organization "
-                    + requestDTO.getOrganizationId() + " and year " + requestDTO.getYear());
+            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(
+                    requestDTO.getOrganizationId(), requestDTO.getYear());
         }
 
         accountingPolicyMapper.updateEntityFromDTO(requestDTO, policy);
@@ -132,7 +135,7 @@ public class AccountingPolicyService {
     @Transactional
     public void deleteAccountingPolicy(Long id) {
         if (!accountingPolicyRepository.existsById(id)) {
-            throw new RuntimeException("Accounting policy not found with id: " + id);
+            throw AccountingPolicyNotFoundException.byId(id);
         }
         accountingPolicyRepository.deleteById(id);
     }
@@ -140,7 +143,7 @@ public class AccountingPolicyService {
     @Transactional
     public AccountingPolicyResponseDTO deactivateAccountingPolicy(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Accounting policy not found with id: " + id));
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         policy.setIsActive(false);
         AccountingPolicy updatedPolicy = accountingPolicyRepository.save(policy);
         return accountingPolicyMapper.toResponseDTO(updatedPolicy);
@@ -149,7 +152,7 @@ public class AccountingPolicyService {
     @Transactional
     public AccountingPolicyResponseDTO activateAccountingPolicy(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Accounting policy not found with id: " + id));
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         policy.setIsActive(true);
         AccountingPolicy updatedPolicy = accountingPolicyRepository.save(policy);
         return accountingPolicyMapper.toResponseDTO(updatedPolicy);

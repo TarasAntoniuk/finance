@@ -1,17 +1,21 @@
 package com.tarasantoniuk.finance.currency.exception;
 
 import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
-
 /**
-        * Exception thrown when a currency already exists
+ * Exception thrown when a currency already exists
  */
-class CurrencyAlreadyExistsException extends ResourceAlreadyExistsException {
-
-    public CurrencyAlreadyExistsException(String code) {
-        super("Currency", "code", code);
-    }
+public class CurrencyAlreadyExistsException extends ResourceAlreadyExistsException {
 
     public CurrencyAlreadyExistsException(String fieldName, String fieldValue) {
         super("Currency", fieldName, fieldValue);
+    }
+
+    // Статичні фабричні методи
+    public static CurrencyAlreadyExistsException byCode(String code) {
+        return new CurrencyAlreadyExistsException("code", code);
+    }
+
+    public static CurrencyAlreadyExistsException byNumericCode(String numericCode) {
+        return new CurrencyAlreadyExistsException("numericCode", numericCode);
     }
 }

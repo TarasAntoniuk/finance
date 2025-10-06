@@ -1,9 +1,13 @@
 package com.tarasantoniuk.finance.externalexchangerate.service;
 
+import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
 import com.tarasantoniuk.finance.externalexchangerate.entity.ExternalExchangeRate;
+import com.tarasantoniuk.finance.externalexchangerate.exception.ExchangeRateAlreadyExistsException;
+import com.tarasantoniuk.finance.externalexchangerate.exception.ExchangeRateNotFoundException;
+import com.tarasantoniuk.finance.externalexchangerate.exception.InvalidExchangeRateException;
 import com.tarasantoniuk.finance.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import com.tarasantoniuk.finance.externalexchangerate.repository.ExternalExchangeRateRepository;
 import org.springframework.stereotype.Service;
@@ -38,7 +42,7 @@ public class ExternalExchangeRateService {
     @Transactional(readOnly = true)
     public ExternalExchangeRateResponseDTO getExchangeRateById(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Exchange rate not found with id: " + id));
+                .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         return exchangeRateMapper.toResponseDTO(rate);
     }
 
@@ -91,7 +95,7 @@ public class ExternalExchangeRateService {
                 .findLatestRateBeforeDate(date, currencyFromId, currencyToId);
 
         if (rates.isEmpty()) {
-            throw new RuntimeException("No exchange rate found for currency pair");
+            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, currencyToId);
         }
 
         return exchangeRateMapper.toResponseDTO(rates.get(0));
@@ -100,21 +104,23 @@ public class ExternalExchangeRateService {
     @Transactional
     public ExternalExchangeRateResponseDTO createExchangeRate(ExternalExchangeRateRequestDTO requestDTO) {
         if (!currencyRepository.existsById(requestDTO.getCurrencyFromId())) {
-            throw new RuntimeException("Currency From not found with id: " + requestDTO.getCurrencyFromId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyFromId());
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyToId())) {
-            throw new RuntimeException("Currency To not found with id: " + requestDTO.getCurrencyToId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyToId());
         }
 
         if (requestDTO.getCurrencyFromId().equals(requestDTO.getCurrencyToId())) {
-            throw new RuntimeException("Currency From and Currency To cannot be the same");
+            throw InvalidExchangeRateException.sameCurrency();
         }
 
         if (exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
                 requestDTO.getExchangeDate(), requestDTO.getCurrencyFromId(),
                 requestDTO.getCurrencyToId(), requestDTO.getSource())) {
-            throw new RuntimeException("Exchange rate already exists for this date, currency pair and source");
+            throw ExchangeRateAlreadyExistsException.forDateCurrencyAndSource(
+                    requestDTO.getExchangeDate(), requestDTO.getCurrencyFromId(),
+                    requestDTO.getCurrencyToId(), requestDTO.getSource());
         }
 
         ExternalExchangeRate rate = exchangeRateMapper.toEntity(requestDTO);
@@ -125,18 +131,18 @@ public class ExternalExchangeRateService {
     @Transactional
     public ExternalExchangeRateResponseDTO updateExchangeRate(Long id, ExternalExchangeRateRequestDTO requestDTO) {
         ExternalExchangeRate rate = exchangeRateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Exchange rate not found with id: " + id));
+                .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyFromId())) {
-            throw new RuntimeException("Currency From not found with id: " + requestDTO.getCurrencyFromId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyFromId());
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyToId())) {
-            throw new RuntimeException("Currency To not found with id: " + requestDTO.getCurrencyToId());
+            throw CurrencyNotFoundException.byId(requestDTO.getCurrencyToId());
         }
 
         if (requestDTO.getCurrencyFromId().equals(requestDTO.getCurrencyToId())) {
-            throw new RuntimeException("Currency From and Currency To cannot be the same");
+            throw InvalidExchangeRateException.sameCurrency();
         }
 
         // Check if changing to existing combination
@@ -147,7 +153,9 @@ public class ExternalExchangeRateService {
                 && exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
                 requestDTO.getExchangeDate(), requestDTO.getCurrencyFromId(),
                 requestDTO.getCurrencyToId(), requestDTO.getSource())) {
-            throw new RuntimeException("Exchange rate already exists for this date, currency pair and source");
+            throw ExchangeRateAlreadyExistsException.forDateCurrencyAndSource(
+                    requestDTO.getExchangeDate(), requestDTO.getCurrencyFromId(),
+                    requestDTO.getCurrencyToId(), requestDTO.getSource());
         }
 
         exchangeRateMapper.updateEntityFromDTO(requestDTO, rate);
@@ -158,7 +166,7 @@ public class ExternalExchangeRateService {
     @Transactional
     public void deleteExchangeRate(Long id) {
         if (!exchangeRateRepository.existsById(id)) {
-            throw new RuntimeException("Exchange rate not found with id: " + id);
+            throw ExchangeRateNotFoundException.byId(id);
         }
         exchangeRateRepository.deleteById(id);
     }
@@ -166,7 +174,7 @@ public class ExternalExchangeRateService {
     @Transactional
     public ExternalExchangeRateResponseDTO deactivateExchangeRate(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Exchange rate not found with id: " + id));
+                .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(false);
         ExternalExchangeRate updatedRate = exchangeRateRepository.save(rate);
         return exchangeRateMapper.toResponseDTO(updatedRate);
@@ -175,7 +183,7 @@ public class ExternalExchangeRateService {
     @Transactional
     public ExternalExchangeRateResponseDTO activateExchangeRate(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Exchange rate not found with id: " + id));
+                .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(true);
         ExternalExchangeRate updatedRate = exchangeRateRepository.save(rate);
         return exchangeRateMapper.toResponseDTO(updatedRate);
@@ -187,15 +195,22 @@ public class ExternalExchangeRateService {
     @Transactional(readOnly = true)
     public BigDecimal calculateCrossRate(Long currencyFromId, Long currencyToId,
                                          Long intermediateCurrencyId, LocalDate date) {
-        ExternalExchangeRate rate1 = exchangeRateRepository
-                .findLatestRateBeforeDate(date, currencyFromId, intermediateCurrencyId)
-                .stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("Rate not found for first pair"));
+        List<ExternalExchangeRate> rates1 = exchangeRateRepository
+                .findLatestRateBeforeDate(date, currencyFromId, intermediateCurrencyId);
 
-        ExternalExchangeRate rate2 = exchangeRateRepository
-                .findLatestRateBeforeDate(date, intermediateCurrencyId, currencyToId)
-                .stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("Rate not found for second pair"));
+        if (rates1.isEmpty()) {
+            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, intermediateCurrencyId);
+        }
+
+        List<ExternalExchangeRate> rates2 = exchangeRateRepository
+                .findLatestRateBeforeDate(date, intermediateCurrencyId, currencyToId);
+
+        if (rates2.isEmpty()) {
+            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, intermediateCurrencyId, currencyToId);
+        }
+
+        ExternalExchangeRate rate1 = rates1.get(0);
+        ExternalExchangeRate rate2 = rates2.get(0);
 
         return rate1.getRate().multiply(rate2.getRate()).setScale(6, RoundingMode.HALF_UP);
     }
