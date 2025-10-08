@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -196,8 +197,8 @@ class CurrencyErrorTest {
     @Test
     void deleteCurrency_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        when(currencyService.getCurrencyById(999L))
-                .thenThrow(CurrencyNotFoundException.byId(999L));
+        doThrow(CurrencyNotFoundException.byId(999L))
+                .when(currencyService).deleteCurrency(999L);
 
         // When & Then
         mockMvc.perform(delete("/api/currencies/999"))

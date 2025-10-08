@@ -20,6 +20,7 @@ import java.time.LocalDate;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -259,8 +260,8 @@ class ExchangeRateErrorTest {
     @Test
     void deleteExchangeRate_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        when(exchangeRateService.getExchangeRateById(999L))
-                .thenThrow(ExchangeRateNotFoundException.byId(999L));
+        doThrow(ExchangeRateNotFoundException.byId(999L))
+                .when(exchangeRateService).deleteExchangeRate(999L);
 
         // When & Then
         mockMvc.perform(delete("/api/exchange-rates/999"))

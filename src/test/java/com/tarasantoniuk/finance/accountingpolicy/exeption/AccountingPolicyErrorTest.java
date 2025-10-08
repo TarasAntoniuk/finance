@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -197,8 +198,9 @@ class AccountingPolicyErrorTest {
     @Test
     void deleteAccountingPolicy_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        when(accountingPolicyService.getAccountingPolicyById(999L))
-                .thenThrow(AccountingPolicyNotFoundException.byId(999L));
+        // Мокаємо метод deleteAccountingPolicy, а не getAccountingPolicyById!
+        doThrow(AccountingPolicyNotFoundException.byId(999L))
+                .when(accountingPolicyService).deleteAccountingPolicy(999L);
 
         // When & Then
         mockMvc.perform(delete("/api/accounting-policies/999"))
