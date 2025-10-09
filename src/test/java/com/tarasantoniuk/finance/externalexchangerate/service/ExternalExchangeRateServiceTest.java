@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -158,9 +158,9 @@ class ExternalExchangeRateServiceTest {
         rate2.setRate(BigDecimal.valueOf(0.9)); // GBP to EUR
 
         when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 3L))
-                .thenReturn(Arrays.asList(rate1));
+                .thenReturn(List.of(rate1));
         when(exchangeRateRepository.findLatestRateBeforeDate(date, 3L, 2L))
-                .thenReturn(Arrays.asList(rate2));
+                .thenReturn(List.of(rate2));
 
         // When
         BigDecimal result = exchangeRateService.calculateCrossRate(1L, 2L, 3L, date);
@@ -176,7 +176,7 @@ class ExternalExchangeRateServiceTest {
         // Given
         LocalDate date = LocalDate.now();
         when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 3L))
-                .thenReturn(Arrays.asList());
+                .thenReturn(List.of());
 
         // When & Then
         assertThrows(ExchangeRateNotFoundException.class,
