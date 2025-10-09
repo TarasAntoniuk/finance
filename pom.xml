@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.tarasantoniuk</groupId>
-	<artifactId>finance</artifactId>
+	<artifactId>finance-core</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>finance</name>
-	<description>Accounting system</description>
+	<name>finance-core</name>
+	<description>Prototype of accounting system</description>
 	<url/>
 	<licenses>
 		<license/>
