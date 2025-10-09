@@ -15,7 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 /**
  * Global exception handler for all REST controllers
  */
-@RestControllerAdvice
+
+@RestControllerAdvice(basePackages = "com.tarasantoniuk.finance")
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)

@@ -98,7 +98,7 @@ public class ExternalExchangeRateService {
             throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, currencyToId);
         }
 
-        return exchangeRateMapper.toResponseDTO(rates.get(0));
+        return exchangeRateMapper.toResponseDTO(rates.getFirst());
     }
 
     @Transactional
@@ -209,8 +209,8 @@ public class ExternalExchangeRateService {
             throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, intermediateCurrencyId, currencyToId);
         }
 
-        ExternalExchangeRate rate1 = rates1.get(0);
-        ExternalExchangeRate rate2 = rates2.get(0);
+        ExternalExchangeRate rate1 = rates1.getFirst();
+        ExternalExchangeRate rate2 = rates2.getFirst();
 
         return rate1.getRate().multiply(rate2.getRate()).setScale(6, RoundingMode.HALF_UP);
     }

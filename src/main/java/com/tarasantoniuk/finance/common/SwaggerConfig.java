@@ -26,7 +26,7 @@ public class SwaggerConfig {
 
         Contact contact = new Contact();
         contact.setName("API Support Team");
-        contact.setEmail("support@example.com");
+        contact.setEmail("bronya2004@gmail.com");
 
         License license = new License();
         license.setName("Apache 2.0");
