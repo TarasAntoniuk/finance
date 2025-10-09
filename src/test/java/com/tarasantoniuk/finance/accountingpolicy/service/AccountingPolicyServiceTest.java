@@ -20,7 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -91,9 +91,9 @@ class AccountingPolicyServiceTest {
     @Test
     void getAllAccountingPolicies_ShouldReturnListOfPolicies() {
         // Given
-        List<AccountingPolicy> policies = Arrays.asList(accountingPolicy);
+        List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
         when(accountingPolicyRepository.findAll()).thenReturn(policies);
-        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Arrays.asList(responseDTO));
+        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         // When
         List<AccountingPolicyResponseDTO> result = accountingPolicyService.getAllAccountingPolicies();
@@ -159,9 +159,9 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByOrganization_ShouldReturnFilteredList() {
         // Given
-        List<AccountingPolicy> policies = Arrays.asList(accountingPolicy);
+        List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
         when(accountingPolicyRepository.findByOrganizationId(1L)).thenReturn(policies);
-        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Arrays.asList(responseDTO));
+        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         // When
         List<AccountingPolicyResponseDTO> result = accountingPolicyService
@@ -175,9 +175,9 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYear_ShouldReturnFilteredList() {
         // Given
-        List<AccountingPolicy> policies = Arrays.asList(accountingPolicy);
+        List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
         when(accountingPolicyRepository.findByYear(2024)).thenReturn(policies);
-        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Arrays.asList(responseDTO));
+        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         // When
         List<AccountingPolicyResponseDTO> result = accountingPolicyService.getAccountingPoliciesByYear(2024);
@@ -190,9 +190,9 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYearRange_ShouldReturnFilteredList() {
         // Given
-        List<AccountingPolicy> policies = Arrays.asList(accountingPolicy);
+        List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
         when(accountingPolicyRepository.findByYearBetween(2020, 2024)).thenReturn(policies);
-        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Arrays.asList(responseDTO));
+        when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         // When
         List<AccountingPolicyResponseDTO> result = accountingPolicyService
@@ -284,7 +284,8 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
         // When
-        AccountingPolicyResponseDTO result = accountingPolicyService.activateAccountingPolicy(1L);
+        //AccountingPolicyResponseDTO result =
+                accountingPolicyService.activateAccountingPolicy(1L);
 
         // Then
         assertTrue(accountingPolicy.getIsActive());
@@ -299,7 +300,8 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
         // When
-        AccountingPolicyResponseDTO result = accountingPolicyService.deactivateAccountingPolicy(1L);
+        //AccountingPolicyResponseDTO result =
+                accountingPolicyService.deactivateAccountingPolicy(1L);
 
         // Then
         assertFalse(accountingPolicy.getIsActive());
