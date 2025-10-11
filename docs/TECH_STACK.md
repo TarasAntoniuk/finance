@@ -1,5 +1,7 @@
 # Technology Stack – Financial Accounting Prototype
 
+---
+
 ## Backend Technologies
 
 ### Core Framework
@@ -16,7 +18,7 @@
 - **Spring Data JPA**
     - Repository abstraction
     - Query derivation
-    - Pagination and sorting support
+    - Pagination and sorting
 
 - **Hibernate 6.5**
     - JPA implementation
@@ -26,23 +28,23 @@
 ### Object Mapping
 - **MapStruct 1.6.3**
     - Compile-time code generation
-    - Type-safe mapping between DTOs and Entities
+    - Type-safe DTO ↔ Entity mapping
     - Better performance than reflection-based mappers
-    - Spring integration support
+    - Spring integration
 
 ### Build Tool
 - **Maven**
     - Dependency management
-    - Build lifecycle management
+    - Build lifecycle
     - Plugin ecosystem
 
 ### API & Documentation
-- **Spring Web (REST API)**
+- **Spring Web**
     - RESTful service development
     - HTTP request handling
 
 - **SpringDoc OpenAPI 2.2.0**
-    - Automatic API documentation generation
+    - Automatic API documentation
     - Swagger UI integration
     - OpenAPI 3 specification
 
@@ -50,24 +52,23 @@
 - **Spring Boot Starter Validation**
     - Bean Validation (Jakarta Validation)
     - Request validation
-    - Custom validators support
+    - Custom validators
 
 ---
 
 ## Database
 
-### RDBMS
 - **PostgreSQL 17**
-    - Open-source relational database
+    - Open-source RDBMS
     - ACID compliance
-    - Advanced features (JSON, full-text search, etc.)
-    - Excellent performance and reliability
+    - Advanced features (JSON, full-text search)
+    - Excellent performance
 
 ---
 
 ## Testing
 
-### Testing Frameworks
+### Frameworks
 - **JUnit 5**
     - Modern testing framework
     - Annotations and assertions
@@ -75,14 +76,14 @@
 
 - **Spring Boot Test**
     - Spring context testing
-    - MockMvc for controller testing
+    - MockMvc for controllers
     - Test slices (@DataJpaTest, @WebMvcTest)
 
 ### Integration Testing
 - **Testcontainers**
     - Docker-based integration tests
-    - Real PostgreSQL instance for testing
-    - Ensures test isolation
+    - Real PostgreSQL instance
+    - Test isolation
 
 ---
 
@@ -92,13 +93,13 @@
 - **GitHub Actions**
     - Automated test execution
     - Build verification
-    - Runs before merging to stable branch
+    - Runs on push to `dev` and `stable`
 
 ### Containerization
 - **Docker**
-    - Used for Testcontainers
-    - Required for integration testing
-    - **Note**: Not used for deployment in current phase
+    - Required for Testcontainers
+    - Integration testing only
+    - **Note**: Not used for deployment yet
 
 ---
 
@@ -126,7 +127,6 @@
 
 ## Configuration Management
 
-### Environment Configuration
 - **dotenv-java 3.0.0**
     - Environment variable management
     - `.properties` file support
@@ -136,7 +136,6 @@
 
 ## Code Quality
 
-### Testing Coverage
 - **JaCoCo 0.8.10**
     - Code coverage reports
     - Maven plugin integration
@@ -144,29 +143,29 @@
 
 ---
 
-## Notable Architectural Decisions
+## Notable Decisions
 
 ### What We DON'T Use
 
 ❌ **Lombok**
-- Reason: Explicit code, better debugging
-- Alternative: Plain Java getters/setters/constructors
+- Explicit code preferred
+- Better debugging
+- Plain Java getters/setters
 
 ❌ **Frontend Framework** (currently)
-- Reason: Backend-first approach
-- Future: Will be added in later phases
+- Backend-first approach
+- Planned for future
 
 ❌ **Kubernetes** (currently)
-- Reason: Prototype phase
-- Future: Planned for production deployment
+- Prototype phase
+- Planned for production
 
 ---
 
-## Dependencies Overview
+## Dependencies Summary
 
-### Main Dependencies (from pom.xml)
-
-```pom
+### Production Dependencies
+```mvn
 <!-- Core -->
 spring-boot-starter-web
 spring-boot-starter-data-jpa
@@ -174,7 +173,6 @@ postgresql
 
 <!-- Mapping -->
 mapstruct (1.6.3)
-mapstruct-processor
 
 <!-- Documentation -->
 springdoc-openapi-starter-webmvc-ui (2.2.0)
@@ -182,17 +180,23 @@ springdoc-openapi-starter-webmvc-ui (2.2.0)
 <!-- Validation -->
 spring-boot-starter-validation
 
-<!-- Testing -->
+<!-- Utilities -->
+dotenv-java (3.0.0)
+commons-lang3 (3.18.0)
+```
+
+### Test Dependencies
+```mvn
 spring-boot-starter-test
 spring-boot-testcontainers
 testcontainers-postgresql
 junit-jupiter
+```
 
-<!-- Utilities -->
-dotenv-java (3.0.0)
-commons-lang3 (3.18.0)
-
-<!-- Code Coverage -->
+### Build Plugins
+```mvn
+spring-boot-maven-plugin
+mapstruct-processor
 jacoco-maven-plugin (0.8.10)
 ```
 
@@ -200,25 +204,25 @@ jacoco-maven-plugin (0.8.10)
 
 ## Version Strategy
 
-- **Spring Boot**: Latest stable version (3.5.5)
+- **Spring Boot**: Latest stable (3.5.5)
 - **Java**: LTS version (21)
-- **PostgreSQL**: Latest major version (17)
-- **Dependencies**: Regular updates for security and features
+- **PostgreSQL**: Latest major (17)
+- **Dependencies**: Regular security updates
 
 ---
 
-## Future Technology Additions
+## Planned Technology Additions
 
-Planned for future phases:
-- Spring Security (authentication/authorization)
-- Spring Scheduler (automatic rate updates)
+See [FUTURE_PLANS.md](FUTURE_PLANS.md) for:
+- Spring Security
+- Spring Scheduler
 - Redis (caching)
 - Liquibase/Flyway (database migrations)
-- Frontend framework (React/Vue/Angular)
-- Kubernetes (orchestration)
+- Frontend framework
+- Kubernetes
 - Monitoring tools (Prometheus, Grafana)
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 0.0.1  
 **Last Updated**: October 2025

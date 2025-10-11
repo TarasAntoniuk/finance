@@ -1,312 +1,225 @@
 # Future Plans – Financial Accounting Prototype
 
-This document outlines the development roadmap for the Financial Accounting Prototype system.
+> **Development Note**: This is a **spare-time side project**.  
+> Timeline is flexible and depends on available time.
 
 ---
 
-## 🎯 Priority #1 – External Integration
+## Priority Levels
+
+- 🔴 **P0**: Next immediate focus
+- 🟡 **P1**: Important for core functionality
+- 🟢 **P2**: Nice to have
+- ⚪ **P3**: Long-term goals
+
+---
+
+## 🔴 P0 – External Integration (Next Release: 0.0.2)
 
 ### Automatic Exchange Rate Updates
 **Status**: Not implemented  
-**Priority**: Highest
+**Target**: Version 0.0.2
 
 #### Goals
-- Integrate with external currency rate providers
-- Implement automatic daily updates
+- Integrate with European Central Bank (ECB) API
+- Implement scheduled daily updates
 - Store historical exchange rate data
 
-#### Implementation Plan
-1. **External API Integration**
-    - European Central Bank (ECB) API
+#### Implementation
+1. **External API Client**
+    - ECB API integration
     - Fallback providers (backup sources)
-    - API error handling and retry logic
+    - Error handling and retry logic
 
-2. **Scheduled Updates**
+2. **Scheduler**
     - Spring Scheduler configuration
-    - Daily automatic rate fetching
+    - Daily automatic fetching
     - Configurable update times
 
-3. **Historical Data Storage**
-    - Create exchange rate history table
+3. **Historical Storage**
+    - Exchange rate history table
     - Track rate changes over time
     - Date-based queries
 
-4. **Data Validation**
-    - Validate incoming rate data
+4. **Validation**
+    - Validate incoming data
     - Compare with previous rates
     - Alert on significant changes
 
 ---
 
-## 📅 Near-term Plans (Next 3-6 months)
+## 🟡 P1 – Near-term Plans (3-6 months)
 
 ### 1. Testing Improvements
-**Status**: In progress
+**Target**: Version 0.0.2-0.0.3
 
-- Refactor existing unit tests
 - Improve test coverage (target: 80%+)
-- Add more integration test scenarios
+- Add edge case scenarios
 - Performance testing
-- API endpoint testing with different scenarios
+- API contract testing
 
 ### 2. Security Implementation
-**Status**: Not started  
-**Priority**: High
+**Target**: Version 0.0.3
 
-#### Authentication & Authorization
 - Spring Security integration
-- User authentication (JWT or session-based)
+- JWT authentication
 - Role-based access control (RBAC)
-- API endpoint protection
 - User management
-
-#### Security Features
 - Password encryption
-- Session management
-- CSRF protection
-- Rate limiting
 - Audit logging
 
-### 3. Account Management System
-**Status**: Not started  
-**Priority**: Medium-High
+### 3. Account Management
+**Target**: Version 0.0.4
 
-#### New Entities
-- **Accounts table**
-    - Account number
-    - Account type (checking, savings, etc.)
-    - Currency
-    - Organization reference
-    - Status
+**New Entities**:
+- Accounts (account number, type, currency, status)
+- Banks (bank name, SWIFT/BIC, country)
 
-- **Banks table**
-    - Bank name
-    - Bank code (SWIFT/BIC)
-    - Country
-    - Contact information
-
-#### Features
-- CRUD operations for accounts and banks
+**Features**:
+- CRUD operations
 - Link accounts to organizations
-- Multi-currency account support
+- Multi-currency accounts
 
 ### 4. Balance Management
-**Status**: Not started  
-**Priority**: Medium-High
+**Target**: Version 0.0.4
 
-#### Balance Tracking
-- Current balance calculation
+- Current balance tracking
 - Balance history
 - Multi-currency balances
-- Balance validation rules
-
-#### Balance Operations
-- Increase balance (deposits, income)
-- Decrease balance (withdrawals, expenses)
-- Transfer between accounts
+- Balance operations (deposits, withdrawals)
+- Account transfers
 - Currency conversion on transfers
-
-#### Reporting
-- Balance reports by account
-- Balance reports by currency
-- Balance reports by organization
-- Historical balance trends
 
 ---
 
-## 🚀 Long-term Plans (6-12 months)
+## 🟢 P2 – Medium-term Plans (6-12 months)
 
-### 1. Expanded Financial Modules
+### 1. Financial Modules
 
-#### Accounting Module
-- Chart of accounts
-- Journal entries
-- General ledger
+#### Chart of Accounts
+- Account structure
+- Account types and categories
+- Account hierarchies
+
+#### Journal Entries
+- Transaction recording
+- Double-entry bookkeeping
+- Entry validation
+
+#### General Ledger
+- Ledger maintenance
 - Trial balance
 - Financial statements (Balance Sheet, P&L)
 
-#### Finance Module
-- Budget management
-- Financial planning
-- Cash flow forecasting
-- Financial analysis tools
+### 2. Currency Operations
 
-#### Operations Module
-- Transaction processing
-- Payment processing
-- Reconciliation tools
-- Multi-organization support
-
-### 2. Advanced Currency Operations
-
-#### Currency Conversion
+#### Advanced Conversions
 - Real-time conversion
 - Historical rate conversion
 - Conversion fees/spreads
 - Multiple rate sources
 
-#### Currency Analytics
+#### Analytics
 - Exchange rate trends
 - Volatility analysis
-- Rate predictions (basic ML)
 - Currency exposure reports
+- Historical comparisons
 
-#### Historical Rate Management
-- Rate history queries
-- Rate comparison tools
-- Historical analysis
-- Data export capabilities
+### 3. Reporting System
 
-### 3. User Interface Development
-
-#### Admin Dashboard
-- System overview
-- Key metrics and KPIs
-- Quick actions
-- Alerts and notifications
-
-#### Reporting Interface
-- Interactive reports
+- Balance reports by account/currency/organization
+- Historical balance trends
+- Financial statements
 - Custom report builder
-- Export capabilities (PDF, Excel, CSV)
-- Scheduled reports
+- Export (PDF, Excel, CSV)
 
-#### User Management UI
-- User administration
-- Role management
-- Permission configuration
-- Activity monitoring
+---
 
-### 4. Advanced Features
+## ⚪ P3 – Long-term Goals (12+ months)
 
-#### API Enhancements
-- GraphQL API (in addition to REST)
+### Frontend Development
+- Admin dashboard
+- Interactive reports
+- User management UI
+- Account management interface
+
+### Advanced Features
+- GraphQL API
 - Webhook support
-- API versioning
-- Rate limiting and quotas
-
-#### Integration Capabilities
-- Import/export functionality
-- External system integration
-- Banking API connections
+- Banking API integration
 - Accounting software integration
+- Machine learning rate predictions
 
-#### Audit Trail
-- Complete audit history
-- Entity change tracking
-- User action logging
-- Compliance reporting
-
----
-
-## 🏗️ Infrastructure & Deployment
-
-### Containerization
+### Infrastructure
 - Docker Compose setup
-- Multi-container orchestration
-- Environment-specific configurations
-
-### Kubernetes Deployment
-- Kubernetes manifests
-- Helm charts
-- Auto-scaling configuration
-- Load balancing
-
-### Monitoring & Observability
-- Application monitoring (Prometheus)
+- Kubernetes deployment
+- Monitoring (Prometheus, Grafana)
 - Log aggregation (ELK stack)
-- Metrics dashboards (Grafana)
-- Alerting system
+- Performance optimization (Redis caching)
 
-### Performance Optimization
-- Database query optimization
-- Caching strategy (Redis)
-- API response optimization
-- Connection pooling tuning
-
----
-
-## 📊 Quality & Maintenance
-
-### Code Quality
-- Code review process
-- Static code analysis (SonarQube)
-- Dependency updates
+### Quality Improvements
+- Code quality tools (SonarQube)
 - Security scanning
-
-### Documentation
-- API documentation improvements
-- Architecture documentation
-- Developer guides
-- User manuals
-
-### Testing Strategy
-- Automated regression testing
 - Load testing
-- Security testing
 - End-to-end testing
 
 ---
 
-## 🔄 Iterative Development Approach
+## Version Roadmap
 
-This project follows an iterative development approach:
+### Version 0.0.2 (Q1 2026)
+- 🔴 Automatic exchange rate updates
+- Improved test coverage
+- Enhanced error handling
 
-1. **Build**: Implement features incrementally
-2. **Test**: Ensure quality with comprehensive tests
-3. **Deploy**: Release stable versions
-4. **Feedback**: Gather feedback and adjust
-5. **Improve**: Refine based on real-world usage
+### Version 0.0.3 (Q2 2026)
+- 🟡 Basic security implementation
+- User authentication
+
+### Version 0.0.4 (Q3 2026)
+- 🟡 Account management
+- Balance tracking
+
+### Version 0.0.5-0.0.9 (Q4 2026 - 2027)
+- 🟢 Financial modules
+- Advanced reporting
+- Currency operations
+
+### Version 1.0.0 (2027+)
+- Complete accounting system
+- Production deployment
+- Full security
+- Frontend interface
 
 ---
 
-## ⏱️ Timeline Considerations
+## Development Approach
 
-**Important Notes**:
-- Development happens in spare time
-- Timeline is flexible and subject to change
-- Features may be reprioritized based on needs
-- Community contributions can accelerate progress
+**Iterative Process**:
+1. Build core features
+2. Test thoroughly
+3. Release stable version
+4. Gather feedback
+5. Plan next iteration
+
+**Flexibility**:
+- Features may be reprioritized
+- Timeline adjusts based on learning
+- Community input welcome
 
 ---
 
-## 💡 Feature Requests
+## Contributing
 
-Have ideas for new features? Contributions and suggestions are welcome!
+Ideas and suggestions are welcome!
 
-Please consider:
+**Consider**:
 - Alignment with project goals
 - Implementation complexity
-- Value to users
 - Maintainability
 
 ---
 
-## 📝 Version Planning
-
-### Version 0.2.0 (Next Release)
-- Automatic exchange rate updates ✓
-- Improved test coverage
-- Basic security implementation
-
-### Version 0.3.0
-- Account management
-- Balance tracking
-- Basic reporting
-
-### Version 0.4.0
-- Advanced security
-- User interface basics
-- Enhanced API features
-
-### Version 1.0.0 (Major Release)
-- Complete accounting module
-- Full authentication system
-- Production-ready deployment
-- Comprehensive documentation
-
----
-
-**Document Version**: 1.0  
+**Document Version**: 0.0.1  
 **Last Updated**: October 2025  
 **Next Review**: Quarterly
