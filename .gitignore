@@ -3,3 +3,11 @@
 
 /src/main/resources/env/
 
+.gitignore
+# Default ignored files
+/shelf/
+/workspace.xml
+
+
+
+
