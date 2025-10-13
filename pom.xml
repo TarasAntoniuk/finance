@@ -117,6 +117,22 @@
     <build>
         <plugins>
 
+            <!-- Spring Boot Repackage Plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.5.5</version>
+                <configuration>
+                    <mainClass>com.tarasantoniuk.finance.FinanceApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Jacoco -->
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -189,7 +205,8 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
-                        <version>3.5.5</version> <!-- або твоя версія Spring Boot -->
+                        <version>3.5.5</version>
+
                         <executions>
                             <execution>
                                 <goals>
