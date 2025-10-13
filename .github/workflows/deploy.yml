@@ -75,9 +75,12 @@ jobs:
           ssh server << 'ENDSSH'
             set -e
             APP_DIR=/srv/apps/finance-core
-            mkdir -p $APP_DIR/{docker/app,logs,db_data,certs}
+
+            sudo mkdir -p $APP_DIR/{docker/app,logs,db_data,certs}
+            sudo chown -R deploy:deploy $APP_DIR
             echo "✅ Directories prepared"
           ENDSSH
+
 
       - name: Copy JAR file to server
         run: |
