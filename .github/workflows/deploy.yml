@@ -107,23 +107,22 @@ jobs:
 
             echo "✅ Deployment completed!"
           ENDSSH
-          
-          
-          - name: Verify deployment
-              run: |
-                ssh server << 'ENDSSH'
-                  set -e
-                  sleep 10
-          
-                  echo "📦 Running containers:"
-                  docker ps
-          
-                  echo ""
-                  echo "🔍 Checking finance-core container:"
-                  docker ps | grep finance-core || echo "⚠️  Container not running"
-          
-                  # Health check (якщо є endpoint)
-                  echo ""
-                  echo "🏥 Health check:"
-                  curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
-                ENDSSH
+
+      - name: Verify deployment
+        run: |
+          ssh server << 'ENDSSH'
+            set -e
+            sleep 10
+
+            echo "📦 Running containers:"
+            docker ps
+
+            echo ""
+            echo "🔍 Checking finance-core container:"
+            docker ps | grep finance-core || echo "⚠️  Container not running"
+
+            # Health check (якщо є endpoint)
+            echo ""
+            echo "🏥 Health check:"
+            curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
+          ENDSSH
