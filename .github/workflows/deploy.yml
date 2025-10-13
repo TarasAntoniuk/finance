@@ -17,6 +17,9 @@ jobs:
     services:
       postgres:
         image: postgres:17
+        # Підключаємо env файл
+        env_file:
+          - .env
         env:
           POSTGRES_DB: finance_test
           POSTGRES_USER: test_user
