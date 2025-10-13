@@ -99,6 +99,10 @@ jobs:
 
             cd docker
             docker compose down
+          
+            # Видаляємо nginx контейнер повністю щоб скинути кеш volumes
+            docker rm -f finance-core-nginx 2>/dev/null || true
+          
             docker compose up -d --build
 
             echo "✅ Deployment completed!"
