@@ -1,4 +1,4 @@
-name: Test SSH Connection (test)
+name: Test SSH Connection
 
 on:
   workflow_dispatch:
@@ -8,48 +8,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Виводимо змінні для дебагу (не секретні)
+      # 1. Виводимо змінні для дебагу
       - name: Debug variables
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
         run: |
-          echo "Server host: $SERVER_HOST"
-          echo "Server user: $SERVER_USER"
+          echo "Server host length: ${#SERVER_HOST}"
+          echo "Server user length: ${#SERVER_USER}"
           echo "Server port: $SERVER_SSH_PORT"
 
-      # 2. Декодуємо base64 приватний ключ і даємо права
-      - name: Decode SSH key
+      # 2. Створюємо SSH ключ
+      - name: Setup SSH key
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/github_deploy_key
+          printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/github_deploy_key
           chmod 600 ~/.ssh/github_deploy_key
+          ls -la ~/.ssh/
 
-      # 3. Додаємо хост до known_hosts (уникаємо prompt)
-      - name: Add host to known_hosts
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
-        run: |
-          ssh-keyscan -p $SERVER_SSH_PORT $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      # 4. Тестове підключення по SSH
-      - name: Test SSH connection
+      # 3. Створюємо SSH config файл
+      - name: Create SSH config
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
         run: |
-          HOST="${SERVER_HOST}"
-          USER="${SERVER_USER}"
-          PORT="${SERVER_SSH_PORT}"
-          
-          echo "Connecting to ${USER}@${HOST}:${PORT}..."
-          
-          ssh -o StrictHostKeyChecking=no \
-              -i ~/.ssh/github_deploy_key \
-              -p "${PORT}" \
-              "${USER}@${HOST}" "echo '✅ SSH connection successful! Hostname:' \$(hostname)"
+          cat > ~/.ssh/config <<EOF
+          Host deployserver
+            HostName $SERVER_HOST
+            User $SERVER_USER
+            Port $SERVER_SSH_PORT
+            IdentityFile ~/.ssh/github_deploy_key
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          EOF
+          chmod 600 ~/.ssh/config
+          cat ~/.ssh/config
+
+      # 4. Тестове підключення
+      - name: Test SSH connection
+        run: |
+          ssh deployserver "echo '✅ SSH connection successful!' && hostname && whoami && pwd"
