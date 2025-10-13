@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1.
+      # 1. Shows info
       - name: Debug variables
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -19,7 +19,7 @@ jobs:
           echo "Server user: $SERVER_USER"
           echo "Server port: $SERVER_SSH_PORT"
 
-      # 2.
+      # 2. Decode
       - name: Decode SSH key
         env:
           SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
@@ -28,7 +28,7 @@ jobs:
           echo "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/github_deploy_key
           chmod 600 ~/.ssh/github_deploy_key
 
-      # 3.
+      # 3. Test
       - name: Test SSH connection
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
