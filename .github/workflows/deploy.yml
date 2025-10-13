@@ -1,21 +1,32 @@
 name: Test SSH Connection
 
+# Можна запускати вручну
 on:
   workflow_dispatch:
 
 jobs:
-  test-ssh:
+  ssh-test:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Просто виводимо змінні для дебагу (не секретні)
+      - name: Debug variables
+        run: |
+          echo "Server host: $SERVER_HOST"
+          echo "Server user: $SERVER_USER"
+          echo "Server port: $SERVER_SSH_PORT"
+
+      # 2. Декодуємо base64 приватний ключ і даємо права
       - name: Decode SSH key
         run: |
           mkdir -p ~/.ssh
           echo "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/github_deploy_key
           chmod 600 ~/.ssh/github_deploy_key
 
+      # 3. Тестове підключення по SSH
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/github_deploy_key \
-            -p $SERVER_SSH_PORT \
-            $SERVER_USER@$SERVER_HOST "echo '✅ SSH connection successful!'"
+          ssh -o StrictHostKeyChecking=no \
+              -i ~/.ssh/github_deploy_key \
+              -p $SERVER_SSH_PORT \
+              $SERVER_USER@$SERVER_HOST "echo '✅ SSH connection successful!'"
