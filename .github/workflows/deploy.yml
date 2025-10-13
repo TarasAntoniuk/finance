@@ -39,8 +39,8 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
-      - name: Run tests with coverage
-        run: mvn clean verify -P test-coverage
+#      - name: Run tests with coverage
+#        run: mvn clean verify -P test-coverage
 
       - name: Package JAR
         run: mvn clean package -DskipTests

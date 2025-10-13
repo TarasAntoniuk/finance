@@ -30,27 +30,23 @@ services:
     restart: unless-stopped
     working_dir: /app
     command: java -jar -Dspring.profiles.active=prod app.jar
+
+    # Підключаємо env файл
+    env_file:
+        - .env
+
+      # Інші змінні можна додавати, якщо потрібно
     environment:
-      # Database Configuration
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finance-core
-      SPRING_DATASOURCE_USERNAME: admin
-      SPRING_DATASOURCE_PASSWORD: admin123
-
-      # JPA/Hibernate
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: false
-
-      # Server Configuration
       SERVER_PORT: 8080
-
-      # Logging
       LOGGING_FILE_PATH: /app/logs
       LOGGING_LEVEL_ROOT: INFO
     volumes:
       - ./app/app.jar:/app/app.jar:ro
       - app_logs:/app/logs
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
