@@ -95,21 +95,20 @@ jobs:
           ssh server << 'ENDSSH'
             set -e
             cd /srv/apps/finance-core
-          
-            # Pull latest code (якщо потрібно)
+
             if [ -d ".git" ]; then
               git fetch --all
               git reset --hard origin/stable
             fi
-          
-            # Deploy with docker compose
+
             cd docker
             docker compose down
             docker compose up -d --build
-          
+
             echo "✅ Deployment completed!"
           ENDSSH
-
+          
+          
           - name: Verify deployment
               run: |
                 ssh server << 'ENDSSH'
