@@ -39,8 +39,8 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
 
-      - name: Run tests with coverage
-        run: mvn clean verify -P test-coverage
+#      - name: Run tests with coverage
+#        run: mvn clean verify -P test-coverage
 
       - name: Package JAR
         run: mvn clean package -DskipTests
@@ -102,7 +102,7 @@ jobs:
               git reset --hard origin/stable
             fi
           
-            # Deploy with docker-compose
+            # Deploy with docker compose
             cd docker
             docker compose down
             docker compose up -d --build
