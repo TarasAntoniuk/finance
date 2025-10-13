@@ -17,9 +17,6 @@ jobs:
     services:
       postgres:
         image: postgres:17
-        # Підключаємо env файл
-#        env_file:
-#          - .env
         env:
           POSTGRES_DB: finance_test
           POSTGRES_USER: test_user
@@ -41,9 +38,6 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-#      - name: Run tests with coverage
-#        run: mvn clean verify -P test-coverage
 
       - name: Package JAR
         run: mvn clean package -DskipTests
@@ -84,7 +78,6 @@ jobs:
             echo "✅ Directories prepared"
           ENDSSH
 
-
       - name: Copy JAR file to server
         run: |
           scp target/*.jar server:/srv/apps/finance-core/docker/app/app.jar
@@ -124,7 +117,6 @@ jobs:
             echo "🔍 Checking finance-core container:"
             docker ps | grep finance-core || echo "⚠️  Container not running"
 
-            # Health check (якщо є endpoint)
             echo ""
             echo "🏥 Health check:"
             curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
