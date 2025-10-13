@@ -1,18 +1,49 @@
-name: Deploy to Server
+name: CI/CD Deploy
 
 on:
   push:
     branches:
-      - main  # або master, залежно від вашої гілки
-  workflow_dispatch:  # можливість запуску вручну
+      - stable
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
-  deploy:
+  build-test-deploy:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: finance_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Run tests with coverage
+        run: mvn clean verify -P test-coverage
+
+      - name: Package JAR
+        run: mvn clean package -DskipTests
 
       - name: Setup SSH key
         env:
@@ -39,26 +70,58 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: Deploy application
+      - name: Prepare deployment directories
         run: |
           ssh server << 'ENDSSH'
             set -e
-          
-            # Перейти в директорію проєкту
-            cd /path/to/your/project
-          
-            # Оновити код
-            git pull origin main
-          
-            # Встановити залежності (приклад для Node.js)
-            npm install --production
-          
-            # Перезапустити додаток (приклад для PM2)
-            pm2 restart your-app-name
-          
-            echo "✅ Deployment completed successfully!"
+            APP_DIR=/srv/apps/finance-core
+            mkdir -p $APP_DIR/{docker/app,logs,db_data,certs}
+            echo "✅ Directories prepared"
           ENDSSH
 
-      - name: Verify deployment
+      - name: Copy JAR file to server
         run: |
-          ssh server "curl -f http://localhost:3000/health || echo '⚠️  Health check failed'"
+          scp target/*.jar server:/srv/apps/finance-core/docker/app/app.jar
+
+      - name: Copy Docker files to server
+        run: |
+          scp -r docker/* server:/srv/apps/finance-core/docker/
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh server << 'ENDSSH'
+            set -e
+            cd /srv/apps/finance-core
+          
+            # Pull latest code (якщо потрібно)
+            if [ -d ".git" ]; then
+              git fetch --all
+              git reset --hard origin/stable
+            fi
+          
+            # Deploy with docker-compose
+            cd docker
+            docker-compose down
+            docker-compose up -d --build
+          
+            echo "✅ Deployment completed!"
+          ENDSSH
+
+          - name: Verify deployment
+              run: |
+                ssh server << 'ENDSSH'
+                  set -e
+                  sleep 10
+          
+                  echo "📦 Running containers:"
+                  docker ps
+          
+                  echo ""
+                  echo "🔍 Checking finance-core container:"
+                  docker ps | grep finance-core || echo "⚠️  Container not running"
+          
+                  # Health check (якщо є endpoint)
+                  echo ""
+                  echo "🏥 Health check:"
+                  curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
+                ENDSSH
