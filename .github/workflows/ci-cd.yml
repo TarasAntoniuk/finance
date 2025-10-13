@@ -1,25 +1,21 @@
-name: CI/CD Pipeline
+name: CI/CD Deploy
 
 on:
-  pull_request:
+  push:
     branches:
       - stable
-    types: [opened, synchronize, reopened]
 
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
-  # Job 1: Build and Test
-  build-and-test:
-    name: Build and Test
+  build-test-deploy:
     runs-on: ubuntu-latest
-    if: github.base_ref == 'stable'
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:17
         env:
           POSTGRES_DB: finance_test
           POSTGRES_USER: test_user
@@ -41,252 +37,28 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
 
       - name: Run tests with coverage
-        env:
-          DB_URL: jdbc:postgresql://localhost:5432/finance_test
-          DB_USERNAME: test_user
-          DB_PASSWORD: test_password
         run: mvn clean verify -P test-coverage
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: target/surefire-reports/
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./target/site/jacoco/jacoco.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-
-      - name: Generate JaCoCo Badge
-        id: jacoco
-        uses: cicirello/jacoco-badge-generator@v2
-        with:
-          jacoco-csv-file: target/site/jacoco/jacoco.csv
-          badges-directory: .github/badges
-          generate-branches-badge: true
-          generate-summary: true
-
-      - name: Upload JaCoCo coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
-
-      - name: Check test coverage threshold
-        run: |
-          if [ -f "target/site/jacoco/index.html" ]; then
-            COVERAGE=$(grep -oP 'Total.*?(\d+)%' target/site/jacoco/index.html | grep -oP '\d+' | head -1 || echo "0")
-            echo "Coverage: $COVERAGE%"
-            if [ "$COVERAGE" -lt 70 ]; then
-              echo "❌ Coverage is below 70%: $COVERAGE%"
-              exit 1
-            fi
-            echo "✅ Coverage is acceptable: $COVERAGE%"
-          else
-            echo "❌ Coverage report not found"
-            exit 1
-          fi
-
-  # Job 2: Security Scan
-  security-scan:
-    name: Security Vulnerability Scan
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.base_ref == 'stable'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Run OWASP Dependency Check
-        run: |
-          mvn org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=7 \
-            -DsuppressionFiles=dependency-check-suppressions.xml
-        continue-on-error: true
-
-      - name: Upload OWASP report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owasp-report
-          path: target/dependency-check-report.html
-
-  # Job 3: Code Quality
-  code-quality:
-    name: Code Quality Analysis
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.base_ref == 'stable'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Build and analyze with SonarCloud
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=finance-core \
-            -Dsonar.organization=your-org \
-            -Dsonar.host.url=https://sonarcloud.io
-        continue-on-error: true
-
-  # Job 4: Auto-merge to stable (after all checks pass)
-  auto-merge:
-    name: Auto-merge to stable
-    runs-on: ubuntu-latest
-    needs: [build-and-test, security-scan, code-quality]
-    if: github.base_ref == 'stable' && github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Enable auto-merge
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              merge_method: 'squash',
-              commit_title: '🚀 Release: dev → stable',
-              commit_message: 'Auto-merge after successful tests, security scan, and code quality checks'
-            });
-
-      - name: Create release tag
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const date = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: `refs/tags/release-${date}`,
-              sha: context.sha
-            });
-
-  # Job 5: Build Docker Image (only after merge)
-  build-docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: auto-merge
-    if: success()
-
-    steps:
-      - name: Checkout stable branch
-        uses: actions/checkout@v4
-        with:
-          ref: stable
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Build with Maven
+      - name: Package JAR
         run: mvn clean package -DskipTests
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v0.1.5
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-        continue-on-error: true
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/finance-core:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/finance-core:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-        continue-on-error: true
-
-  # Job 6: Notify on Success
-  notify-success:
-    name: Notify on Success
-    runs-on: ubuntu-latest
-    needs: [build-and-test, security-scan, code-quality]
-    if: success()
-
-    steps:
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '✅ **All checks passed!**\n\n- ✅ Tests passed\n- ✅ Security scan completed\n- ✅ Code quality check passed\n\nReady to merge to `stable`!'
-            })
-
-  # Job 7: Notify on Failure
-  notify-failure:
-    name: Notify on Failure
-    runs-on: ubuntu-latest
-    needs: [build-and-test, security-scan, code-quality]
-    if: failure()
-
-    steps:
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: '❌ **Pipeline Failed!**\n\nSome checks did not pass. Please review the [workflow logs](' + context.payload.repository.html_url + '/actions/runs/' + context.runId + ') for details.'
-            })
+            APP_DIR=/srv/apps/myapp
+            if [ ! -d "$APP_DIR" ]; then
+              git clone https://github.com/${{ github.repository }} $APP_DIR
+            fi
+            cd $APP_DIR
+            git fetch --all
+            git reset --hard origin/stable
+            mkdir -p logs db_data certs
+            cp ./target/app.jar ./docker/app/app.jar
+            docker-compose -f docker/docker-compose.yml up -d --build
