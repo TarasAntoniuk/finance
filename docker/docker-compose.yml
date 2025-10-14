@@ -44,7 +44,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/letsencrypt
       - ./logs/nginx:/var/log/nginx
-      - ./certs/webroot:/var/www/certbot # webroot для certbot
+      - ./certs/webroot:/var/www/certbot # webroot for certbot
 
 volumes:
   db_data:
