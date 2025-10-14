@@ -1,16 +1,14 @@
-version: "3.9"
-
 services:
   finance-core-db:
     image: postgres:17-alpine
     container_name: finance-core-db
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -20,10 +18,9 @@ services:
   finance-core-app:
     image: eclipse-temurin:21-jre-alpine
     container_name: finance-core-app
-    restart: always
+    restart: unless-stopped
     depends_on:
-      finance-core-db:
-        condition: service_healthy
+      - finance-core-db
     working_dir: /app
     volumes:
       - ./app:/app
@@ -41,7 +38,9 @@ services:
   finance-core-nginx:
     image: nginx:alpine
     container_name: finance-core-nginx
-    restart: always
+    restart: unless-stopped
+    depends_on:
+      - finance-core-app
     ports:
       - "80:80"
       - "443:443"
@@ -49,14 +48,15 @@ services:
       - ./nginx/conf:/etc/nginx/conf.d
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
-    depends_on:
-      - finance-core-app
 
   finance-core-certbot:
     image: certbot/certbot:latest
     container_name: finance-core-certbot
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./certbot/www:/var/www/certbot
       - ./certbot/conf:/etc/letsencrypt
     entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew; done"
+
+volumes:
+  postgres_data:

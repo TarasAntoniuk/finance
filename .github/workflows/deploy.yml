@@ -1,4 +1,4 @@
-name: CI/CD Deploy NEW
+name: CI/CD Deploy
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
   JAVA_DISTRIBUTION: 'temurin'
 
 jobs:
-  build-test-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -37,12 +37,13 @@ jobs:
 
       - name: Prepare deployment directories
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             APP_DIR=/srv/apps/finance-core
             sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs}
             sudo chown -R deploy:deploy $APP_DIR
-            echo "✅ Directories prepared"
+            echo "✅ Directories ready"
           ENDSSH
 
       - name: Install rsync
@@ -50,39 +51,35 @@ jobs:
 
       - name: Copy JAR to server
         run: |
-          rsync -avz \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
             target/*.jar \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
 
-      - name: Copy Docker files to server
+      - name: Copy Docker files
         run: |
-          rsync -avz \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
             docker/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/
 
       - name: Deploy with Docker Compose
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             cd /srv/apps/finance-core/docker
-
-            # Stop and remove previous containers safely
             docker compose down --remove-orphans || true
             docker rm -f finance-core-app finance-core-nginx finance-core-certbot finance-core-db 2>/dev/null || true
-
-            # Start all containers
             docker compose up -d --build
-            echo "✅ Deployment completed!"
+            echo "✅ Deployment completed"
           ENDSSH
 
       - name: Verify deployment
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             sleep 10
-            echo "📦 Running containers:"
+            echo "📦 Containers:"
             docker ps
             echo ""
             echo "🏥 Health check:"
