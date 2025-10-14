@@ -84,7 +84,9 @@ jobs:
 
       - name: Copy JAR with rsync
         run: |
-          rsync -avz -e "ssh -F ~/.ssh/config" target/*.jar server:/srv/apps/finance-core/docker/app/app.jar
+          sudo apt-get update && sudo apt-get install -y rsync
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+            target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
 
       - name: Copy Docker files to server
         run: |
