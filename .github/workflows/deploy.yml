@@ -3,7 +3,7 @@ name: CI/CD Deploy NEW
 on:
   push:
     branches:
-      - stable
+      - dev
   workflow_dispatch:
 
 env:
@@ -94,7 +94,7 @@ jobs:
 
             if [ -d ".git" ]; then
               git fetch --all
-              git reset --hard origin/stable
+              git reset --hard origin/dev
             fi
 
             cd docker
