@@ -1,4 +1,4 @@
-name: CI/CD Deploy NEW (No sudo)
+name: CI/CD Deploy NEW
 
 on:
   push:
@@ -13,21 +13,6 @@ env:
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: finance_test
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -50,14 +35,6 @@ jobs:
           printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Ensure SSH config exists
-        run: |
-          mkdir -p ~/.ssh
-          echo "Checking .ssh contents before rsync:"
-          ls -la ~/.ssh
-          echo "Contents of config (if any):"
-          cat ~/.ssh/config || echo "No config found"
-
       - name: Create SSH config
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -75,35 +52,36 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
-      - name: Prepare deployment directories (no sudo)
+      - name: Prepare deployment directories
         run: |
           ssh server << 'ENDSSH'
             set -e
             APP_DIR=/srv/apps/finance-core
-
-            # Створюємо все від імені deploy
-            mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs}
+            sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs}
+            sudo chown -R deploy:deploy $APP_DIR
             echo "✅ Directories prepared"
           ENDSSH
 
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
 
+      - name: Copy JAR with rsync
+        run: |
+          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+            target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
+
       - name: Copy Docker files to server
         run: |
-            rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
-              docker/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/
-#      - name: Copy Docker files to server
-#        run: |
-#          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
+          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
 
       - name: Deploy with Docker Compose
         run: |
           ssh server << 'ENDSSH'
             set -e
             cd /srv/apps/finance-core/docker
-            docker compose down
-            docker rm -f finance-core-nginx 2>/dev/null || true
+            # Видаляємо старі контейнери та томи
+            docker compose down -v --remove-orphans
+            # Запускаємо нові контейнери
             docker compose up -d --build
             echo "✅ Deployment completed!"
           ENDSSH
@@ -116,8 +94,8 @@ jobs:
             echo "📦 Running containers:"
             docker ps
             echo ""
-            echo "🔍 Checking finance-core container:"
-            docker ps | grep finance-core || echo "⚠️  Container not running"
+            echo "🔍 Checking finance-core-app container:"
+            docker ps | grep finance-core-app || echo "⚠️  Container not running"
             echo ""
             echo "🏥 Health check:"
             curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
