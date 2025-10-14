@@ -1,3 +1,5 @@
+version: '3.9'
+
 services:
   db:
     image: postgres:17-alpine
@@ -38,10 +40,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d   # тільки конфігурації
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro  # якщо є свій nginx.conf
-      - ./certs:/etc/letsencrypt           # для сертифікатів
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/letsencrypt
       - ./logs/nginx:/var/log/nginx
+      - ./certs/webroot:/var/www/certbot # webroot для certbot
 
 volumes:
   db_data:
