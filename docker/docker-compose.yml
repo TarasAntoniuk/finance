@@ -1,62 +1,58 @@
+version: '3.9'
+
 services:
+  # PostgreSQL
   finance-core-db:
     image: postgres:17-alpine
     container_name: finance-core-db
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      - finance-db-data:/var/lib/postgresql/data
 
+  # Java Application
   finance-core-app:
     image: eclipse-temurin:21-jre-alpine
     container_name: finance-core-app
-    restart: unless-stopped
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://finance-core-db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - finance-core-db
-    working_dir: /app
-    volumes:
-      - ./app:/app
-    env_file:
-      - .env
-    command: >
-      sh -c "
-      echo 'Waiting for DB...' &&
-      sleep 10 &&
-      java -jar app.jar
-      "
     ports:
       - "8080:8080"
 
+  # Nginx reverse proxy
   finance-core-nginx:
     image: nginx:alpine
     container_name: finance-core-nginx
-    restart: unless-stopped
-    depends_on:
-      - finance-core-app
+    restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf:/etc/nginx/conf.d
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - finance-core-app
 
+  # Certbot for SSL
   finance-core-certbot:
     image: certbot/certbot:latest
     container_name: finance-core-certbot
     restart: unless-stopped
     volumes:
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew; done"
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
 
 volumes:
-  postgres_data:
+  finance-db-data:
+
