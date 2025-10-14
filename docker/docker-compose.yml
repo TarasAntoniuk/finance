@@ -1,101 +1,62 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # PostgreSQL Database
-  postgres:
+  finance-core-db:
     image: postgres:17-alpine
     container_name: finance-core-db
-    restart: unless-stopped
-    env_file:
-      - .env
+    restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"
+      - ./postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
-    networks:
-      - finance-network
+      retries: 10
 
-  # Spring Boot Application
-  app:
+  finance-core-app:
     image: eclipse-temurin:21-jre-alpine
     container_name: finance-core-app
-    restart: unless-stopped
+    restart: always
+    depends_on:
+      finance-core-db:
+        condition: service_healthy
     working_dir: /app
-    command: java -jar -Dspring.profiles.active=prod app.jar
+    volumes:
+      - ./app:/app
     env_file:
       - .env
-    environment:
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: false
-      SERVER_PORT: 8080
-      LOGGING_FILE_PATH: /app/logs
-      LOGGING_LEVEL_ROOT: INFO
-    volumes:
-      - ./app/app.jar:/app/app.jar:ro
-      - app_logs:/app/logs
+    command: >
+      sh -c "
+      echo 'Waiting for DB...' &&
+      sleep 10 &&
+      java -jar app.jar
+      "
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    networks:
-      - finance-network
 
-  # Nginx Reverse Proxy
-  nginx:
+  finance-core-nginx:
     image: nginx:alpine
     container_name: finance-core-nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - certbot_data:/etc/letsencrypt
-      - certbot_webroot:/var/www/certbot
+      - ./nginx/conf:/etc/nginx/conf.d
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     depends_on:
-      - app
-    networks:
-      - finance-network
+      - finance-core-app
 
-  # Certbot for SSL certificates
-  certbot:
+  finance-core-certbot:
     image: certbot/certbot:latest
     container_name: finance-core-certbot
+    restart: always
     volumes:
-      - certbot_data:/etc/letsencrypt
-      - certbot_webroot:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-    networks:
-      - finance-network
-
-volumes:
-  postgres_data:
-    driver: local
-  app_logs:
-    driver: local
-  certbot_data:
-    driver: local
-  certbot_webroot:
-    driver: local
-
-networks:
-  finance-network:
-    driver: bridge
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew; done"
