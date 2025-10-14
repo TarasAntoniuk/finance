@@ -73,18 +73,19 @@ jobs:
             set -e
             APP_DIR=/srv/apps/finance-core
 
-            sudo mkdir -p $APP_DIR/{docker/app,logs,db_data,certs}
+            
+            sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs}
             sudo chown -R deploy:deploy $APP_DIR
             echo "✅ Directories prepared"
           ENDSSH
 
       - name: Copy JAR file to server
         run: |
-          scp target/*.jar server:/srv/apps/finance-core/docker/app/app.jar
+          rsync -avz -e "ssh -F ~/.ssh/config" target/*.jar server:/srv/apps/finance-core/docker/app/app.jar
 
       - name: Copy Docker files to server
         run: |
-          scp -r docker/* server:/srv/apps/finance-core/docker/
+          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
 
       - name: Deploy with Docker Compose
         run: |
@@ -100,7 +101,7 @@ jobs:
             cd docker
             docker compose down
           
-            # Видаляємо nginx контейнер повністю щоб скинути кеш volumes
+            
             docker rm -f finance-core-nginx 2>/dev/null || true
           
             docker compose up -d --build
