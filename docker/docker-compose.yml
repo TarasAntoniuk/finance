@@ -15,7 +15,9 @@ services:
       - finance-db-data:/var/lib/postgresql/data
 
   finance-core-app:
-    build: ./app
+    build:
+      context: ./app
+      dockerfile: Dockerfile
     container_name: finance-core-app
     restart: always
     environment:
