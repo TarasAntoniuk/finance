@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
@@ -35,26 +35,9 @@ jobs:
           printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Create SSH config
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_SSH_PORT: ${{ secrets.SERVER_SSH_PORT }}
-        run: |
-          cat > ~/.ssh/config <<EOF
-          Host server
-            HostName $SERVER_HOST
-            User $SERVER_USER
-            Port $SERVER_SSH_PORT
-            IdentityFile ~/.ssh/deploy_key
-            StrictHostKeyChecking no
-            UserKnownHostsFile /dev/null
-          EOF
-          chmod 600 ~/.ssh/config
-
       - name: Prepare deployment directories
         run: |
-          ssh server << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             APP_DIR=/srv/apps/finance-core
             sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs}
@@ -65,38 +48,43 @@ jobs:
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
 
-      - name: Copy JAR with rsync
+      - name: Copy JAR to server
         run: |
-          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
-            target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+            target/*.jar \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
 
       - name: Copy Docker files to server
         run: |
-          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
+          rsync -avz \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+            docker/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/
 
       - name: Deploy with Docker Compose
         run: |
-          ssh server << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             cd /srv/apps/finance-core/docker
-            # Видаляємо старі контейнери та томи
-            docker compose down -v --remove-orphans
-            # Запускаємо нові контейнери
+
+            # Stop and remove previous containers safely
+            docker compose down --remove-orphans || true
+            docker rm -f finance-core-app finance-core-nginx finance-core-certbot finance-core-db 2>/dev/null || true
+
+            # Start all containers
             docker compose up -d --build
             echo "✅ Deployment completed!"
           ENDSSH
 
       - name: Verify deployment
         run: |
-          ssh server << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             sleep 10
             echo "📦 Running containers:"
             docker ps
             echo ""
-            echo "🔍 Checking finance-core-app container:"
-            docker ps | grep finance-core-app || echo "⚠️  Container not running"
-            echo ""
             echo "🏥 Health check:"
-            curl -f http://localhost:8080/actuator/health || echo "⚠️  Health check failed"
+            curl -f http://localhost:8080/actuator/health || echo "⚠️ Health check failed"
           ENDSSH
