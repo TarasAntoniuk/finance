@@ -40,14 +40,5 @@ services:
     depends_on:
       - finance-core-app
 
-  finance-core-certbot:
-    image: certbot/certbot:latest
-    container_name: finance-core-certbot
-    restart: unless-stopped
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx:/etc/letsencrypt
-    entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
-
 volumes:
   finance-db-data:
