@@ -1,7 +1,6 @@
 version: '3.9'
 
 services:
-  # PostgreSQL
   finance-core-db:
     image: postgres:17-alpine
     container_name: finance-core-db
@@ -15,9 +14,8 @@ services:
     volumes:
       - finance-db-data:/var/lib/postgresql/data
 
-  # Java Application
   finance-core-app:
-    image: eclipse-temurin:21-jre-alpine
+    build: ./app
     container_name: finance-core-app
     restart: always
     environment:
@@ -29,7 +27,6 @@ services:
     ports:
       - "8080:8080"
 
-  # Nginx reverse proxy
   finance-core-nginx:
     image: nginx:alpine
     container_name: finance-core-nginx
@@ -39,20 +36,18 @@ services:
       - "443:443"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx:/etc/nginx
     depends_on:
       - finance-core-app
 
-  # Certbot for SSL
   finance-core-certbot:
     image: certbot/certbot:latest
     container_name: finance-core-certbot
     restart: unless-stopped
     volumes:
-      - ./nginx/certs:/etc/letsencrypt
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx:/etc/letsencrypt
     entrypoint: /bin/sh -c "trap exit TERM; while :; do sleep 12h & wait $${!}; done"
 
 volumes:
   finance-db-data:
-
