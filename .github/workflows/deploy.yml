@@ -50,6 +50,14 @@ jobs:
           printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      - name: Ensure SSH config exists
+        run: |
+          mkdir -p ~/.ssh
+          echo "Checking .ssh contents before rsync:"
+          ls -la ~/.ssh
+          echo "Contents of config (if any):"
+          cat ~/.ssh/config || echo "No config found"
+
       - name: Create SSH config
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -81,14 +89,13 @@ jobs:
       - name: Install rsync
         run: sudo apt-get update && sudo apt-get install -y rsync
 
-      - name: Copy JAR with rsync
-        run: |
-          rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
-            target/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
-
       - name: Copy Docker files to server
         run: |
-          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
+            rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+              docker/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/
+#      - name: Copy Docker files to server
+#        run: |
+#          rsync -avz -e "ssh -F ~/.ssh/config" docker/ server:/srv/apps/finance-core/docker/
 
       - name: Deploy with Docker Compose
         run: |
