@@ -37,7 +37,7 @@ openssl req -x509 -nodes -newkey rsa:4096 -days 1 \
   -subj "/CN=$DOMAIN"
 
 echo -e "${GREEN}Запуск nginx...${NC}"
-docker-compose up -d nginx
+docker compose up -d nginx
 
 echo -e "${GREEN}Видалення тимчасових сертифікатів...${NC}"
 rm -rf "./certs/live/$DOMAIN"
@@ -50,7 +50,7 @@ if [ $STAGING != "0" ]; then
   echo -e "${YELLOW}Використовується STAGING режим${NC}"
 fi
 
-docker-compose run --rm certbot certonly \
+docker compose run --rm certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email "$EMAIL" \
@@ -60,6 +60,6 @@ docker-compose run --rm certbot certonly \
   -d "$DOMAIN"
 
 echo -e "${GREEN}Перезапуск nginx...${NC}"
-docker-compose restart nginx
+docker compose restart nginx
 
 echo -e "${GREEN}=== Готово! ===${NC}"
