@@ -24,6 +24,10 @@ public class SwaggerConfig {
         localServer.setUrl("http://localhost:" + serverPort);
         localServer.setDescription("Local development server");
 
+        Server productionServer = new Server();
+        productionServer.setUrl("https://api.tarasantoniuk.com");
+        productionServer.setDescription("Production server");
+
         Contact contact = new Contact();
         contact.setName("API Support Team");
         contact.setEmail("bronya2004@gmail.com");
@@ -42,6 +46,6 @@ public class SwaggerConfig {
 
         return new OpenAPI()
                 .info(info)
-                .servers(List.of(localServer));
+                .servers(List.of(localServer, productionServer));
     }
 }
