@@ -1,22 +1,18 @@
 #!/bin/bash
 
-#Ініціалізація Let's Encrypt SSL сертифікатів для finance-core
-
 set -e
 
 DOMAIN="api.tarasantoniuk.com"
-EMAIL="bronya2004@gmail.com"  # ЗАМІНІТЬ на ваш email!
-STAGING=0  # Встановіть 1 для тестування (staging certificates)
+EMAIL="bronya2004@gmail.com"
+STAGING=0
 
-# Кольори для виводу
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${GREEN}=== Ініціалізація Let's Encrypt SSL для $DOMAIN ===${NC}"
 
-# Перевірка чи існують вже сертифікати
 if [ -d "./certs/live/$DOMAIN" ]; then
   echo -e "${YELLOW}Сертифікати вже існують. Видалити та створити нові? (y/N)${NC}"
   read -r response
@@ -30,38 +26,30 @@ if [ -d "./certs/live/$DOMAIN" ]; then
   rm -rf "./certs/renewal/$DOMAIN.conf"
 fi
 
-# Створення необхідних директорій
 mkdir -p ./certs/live/$DOMAIN
 mkdir -p ./webroot
 
-echo -e "${GREEN}Створення тимчасових (dummy) сертифікатів...${NC}"
+echo -e "${GREEN}Створення тимчасових сертифікатів...${NC}"
 
-# Створення тимчасових self-signed сертифікатів
 openssl req -x509 -nodes -newkey rsa:4096 -days 1 \
   -keyout "./certs/live/$DOMAIN/privkey.pem" \
   -out "./certs/live/$DOMAIN/fullchain.pem" \
   -subj "/CN=$DOMAIN"
 
-echo -e "${GREEN}Запуск nginx з тимчасовими сертифікатами...${NC}"
-
-# Запуск nginx з тимчасовими сертифікатами
+echo -e "${GREEN}Запуск nginx...${NC}"
 docker-compose up -d nginx
 
 echo -e "${GREEN}Видалення тимчасових сертифікатів...${NC}"
-
-# Видалення тимчасових сертифікатів
 rm -rf "./certs/live/$DOMAIN"
 
-echo -e "${GREEN}Отримання справжніх SSL сертифікатів від Let's Encrypt...${NC}"
+echo -e "${GREEN}Отримання справжніх SSL сертифікатів...${NC}"
 
-# Визначення staging параметру
 STAGING_ARG=""
 if [ $STAGING != "0" ]; then
   STAGING_ARG="--staging"
-  echo -e "${YELLOW}Використовується STAGING режим (тестові сертифікати)${NC}"
+  echo -e "${YELLOW}Використовується STAGING режим${NC}"
 fi
 
-# Отримання справжніх сертифікатів
 docker-compose run --rm certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
@@ -71,10 +59,7 @@ docker-compose run --rm certbot certonly \
   $STAGING_ARG \
   -d "$DOMAIN"
 
-echo -e "${GREEN}Перезапуск nginx з новими сертифікатами...${NC}"
-
-# Перезапуск nginx
+echo -e "${GREEN}Перезапуск nginx...${NC}"
 docker-compose restart nginx
 
-echo -e "${GREEN}=== Готово! SSL сертифікати успішно встановлено ===${NC}"
-echo -e "${YELLOW}Сертифікати будуть автоматично оновлюватись кожні 12 годин${NC}"
+echo -e "${GREEN}=== Готово! ===${NC}"
