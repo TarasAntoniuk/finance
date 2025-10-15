@@ -74,22 +74,25 @@ jobs:
             echo "✅ App + Nginx (HTTP) up for Certbot"
           ENDSSH
 
-      - name: Obtain Let's Encrypt certificate
+      - name: Deploy and setup SSL
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             cd /srv/apps/finance-core/docker
-            docker run --rm \
-              -v $(pwd)/certs:/etc/letsencrypt \
-              -v $(pwd)/certs/webroot:/var/www/certbot \
-              certbot/certbot certonly \
-              --webroot -w /var/www/certbot \
-              -d api.tarasantoniuk.com \
-              --email bronya2004@gmail.com \
-              --agree-tos \
-              --non-interactive
-            echo "✅ Certificate obtained"
+
+            # Перевірити чи існують сертифікати
+            if [ ! -d "./certs/live/api.tarasantoniuk.com" ]; then
+              echo "🔐 Setting up SSL certificates for the first time..."
+              bash init-letsencrypt.sh
+            else
+              echo "✅ SSL certificates already exist, skipping initialization"
+            fi
+
+            # Запустити або перезапустити сервіси
+            docker compose up -d
+
+            echo "🚀 Deployment completed"
           ENDSSH
 
       - name: Restart Nginx with HTTPS
