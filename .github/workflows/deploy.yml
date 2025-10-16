@@ -1,4 +1,4 @@
-name: CI/CD Deploy (new; version 31)
+name: CI/CD Deploy (new)
 
 on:
   push:
