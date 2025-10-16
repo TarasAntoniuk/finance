@@ -42,7 +42,7 @@ It demonstrates architecture, service design, and automated workflows as a found
 
 - Create, read, update, delete currencies
 - Load standard currency list from file
-- Currency code validation (ISO standard)
+- Currency code validation (ISO 4217 standard)
 
 **Entities**: `Currency`
 
@@ -50,7 +50,7 @@ It demonstrates architecture, service design, and automated workflows as a found
 **Purpose**: Manage country reference data
 
 - CRUD operations for countries
-- Country-currency relationships
+- Country information with ISO codes
 
 **Entities**: `Country`
 
@@ -58,27 +58,28 @@ It demonstrates architecture, service design, and automated workflows as a found
 **Purpose**: Manage organizational entities
 
 - Store organization details
-- Link to accounting policies
+- Link organizations to countries
 
 **Entities**: `Organization`
 
 ### 4. Accounting Policy Management
-**Purpose**: Define currency handling rules per organization
+**Purpose**: Define accounting rules and methods per organization and fiscal year
 
-- Configure which currencies need exchange rates
-- Set rate update preferences
-- Organization-specific settings
+- Configure accounting methods (depreciation, inventory, revenue recognition, VAT)
+- Set fiscal year start month
+- Define base currency for each policy
+- Track accounting policies over time
 
 **Entities**: `AccountingPolicy`
 
-### 5. Exchange Rate Management
-**Purpose**: Store and manage currency exchange rates
+### 5. External Exchange Rate Management
+**Purpose**: Store and manage currency exchange rates from external sources
 
-- Manual rate entry
-- Query rates by date and currency pair
-- **Future**: Automatic updates from external sources
+- Track rates by date, currency pair, and source
+- Support multiple rate sources (ECB, NBU, MONOBANK, etc.)
+- Store historical rates
 
-**Entities**: `ExchangeRate`
+**Entities**: `ExternalExchangeRate`
 
 ---
 
@@ -87,46 +88,77 @@ It demonstrates architecture, service design, and automated workflows as a found
 ### Entity Relationships
 
 ```
-Organization ──┬─→ AccountingPolicy ──→ Currency
-               │
-               └─→ Account (future)
-
-ExchangeRate ──→ Currency (from/to)
-
-Country ──→ Currency
+Country ──→ Organization ──→ AccountingPolicy ──→ Currency (base currency)
+                                      ↓
+                            ExternalExchangeRate
+                                   ↙    ↖
+                          Currency    Currency
+                        (currencyFrom) (currencyTo)
 ```
 
 ### Key Entities
 
 **Currency**
-- Code (ISO 4217, 3 characters)
-- Name
-- Symbol
-- Numeric code
+- `id` (Long, PK) — Primary key
+- `code` (String, 3 chars, UNIQUE, NOT NULL) — ISO 4217 alphabetic code (USD, EUR, UAH)
+- `numericCode` (String, 3 chars, UNIQUE, NOT NULL) — ISO 4217 numeric code (840, 978, 980)
+- `name` (String, 100 chars, NOT NULL) — Full name (US Dollar, Euro, Ukrainian Hryvnia)
+- `symbol` (String, 10 chars) — Currency symbol ($, €, ₴)
+- `minorUnit` (Integer) — Number of decimal places (2 for most currencies)
+- `isActive` (Boolean, NOT NULL, DEFAULT true) — Active/inactive flag
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
 
 **Country**
-- Country code
-- Country name
-- Currency reference
+- `id` (Long, PK) — Primary key
+- `name` (String, 100 chars, UNIQUE, NOT NULL) — Country name
+- `isoCode` (String, 3 chars, UNIQUE, NOT NULL) — ISO 3166-1 alpha-3 code
+- `phoneCode` (String, 10 chars) — International phone code
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
 
 **Organization**
-- Organization name
-- Tax ID
-- Address details
-- Contact information
+- `id` (Long, PK) — Primary key
+- `name` (String, 200 chars, NOT NULL) — Organization name
+- `registrationNumber` (String, 50 chars, UNIQUE) — Registration/business number
+- `vatNumber` (String, 50 chars) — VAT registration number
+- `address` (String, 500 chars) — Physical address
+- `email` (String, 100 chars) — Contact email
+- `phone` (String, 20 chars) — Contact phone
+- `country_id` (Long, FK, NOT NULL) — Reference to Country
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
 
 **AccountingPolicy**
-- Organization reference
-- Base currency
-- Rate update settings
-- Configured currencies
+- `id` (Long, PK) — Primary key
+- `organization_id` (Long, FK, NOT NULL) — Reference to Organization
+- `year` (Integer, NOT NULL) — Fiscal year
+- `currency_id` (Long, FK, NOT NULL) — Base currency for the policy (reference to Currency)
+- `fiscalYearStartMonth` (Integer, 1-12, DEFAULT 1) — Fiscal year start month
+- `depreciationMethod` (String, 50 chars) — Depreciation method (STRAIGHT_LINE, DECLINING_BALANCE, etc.)
+- `inventoryValuationMethod` (String, 50 chars) — Inventory valuation (FIFO, LIFO, WEIGHTED_AVERAGE)
+- `revenueRecognitionMethod` (String, 50 chars) — Revenue recognition (ACCRUAL, CASH)
+- `vatAccountingMethod` (String, 50 chars) — VAT method (INVOICE, PAYMENT)
+- `isActive` (Boolean, NOT NULL, DEFAULT true) — Active/inactive flag
+- `notes` (Text) — Additional notes
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
+- `createdBy` (String, 100 chars) — User who created
+- `updatedBy` (String, 100 chars) — User who last updated
+- **Unique constraint**: (organization_id, year)
 
-**ExchangeRate**
-- Source currency
-- Target currency
-- Rate value
-- Date
-- Source (manual/automatic)
+**ExternalExchangeRate**
+- `id` (Long, PK) — Primary key
+- `exchangeDate` (LocalDate, NOT NULL) — Date of exchange rate
+- `currency_from_id` (Long, FK, NOT NULL) — Source currency (reference to Currency)
+- `currency_to_id` (Long, FK, NOT NULL) — Target currency (reference to Currency)
+- `rate` (BigDecimal, precision 19, scale 6, NOT NULL) — Exchange rate value
+- `source` (String, 100 chars, NOT NULL) — Rate source (ECB, NBU, MONOBANK, PRIVATBANK, etc.)
+- `sourceUrl` (String, 500 chars) — URL of the rate source
+- `isActive` (Boolean, NOT NULL, DEFAULT true) — Active/inactive flag
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
+- **Unique constraint**: (exchangeDate, currency_from_id, currency_to_id, source)
 
 ---
 
@@ -198,6 +230,7 @@ Country ──→ Currency
 - ❌ Transaction processing
 - ❌ Financial reporting
 - ❌ Multi-currency operations
+- ❌ Audit logging for accounting policies
 
 ### Technical Debt
 - Basic error handling (needs improvement)
