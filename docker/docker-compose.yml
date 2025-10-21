@@ -26,7 +26,7 @@ services:
       SPRING_DATASOURCE_USERNAME: test_user
       SPRING_DATASOURCE_PASSWORD: test_password
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
   nginx:
     image: nginx:alpine
