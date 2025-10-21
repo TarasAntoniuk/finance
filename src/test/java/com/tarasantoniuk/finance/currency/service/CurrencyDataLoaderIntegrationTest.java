@@ -334,33 +334,34 @@ class CurrencyDataLoaderIntegrationTest {
 
         List<Currency> inactiveCurrencies = currencyRepository.findAll().stream()
                 .filter(c -> !c.getIsActive())
-                .toList();
+                .collect(Collectors.toList());
 
         assertThat(activeCurrencies).isNotEmpty();
         assertThat(activeCurrencies.size()).isGreaterThan(inactiveCurrencies.size());
     }
 
     @Test
-    @DisplayName("Should handle database constraint violations gracefully")
-    @Transactional
-    void shouldHandleConstraintViolations() throws Exception {
-        // Given - create a currency that might conflict
-        Currency conflictingCurrency = new Currency();
-        conflictingCurrency.setCode("USD");
-        conflictingCurrency.setNumericCode("840");
-        conflictingCurrency.setName("Conflicting Dollar");
-        conflictingCurrency.setSymbol("$");
-        conflictingCurrency.setMinorUnit(2);
-        conflictingCurrency.setIsActive(true);
-        currencyRepository.save(conflictingCurrency);
-        currencyRepository.flush();
+    @DisplayName("Should skip loading when database already has data")
+    void shouldSkipLoadingWhenDataExists() throws Exception {
+        // Given - manually insert one currency before loader runs
+        currencyRepository.deleteAll(); // Clean first
+
+        Currency existingCurrency = new Currency();
+        existingCurrency.setCode("TST");
+        existingCurrency.setNumericCode("999");
+        existingCurrency.setName("Test Currency");
+        existingCurrency.setSymbol("T");
+        existingCurrency.setMinorUnit(2);
+        existingCurrency.setIsActive(true);
+        currencyRepository.save(existingCurrency);
 
         long initialCount = currencyRepository.count();
+        assertThat(initialCount).isEqualTo(1);
 
         // When - try to load currencies (should skip because DB has data)
         currencyDataLoader.run();
 
-        // Then - count should remain the same
+        // Then - count should remain the same (loader skips if DB not empty)
         assertThat(currencyRepository.count()).isEqualTo(initialCount);
     }
 
