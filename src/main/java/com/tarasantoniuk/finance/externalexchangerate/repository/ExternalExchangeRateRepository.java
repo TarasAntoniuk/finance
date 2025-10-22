@@ -49,4 +49,7 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
             LocalDate exchangeDate, Long currencyFromId, Long currencyToId, String source);
 
     List<ExternalExchangeRate> findByIsActive(Boolean isActive);
+
+    List<ExternalExchangeRate> findByExchangeDateBetweenAndSource(
+            LocalDate startDate, LocalDate endDate, String source);
 }

@@ -15,7 +15,12 @@ import java.util.Objects;
 public class ExternalExchangeRate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "external_exchange_rate_seq")
+    @SequenceGenerator(
+            name = "external_exchange_rate_seq",
+            sequenceName = "external_exchange_rate_id_seq",
+            allocationSize = 50
+    )
     private Long id;
 
     @Column(name = "exchange_date", nullable = false)

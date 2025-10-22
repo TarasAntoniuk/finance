@@ -18,6 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Run tests
+        run: mvn clean test -Dspring.profiles.active=test
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
