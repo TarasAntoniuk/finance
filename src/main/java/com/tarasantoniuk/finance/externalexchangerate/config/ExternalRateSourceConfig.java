@@ -16,8 +16,8 @@ public class ExternalRateSourceConfig {
         return builder
                 .requestFactory(() -> {
                     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-                    factory.setConnectTimeout(10_000); // мілісекунди
-                    factory.setReadTimeout(30_000);    // мілісекунди
+                    factory.setConnectTimeout(10_000);
+                    factory.setReadTimeout(30_000);
                     return factory;
                 })
                 .build();

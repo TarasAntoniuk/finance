@@ -14,7 +14,6 @@ public class ECBScheduler {
     private static final Logger log = LoggerFactory.getLogger(ECBScheduler.class);
 
     private final ECBSyncService syncService;
-    private boolean historyLoaded = false;
 
     @Value("${ecb.sync.enabled:true}")
     private boolean syncEnabled;
@@ -36,23 +35,23 @@ public class ECBScheduler {
         log.info("Checking ECB initial sync");
         try {
             syncService.syncHistory();
-            historyLoaded = true;
-            log.info("ECB history loaded");
+            log.info("ECB history loaded successfully");
         } catch (Exception e) {
             log.error("Failed to load ECB history on startup", e);
         }
     }
 
-    @Scheduled(cron = "0 0 16 * * *", zone = "Europe/Paris")
+    @Scheduled(cron = "0 5 16 * * *", zone = "Europe/Paris")
     public void dailySync() {
-        if (!historyLoaded) {
-            log.warn("History not loaded, skipping daily sync");
+        if (!syncEnabled) {
+            log.info("ECB daily sync disabled");
             return;
         }
 
         log.info("Running daily ECB sync");
         try {
             syncService.syncDaily();
+            log.info("Daily ECB sync completed successfully");
         } catch (Exception e) {
             log.error("Daily ECB sync failed", e);
         }
