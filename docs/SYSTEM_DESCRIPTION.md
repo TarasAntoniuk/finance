@@ -76,8 +76,10 @@ It demonstrates architecture, service design, and automated workflows as a found
 **Purpose**: Store and manage currency exchange rates from external sources
 
 - Track rates by date, currency pair, and source
-- Support multiple rate sources (ECB, NBU, MONOBANK, etc.)
 - Store historical rates
+- **Automatic daily updates from ECB (16:05 CET)**
+- **Historical data loading from ECB**
+- **Batch operations support**
 
 **Entities**: `ExternalExchangeRate`
 
@@ -224,7 +226,6 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 ### Not Yet Implemented
 - ❌ Frontend interface
 - ❌ Historical data tables
-- ❌ Automatic exchange rate updates
 - ❌ User authentication/authorization
 - ❌ Account and balance management
 - ❌ Transaction processing
@@ -277,5 +278,5 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 
 ---
 
-**Document Version**: 0.0.1  
-**Last Updated**: October 2025
+**Document Version**: 0.0.2  
+**Last Updated**: November 2025

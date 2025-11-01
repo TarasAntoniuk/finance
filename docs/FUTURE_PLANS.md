@@ -14,52 +14,46 @@
 
 ---
 
-## 🔴 P0 – External Integration (Next Release: 0.0.2)
+## ✅ Completed
 
 ### Automatic Exchange Rate Updates
-**Status**: Not implemented  
-**Target**: Version 0.0.2
+**Status**: Completed in Version 0.0.2  
+**Released**: November 2025
+
+- ✅ European Central Bank (ECB) API integration
+- ✅ Scheduled daily updates (16:05 CET)
+- ✅ Historical exchange rate data loading
+- ✅ Batch operations support
+- ✅ Test coverage with JaCoCo (80% line, 75% branch)
+
+---
+
+## 🔴 P0 – Next Release (Version 0.0.3)
+
+### Code Refactoring and API Redesign
+**Status**: Planned  
+**Target**: Version 0.0.3 (Q1 2026)
 
 #### Goals
-- Integrate with European Central Bank (ECB) API
-- Implement scheduled daily updates
-- Store historical exchange rate data
-
-#### Implementation
-1. **External API Client**
-    - ECB API integration
-    - Fallback providers (backup sources)
-    - Error handling and retry logic
-
-2. **Scheduler**
-    - Spring Scheduler configuration
-    - Daily automatic fetching
-    - Configurable update times
-
-3. **Historical Storage**
-    - Exchange rate history table
-    - Track rate changes over time
-    - Date-based queries
-
-4. **Validation**
-    - Validate incoming data
-    - Compare with previous rates
-    - Alert on significant changes
+- Refactor existing codebase for better maintainability
+- Redesign API endpoints for consistency
+- Improve error handling across services
+- Enhance validation logic
 
 ---
 
 ## 🟡 P1 – Near-term Plans (3-6 months)
 
 ### 1. Testing Improvements
-**Target**: Version 0.0.2-0.0.3
+**Target**: Version 0.0.3
 
-- Improve test coverage (target: 80%+)
+- ✅ Test coverage 80%+ (completed in 0.0.2)
 - Add edge case scenarios
 - Performance testing
 - API contract testing
 
 ### 2. Security Implementation
-**Target**: Version 0.0.3
+**Target**: Version 0.0.4
 
 - Spring Security integration
 - JWT authentication
@@ -69,7 +63,7 @@
 - Audit logging
 
 ### 3. Account Management
-**Target**: Version 0.0.4
+**Target**: Version 0.0.5
 
 **New Entities**:
 - Accounts (account number, type, currency, status)
@@ -81,7 +75,7 @@
 - Multi-currency accounts
 
 ### 4. Balance Management
-**Target**: Version 0.0.4
+**Target**: Version 0.0.5
 
 - Current balance tracking
 - Balance history
@@ -167,20 +161,25 @@
 
 ## Version Roadmap
 
-### Version 0.0.2 (Q1 2026)
-- 🔴 Automatic exchange rate updates
-- Improved test coverage
-- Enhanced error handling
+### Version 0.0.2 (November 2025)
+- ✅ Automatic exchange rate updates (completed)
+- ✅ Historical data loading from ECB
+- ✅ Batch operations support
+- ✅ Test coverage with JaCoCo badges
 
-### Version 0.0.3 (Q2 2026)
+### Version 0.0.3 (Q1 2026)
+- 🔴 Code refactoring and improvements
+- 🔴 API endpoints redesign
+
+### Version 0.0.4 (Q2 2026)
 - 🟡 Basic security implementation
 - User authentication
 
-### Version 0.0.4 (Q3 2026)
+### Version 0.0.5 (Q3 2026)
 - 🟡 Account management
 - Balance tracking
 
-### Version 0.0.5-0.0.9 (Q4 2026 - 2027)
+### Version 0.0.6-0.0.9 (Q4 2026 - 2027)
 - 🟢 Financial modules
 - Advanced reporting
 - Currency operations
@@ -220,6 +219,6 @@ Ideas and suggestions are welcome!
 
 ---
 
-**Document Version**: 0.0.1  
-**Last Updated**: October 2025  
+**Document Version**: 0.0.2  
+**Last Updated**: November 2025  
 **Next Review**: Quarterly

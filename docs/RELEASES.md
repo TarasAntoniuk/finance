@@ -11,10 +11,42 @@ All versions before production release are numbered as **0.0.x** where x increme
 
 ---
 
+## Version 0.0.2 – Exchange Rate Automation
+
+**Release Date**: November 2025  
+**Status**: Current Version
+
+### Features Implemented
+
+#### Exchange Rate Automation
+- ✅ Historical exchange rate loading from ECB (all available history)
+- ✅ Batch saving of exchange rates (optimized bulk operations)
+- ✅ Scheduled automatic exchange rate updates (daily at 16:05 CET)
+- ✅ Integration with European Central Bank API
+- ✅ Fallback mechanism for rate fetching failures
+
+#### Code Quality & Testing
+- ✅ JaCoCo test coverage reporting (80% line coverage, 75% branch coverage)
+- ✅ Automated coverage badge generation in CI/CD
+- ✅ Separate workflow for test coverage monitoring
+- ✅ Coverage enforcement in CI profile
+
+#### Code Quality & Testing
+- ✅ JaCoCo test coverage reporting (80% line coverage, 75% branch coverage)
+- ✅ Automated coverage badge generation in CI/CD
+
+### Known Limitations
+- No frontend interface
+- No authentication/authorization
+- Limited to currencies supported by ECB
+- No retry mechanism for failed scheduled updates
+
+---
+
 ## Version 0.0.1 – Initial Release
 
 **Release Date**: October 2025  
-**Status**: Current Version
+**Status**: Previous Version
 
 ### Features Implemented
 
@@ -48,16 +80,13 @@ All versions before production release are numbered as **0.0.x** where x increme
 
 ---
 
-## Version 0.0.2 (Planned)
+## Version 0.0.3 (Planned)
 
 **Expected**: Q1 2026
 
 ### Planned Features
-- 🔄 Automatic exchange rate updates from ECB
-- 🔄 Scheduled daily rate fetching
-- 🔄 Exchange rate history table
-- 🔄 Improved test coverage (80%+)
-- 🔄 Enhanced error handling
+- 🔄 Code refactoring and improvements
+- 🔄 API endpoints redesign
 
 ---
 
@@ -90,12 +119,24 @@ Each release includes:
 
 ## Version History
 
-| Version | Date     | Status  | Key Features                    |
-|---------|----------|---------|---------------------------------|
-| 0.0.1   | Oct 2025 | Current | Initial CRUD operations         |
-| 0.0.2   | Q1 2026  | Planned | Automatic exchange rate updates |
-| 0.0.3   | TBD      | Planned | Account management              |
-| 1.0.0   | TBD      | Planned | Production-ready release        |
+| Version | Date     | Status  | Key Features                           |
+|---------|----------|---------|----------------------------------------|
+| 0.0.1   | Oct 2025 | Released| Initial CRUD operations                |
+| 0.0.2   | Nov 2025 | Current | Automatic exchange rate updates        |
+| 0.0.3   | Q1 2026  | Planned | Account management                     |
+| 1.0.0   | TBD      | Planned | Production-ready release               |
+
+---
+
+## Version 0.0.2 – Detailed Changelog
+
+### Added
+- Historical exchange rate loading from ECB API
+- Batch saving operations for exchange rates
+- Scheduled task for daily exchange rate updates (16:05 CET)
+- JaCoCo test coverage with automated badge generation
+- Separate GitHub Actions workflow for test coverage
+- Coverage enforcement in CI profile (80% line, 75% branch)
 
 ---
 
@@ -137,5 +178,5 @@ Each release includes:
 
 ---
 
-**Document Version**: 0.0.1  
-**Last Updated**: October 2025
+**Document Version**: 0.0.2  
+**Last Updated**: November 2025

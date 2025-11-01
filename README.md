@@ -25,10 +25,13 @@ Currently, it focuses on **currency rate management** and demonstrates backend a
 **Version**: 0.0.1  
 **Status**: Prototype / Minimal Model
 
+![Coverage](.github/badges/jacoco.svg)  
+![Build](https://github.com/tarasantoniuk/finance-core/actions/workflows/deploy.yml/badge.svg)
+
 ### Implemented
 ✅ REST API for currencies, countries, organizations, accounting policies, exchange rates  
 ✅ PostgreSQL database with JPA/Hibernate  
-✅ Unit and integration tests (JUnit 5 + Testcontainers)  
+✅ Unit and integration tests (JUnit 5 + Testcontainers) with **80% line coverage**  
 ✅ CI/CD pipeline with GitHub Actions  
 ✅ API documentation (Swagger/OpenAPI)
 
