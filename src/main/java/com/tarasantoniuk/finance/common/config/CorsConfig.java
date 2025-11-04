@@ -9,7 +9,14 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/exchange-rates/date/**")  // only /date/*
+        registry.addMapping("/api/exchange-rates/date/**")
+                .allowedOrigins("*")
+                .allowedMethods("GET", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(false)
+                .maxAge(3600);
+
+        registry.addMapping("/api/exchange-rates/latest/**")
                 .allowedOrigins("*")
                 .allowedMethods("GET", "OPTIONS")
                 .allowedHeaders("*")
