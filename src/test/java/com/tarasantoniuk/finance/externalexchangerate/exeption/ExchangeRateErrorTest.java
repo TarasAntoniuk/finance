@@ -53,17 +53,15 @@ class ExchangeRateErrorTest {
     }
 
     @Test
-    void getLatestRateForCurrencyPair_WhenNotFound_ShouldReturn404() throws Exception {
+    void getLatestRatesByDate_WhenCurrencyNotFound_ShouldReturn404() throws Exception {
         // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        when(exchangeRateService.getLatestRateForCurrencyPair(1L, 2L, date))
-                .thenThrow(ExchangeRateNotFoundException.byDateAndCurrencyPair(date, 1L, 2L));
+        when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, 999L))
+                .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then
-        mockMvc.perform(get("/api/exchange-rates/latest")
-                        .param("currencyFromId", "1")
-                        .param("currencyToId", "2")
-                        .param("date", "2024-01-15"))
+        mockMvc.perform(get("/api/exchange-rates/latest/2024-01-15")
+                        .param("currencyFromId", "999"))
                 .andExpect(status().isNotFound());
     }
 

@@ -85,7 +85,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setExchangeDate(date);
 
         when(exchangeRateService.getExchangeRatesByDate(date))
-                .thenReturn(Arrays.asList(rate));
+                .thenReturn(List.of(rate));
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/date/2024-01-15"))
@@ -102,7 +102,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setExchangeDate(date);
 
         when(exchangeRateService.getExchangeRatesByDateAndSource(date, "ECB"))
-                .thenReturn(Arrays.asList(rate));
+                .thenReturn(List.of(rate));
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/date/2024-01-15/source/ECB"))
@@ -118,7 +118,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setRate(BigDecimal.valueOf(0.92));
 
         when(exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L))
-                .thenReturn(Arrays.asList(rate));
+                .thenReturn(List.of(rate));
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/currency-pair")
@@ -135,7 +135,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setId(1L);
 
         when(exchangeRateService.getExchangeRatesBySource("NBU"))
-                .thenReturn(Arrays.asList(rate));
+                .thenReturn(List.of(rate));
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/source/NBU"))
@@ -163,22 +163,29 @@ class ExternalExchangeRateControllerIntegrationTest {
     }
 
     @Test
-    void getLatestRateForCurrencyPair_ShouldReturnRate() throws Exception {
+    void getLatestRatesByDate_ShouldReturnRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
-        rate.setId(1L);
-        rate.setRate(BigDecimal.valueOf(0.92));
+        ExternalExchangeRateResponseDTO rate1 = new ExternalExchangeRateResponseDTO();
+        rate1.setId(1L);
+        rate1.setRate(BigDecimal.valueOf(0.92));
 
-        when(exchangeRateService.getLatestRateForCurrencyPair(1L, 2L, LocalDate.of(2024, 1, 15)))
-                .thenReturn(rate);
+        ExternalExchangeRateResponseDTO rate2 = new ExternalExchangeRateResponseDTO();
+        rate2.setId(2L);
+        rate2.setRate(BigDecimal.valueOf(1.15));
+
+        when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(
+                LocalDate.of(2024, 1, 15), 2L))
+                .thenReturn(List.of(rate1, rate2));
 
         // When & Then
-        mockMvc.perform(get("/api/exchange-rates/latest")
-                        .param("currencyFromId", "1")
-                        .param("currencyToId", "2")
-                        .param("date", "2024-01-15"))
+        mockMvc.perform(get("/api/exchange-rates/latest/2024-01-15")
+                        .param("currencyFromId", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.rate").value(0.92));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].rate").value(0.92))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].rate").value(1.15));
     }
 
     @Test

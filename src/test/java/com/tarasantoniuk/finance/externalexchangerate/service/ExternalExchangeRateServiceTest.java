@@ -300,27 +300,70 @@ class ExternalExchangeRateServiceTest {
     }
 
     @Test
-    void getLatestRateForCurrencyPair_WhenExists_ShouldReturnRate() {
+    void getLatestRatesByDateAndCurrencyFrom_WhenExists_ShouldReturnRates() {
+        // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 2L))
-                .thenReturn(List.of(exchangeRate));
-        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
+        Long currencyFromId = 2L;
 
-        ExternalExchangeRateResponseDTO result =
-                exchangeRateService.getLatestRateForCurrencyPair(1L, 2L, date);
+        ExternalExchangeRate rate1 = new ExternalExchangeRate();
+        ExternalExchangeRate rate2 = new ExternalExchangeRate();
 
+        ExternalExchangeRateResponseDTO responseDTO1 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDTO responseDTO2 = new ExternalExchangeRateResponseDTO();
+
+        when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
+        when(exchangeRateRepository.findByExchangeDateAndCurrencyFromId(date, currencyFromId))
+                .thenReturn(List.of(rate1, rate2));
+        when(exchangeRateMapper.toResponseDTOList(List.of(rate1, rate2)))
+                .thenReturn(List.of(responseDTO1, responseDTO2));
+
+        // When
+        List<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+
+        // Then
         assertNotNull(result);
-        verify(exchangeRateRepository).findLatestRateBeforeDate(date, 1L, 2L);
+        assertEquals(2, result.size());
+        verify(currencyRepository).existsById(currencyFromId);
+        verify(exchangeRateRepository).findByExchangeDateAndCurrencyFromId(date, currencyFromId);
+        verify(exchangeRateMapper).toResponseDTOList(List.of(rate1, rate2));
     }
 
     @Test
-    void getLatestRateForCurrencyPair_WhenNotExists_ShouldThrowException() {
+    void getLatestRatesByDateAndCurrencyFrom_WhenCurrencyNotExists_ShouldThrowException() {
+        // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 2L))
-                .thenReturn(List.of());
+        Long currencyFromId = 999L;
 
-        assertThrows(ExchangeRateNotFoundException.class,
-                () -> exchangeRateService.getLatestRateForCurrencyPair(1L, 2L, date));
+        when(currencyRepository.existsById(currencyFromId)).thenReturn(false);
+
+        // When & Then
+        assertThrows(CurrencyNotFoundException.class,
+                () -> exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId));
+
+        verify(currencyRepository).existsById(currencyFromId);
+        verify(exchangeRateRepository, never()).findByExchangeDateAndCurrencyFromId(any(), any());
+    }
+
+    @Test
+    void getLatestRatesByDateAndCurrencyFrom_WhenNoRatesFound_ShouldReturnEmptyList() {
+        // Given
+        LocalDate date = LocalDate.of(2024, 1, 15);
+        Long currencyFromId = 2L;
+
+        when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
+        when(exchangeRateRepository.findByExchangeDateAndCurrencyFromId(date, currencyFromId))
+                .thenReturn(List.of());
+        when(exchangeRateMapper.toResponseDTOList(List.of())).thenReturn(List.of());
+
+        // When
+        List<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(exchangeRateRepository).findByExchangeDateAndCurrencyFromId(date, currencyFromId);
     }
 
     @Test

@@ -89,16 +89,17 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional(readOnly = true)
-    public ExternalExchangeRateResponseDTO getLatestRateForCurrencyPair(
-            Long currencyFromId, Long currencyToId, LocalDate date) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findLatestRateBeforeDate(date, currencyFromId, currencyToId);
+    public List<ExternalExchangeRateResponseDTO> getLatestRatesByDateAndCurrencyFrom(
+            LocalDate date, Long currencyFromId) {
 
-        if (rates.isEmpty()) {
-            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, currencyToId);
+        if (!currencyRepository.existsById(currencyFromId)) {
+            throw CurrencyNotFoundException.byId(currencyFromId);
         }
 
-        return exchangeRateMapper.toResponseDTO(rates.getFirst());
+        List<ExternalExchangeRate> rates = exchangeRateRepository
+                .findByExchangeDateAndCurrencyFromId(date, currencyFromId);
+
+        return exchangeRateMapper.toResponseDTOList(rates);
     }
 
     @Transactional

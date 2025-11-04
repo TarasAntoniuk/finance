@@ -128,21 +128,18 @@ public class ExternalExchangeRateController {
         return ResponseEntity.ok(rates);
     }
 
-    @GetMapping("/latest")
-    @Operation(summary = "Get latest exchange rate for currency pair",
-            description = "Retrieve the most recent exchange rate for a currency pair before or on a specific date")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Exchange rate found"),
-            @ApiResponse(responseCode = "404", description = "Exchange rate not found")
-    })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> getLatestRateForCurrencyPair(
-            @Parameter(description = "Currency From ID", required = true) @RequestParam Long currencyFromId,
-            @Parameter(description = "Currency To ID", required = true) @RequestParam Long currencyToId,
-            @Parameter(description = "Date", required = true, example = "2024-01-15")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService
-                .getLatestRateForCurrencyPair(currencyFromId, currencyToId, date);
-        return ResponseEntity.ok(rate);
+    @GetMapping("/latest/{date}")
+    @Operation(summary = "Get latest exchange rates for date",
+            description = "Retrieve all latest exchange rates from a base currency for a specific date")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
+    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getLatestRatesByDate(
+            @Parameter(description = "Date", required = true, example = "2025-11-03")
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Currency From ID", required = true, example = "2")
+            @RequestParam Long currencyFromId) {
+        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
+                .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+        return ResponseEntity.ok(rates);
     }
 
     @GetMapping("/cross-rate")
