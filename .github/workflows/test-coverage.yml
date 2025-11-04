@@ -40,36 +40,38 @@ jobs:
           echo "Coverage = ${{ steps.jacoco.outputs.coverage }}"
           echo "Branches = ${{ steps.jacoco.outputs.branches }}"
 
-      - name: Commit and push badge to badges branch
+      - name: Commit badges to badges branch
         if: github.event_name == 'push'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # Save current branch
-          CURRENT_BRANCH=${{ github.ref_name }}
+          # Save badges to temp location
+          mkdir -p /tmp/badges-temp
+          cp -r badges/* /tmp/badges-temp/ 2>/dev/null || true
           
           # Switch to badges branch (or create it)
-          git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
+          git fetch origin badges 2>/dev/null || true
           git checkout badges 2>/dev/null || git checkout --orphan badges
           
-          # Clean everything except badges
+          # Clean everything
           git rm -rf . 2>/dev/null || true
           
-          # Copy badges
-          cp -r badges/* . 2>/dev/null || cp -r ../badges/* . 2>/dev/null || true
+          # Copy badges from temp location
+          cp -r /tmp/badges-temp/* . 2>/dev/null || true
           
           # Commit if there are changes
           if [[ -n $(git status --porcelain) ]]; then
-            git add *.svg *.json 2>/dev/null || git add .
+            git add *.svg *.json
             git commit -m "Update coverage badges [skip ci]"
             git push -f origin badges
+            echo "Badges updated successfully"
           else
             echo "No changes to commit"
           fi
           
-          # Return to previous branch
-          git checkout $CURRENT_BRANCH
+          # Return to original branch
+          git checkout ${{ github.ref_name }}
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
