@@ -31,7 +31,7 @@ jobs:
         id: jacoco
         uses: cicirello/jacoco-badge-generator@v2
         with:
-          badges-directory: .github/badges
+          badges-directory: badges
           generate-branches-badge: true
           generate-summary: true
 
@@ -40,19 +40,36 @@ jobs:
           echo "Coverage = ${{ steps.jacoco.outputs.coverage }}"
           echo "Branches = ${{ steps.jacoco.outputs.branches }}"
 
-      - name: Commit and push badge
+      - name: Commit and push badge to badges branch
         if: github.event_name == 'push'
         run: |
-          cd .github/badges
-          if [[ $(git status --porcelain) ]]; then
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add .
-            git commit -m "Update coverage badge [skip ci]"
-            git push
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # Save current branch
+          CURRENT_BRANCH=${{ github.ref_name }}
+          
+          # Switch to badges branch (or create it)
+          git fetch origin badges:badges 2>/dev/null || git checkout --orphan badges
+          git checkout badges 2>/dev/null || git checkout --orphan badges
+          
+          # Clean everything except badges
+          git rm -rf . 2>/dev/null || true
+          
+          # Copy badges
+          cp -r badges/* . 2>/dev/null || cp -r ../badges/* . 2>/dev/null || true
+          
+          # Commit if there are changes
+          if [[ -n $(git status --porcelain) ]]; then
+            git add *.svg *.json 2>/dev/null || git add .
+            git commit -m "Update coverage badges [skip ci]"
+            git push -f origin badges
           else
             echo "No changes to commit"
           fi
+          
+          # Return to previous branch
+          git checkout $CURRENT_BRANCH
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4

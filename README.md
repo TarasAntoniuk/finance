@@ -22,11 +22,13 @@ Currently, it focuses on **currency rate management** and demonstrates backend a
 
 ## Current Status
 
-**Version**: 0.0.1  
+**Version**: 0.0.2  
 **Status**: Prototype / Minimal Model
 
-![Coverage](.github/badges/jacoco.svg)  
-![Build](https://github.com/tarasantoniuk/finance-core/actions/workflows/deploy.yml/badge.svg)
+![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/jacoco.svg)
+![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/branches.svg)
+
+[![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/jacoco.svg)](https://github.com/TarasAntoniuk/finance-core/actions)
 
 ### Implemented
 ✅ REST API for currencies, countries, organizations, accounting policies, exchange rates  
