@@ -54,4 +54,19 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
             LocalDate startDate, LocalDate endDate, String source);
 
     List<ExternalExchangeRate> findByExchangeDateAndCurrencyFromId(LocalDate exchangeDate, Long currencyFromId);
+
+    @Query("""
+    SELECT e FROM ExternalExchangeRate e 
+    WHERE e.currencyFrom.id = :currencyFromId 
+    AND e.exchangeDate = (
+        SELECT MAX(e2.exchangeDate) 
+        FROM ExternalExchangeRate e2 
+        WHERE e2.currencyFrom.id = :currencyFromId 
+        AND e2.exchangeDate <= :date
+    )
+    """)
+    List<ExternalExchangeRate> findLatestRatesByCurrencyFromBeforeDate(
+            @Param("date") LocalDate date,
+            @Param("currencyFromId") Long currencyFromId
+    );
 }

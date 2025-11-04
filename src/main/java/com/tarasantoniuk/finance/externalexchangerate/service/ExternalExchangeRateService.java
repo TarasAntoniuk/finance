@@ -96,8 +96,9 @@ public class ExternalExchangeRateService {
             throw CurrencyNotFoundException.byId(currencyFromId);
         }
 
+        // Шукаємо останню доступну дату ДО вказаної дати (включно)
         List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findByExchangeDateAndCurrencyFromId(date, currencyFromId);
+                .findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId);
 
         return exchangeRateMapper.toResponseDTOList(rates);
     }
