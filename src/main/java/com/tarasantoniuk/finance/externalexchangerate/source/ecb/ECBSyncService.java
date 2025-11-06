@@ -40,41 +40,58 @@ public class ECBSyncService {
 
     @Transactional
     public int syncHistory() {
-        log.info("Syncing ECB history - this may take several minutes");
-        return sync(client.fetchHistory());
+        log.info("🔹 Початок syncHistory");
+        long totalStart = System.currentTimeMillis();
+
+        long step1 = System.currentTimeMillis();
+        Map<LocalDate, Map<String, BigDecimal>> data = client.fetchHistory();
+        log.info("⏱️  Крок 1 (fetchHistory): {} ms, записів: {}",
+                System.currentTimeMillis() - step1,
+                data != null ? data.size() : 0);
+
+        long step2 = System.currentTimeMillis();
+        int result = sync(data);
+        log.info("⏱️  Крок 2 (sync): {} ms", System.currentTimeMillis() - step2);
+
+        log.info("🔹 Загальний час syncHistory: {} ms", System.currentTimeMillis() - totalStart);
+        return result;
     }
 
     private int sync(Map<LocalDate, Map<String, BigDecimal>> data) {
+        long syncStart = System.currentTimeMillis();
+
         if (data == null || data.isEmpty()) {
             log.warn("No data to sync");
             return 0;
         }
 
-        // Завантажити EUR один раз
+        long step1 = System.currentTimeMillis();
         Currency eur = currencyRepository.findByCode("EUR")
                 .orElseThrow(() -> new RuntimeException("EUR currency not found"));
+        log.info("⏱️  Завантаження EUR: {} ms", System.currentTimeMillis() - step1);
 
-        // Завантажити всі валюти один раз
+        long step2 = System.currentTimeMillis();
         Map<String, Currency> currencyMap = currencyRepository.findAll().stream()
                 .collect(HashMap::new, (m, c) -> m.put(c.getCode(), c), HashMap::putAll);
+        log.info("⏱️  Завантаження всіх валют: {} ms, кількість: {}",
+                System.currentTimeMillis() - step2, currencyMap.size());
 
-        log.info("Found {} currencies in database", currencyMap.size());
-
-        // Завантажити існуючі курси один раз
         LocalDate minDate = data.keySet().stream().min(LocalDate::compareTo).orElse(LocalDate.now());
         LocalDate maxDate = data.keySet().stream().max(LocalDate::compareTo).orElse(LocalDate.now());
 
+        long step3 = System.currentTimeMillis();
         Set<String> existingKeys = rateRepository
                 .findByExchangeDateBetweenAndSource(minDate, maxDate, SOURCE)
                 .stream()
                 .map(r -> buildKey(r.getExchangeDate(), r.getCurrencyFrom().getId(), r.getCurrencyTo().getId()))
                 .collect(HashSet::new, HashSet::add, HashSet::addAll);
+        log.info("⏱️  Завантаження існуючих курсів: {} ms, кількість: {} (діапазон: {} - {})",
+                System.currentTimeMillis() - step3, existingKeys.size(), minDate, maxDate);
 
-        log.info("Found {} existing rates for date range {} to {}", existingKeys.size(), minDate, maxDate);
-
-        // Batch insert нових записів
+        long step4 = System.currentTimeMillis();
         List<ExternalExchangeRate> newRates = new ArrayList<>();
         int skipped = 0;
+        int batchCount = 0;
 
         for (var dateEntry : data.entrySet()) {
             LocalDate date = dateEntry.getKey();
@@ -94,7 +111,6 @@ public class ECBSyncService {
                     continue;
                 }
 
-                // Створити новий запис
                 ExternalExchangeRate rate = new ExternalExchangeRate();
                 rate.setExchangeDate(date);
                 rate.setCurrencyFrom(eur);
@@ -106,25 +122,31 @@ public class ECBSyncService {
 
                 newRates.add(rate);
 
-                // Batch save кожні 1000 записів
                 if (newRates.size() >= 1000) {
+                    long batchStart = System.currentTimeMillis();
                     rateRepository.saveAll(newRates);
                     rateRepository.flush();
-                    log.info("Saved batch of {} rates", newRates.size());
+                    batchCount++;
+                    log.info("⏱️  Збережено batch #{}: {} записів за {} ms",
+                            batchCount, newRates.size(), System.currentTimeMillis() - batchStart);
                     newRates.clear();
                 }
             }
         }
 
-        // Зберегти залишок
         if (!newRates.isEmpty()) {
+            long batchStart = System.currentTimeMillis();
             rateRepository.saveAll(newRates);
             rateRepository.flush();
-            log.info("Saved final batch of {} rates", newRates.size());
+            log.info("⏱️  Збережено фінальний batch: {} записів за {} ms",
+                    newRates.size(), System.currentTimeMillis() - batchStart);
         }
 
+        log.info("⏱️  Обробка даних і збереження: {} ms", System.currentTimeMillis() - step4);
+
         int saved = data.values().stream().mapToInt(Map::size).sum() - skipped;
-        log.info("ECB sync completed: {} saved, {} skipped", saved, skipped);
+        log.info("🔹 sync() завершено за {} ms: {} збережено, {} пропущено",
+                System.currentTimeMillis() - syncStart, saved, skipped);
         return saved;
     }
 
