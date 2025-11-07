@@ -1,17 +1,17 @@
 package com.tarasantoniuk.finance.accountingpolicy.entity;
 
 
+import com.tarasantoniuk.finance.common.entity.BaseEntity;
 import com.tarasantoniuk.finance.currency.entity.Currency;
 import com.tarasantoniuk.finance.organization.entity.Organization;
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "accounting_policies",
         uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "year"}))
-public class AccountingPolicy {
+public class AccountingPolicy extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,12 +49,6 @@ public class AccountingPolicy {
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
@@ -68,8 +62,7 @@ public class AccountingPolicy {
                             Currency currency, Integer fiscalYearStartMonth,
                             String depreciationMethod, String inventoryValuationMethod,
                             String revenueRecognitionMethod, String vatAccountingMethod,
-                            Boolean isActive, String notes, LocalDateTime createdAt,
-                            LocalDateTime updatedAt, String createdBy, String updatedBy) {
+                            Boolean isActive, String notes) {
         this.id = id;
         this.organization = organization;
         this.year = year;
@@ -81,27 +74,7 @@ public class AccountingPolicy {
         this.vatAccountingMethod = vatAccountingMethod;
         this.isActive = isActive;
         this.notes = notes;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.createdBy = createdBy;
-        this.updatedBy = updatedBy;
-    }
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (isActive == null) {
-            isActive = true;
-        }
-        if (fiscalYearStartMonth == null) {
-            fiscalYearStartMonth = 1;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -190,22 +163,6 @@ public class AccountingPolicy {
 
     public void setNotes(String notes) {
         this.notes = notes;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public String getCreatedBy() {

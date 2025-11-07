@@ -1,18 +1,18 @@
 package com.tarasantoniuk.finance.externalexchangerate.entity;
 
 
+import com.tarasantoniuk.finance.common.entity.BaseEntity;
 import com.tarasantoniuk.finance.currency.entity.Currency;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "external_exchange_rates",
         uniqueConstraints = @UniqueConstraint(columnNames = {"exchange_date", "currency_from_id", "currency_to_id", "source"}))
-public class ExternalExchangeRate {
+public class ExternalExchangeRate extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "external_exchange_rate_seq")
@@ -46,19 +46,12 @@ public class ExternalExchangeRate {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     public ExternalExchangeRate() {
     }
 
     public ExternalExchangeRate(Long id, LocalDate exchangeDate, Currency currencyFrom,
                                 Currency currencyTo, BigDecimal rate, String source,
-                                String sourceUrl, Boolean isActive, LocalDateTime createdAt,
-                                LocalDateTime updatedAt) {
+                                String sourceUrl, Boolean isActive) {
         this.id = id;
         this.exchangeDate = exchangeDate;
         this.currencyFrom = currencyFrom;
@@ -67,22 +60,7 @@ public class ExternalExchangeRate {
         this.source = source;
         this.sourceUrl = sourceUrl;
         this.isActive = isActive;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (isActive == null) {
-            isActive = true;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -147,22 +125,6 @@ public class ExternalExchangeRate {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     @Override

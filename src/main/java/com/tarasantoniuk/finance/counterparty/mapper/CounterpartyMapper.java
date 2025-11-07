@@ -10,7 +10,6 @@ import org.mapstruct.*;
 public interface CounterpartyMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "country", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "isActive", defaultValue = "true")
@@ -21,7 +20,6 @@ public interface CounterpartyMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "country", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntity(CounterpartyRequestDto request, @MappingTarget Counterparty entity);

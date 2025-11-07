@@ -1,15 +1,15 @@
 package com.tarasantoniuk.finance.organization.entity;
 
 
+import com.tarasantoniuk.finance.common.entity.BaseEntity;
 import com.tarasantoniuk.finance.country.entity.Country;
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
 @Table(name = "organizations")
-public class Organization {
+public class Organization extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,18 +37,11 @@ public class Organization {
     @JoinColumn(name = "country_id", nullable = false)
     private Country country;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
     public Organization() {
     }
 
     public Organization(Long id, String name, String registrationNumber, String vatNumber,
-                        String address, String email, String phone, Country country,
-                        LocalDateTime createdAt, LocalDateTime updatedAt) {
+                        String address, String email, String phone, Country country) {
         this.id = id;
         this.name = name;
         this.registrationNumber = registrationNumber;
@@ -57,19 +50,6 @@ public class Organization {
         this.email = email;
         this.phone = phone;
         this.country = country;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -134,22 +114,6 @@ public class Organization {
 
     public void setCountry(Country country) {
         this.country = country;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     @Override
