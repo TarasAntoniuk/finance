@@ -40,20 +40,20 @@ public class ECBSyncService {
 
     @Transactional
     public int syncHistory() {
-        log.info("🔹 Початок syncHistory");
+        log.info("🔹 Starting syncHistory");
         long totalStart = System.currentTimeMillis();
 
         long step1 = System.currentTimeMillis();
         Map<LocalDate, Map<String, BigDecimal>> data = client.fetchHistory();
-        log.info("⏱️  Крок 1 (fetchHistory): {} ms, записів: {}",
+        log.info("⏱️  Step 1 (fetchHistory): {} ms, records: {}",
                 System.currentTimeMillis() - step1,
                 data != null ? data.size() : 0);
 
         long step2 = System.currentTimeMillis();
         int result = sync(data);
-        log.info("⏱️  Крок 2 (sync): {} ms", System.currentTimeMillis() - step2);
+        log.info("⏱️  Step 2 (sync): {} ms", System.currentTimeMillis() - step2);
 
-        log.info("🔹 Загальний час syncHistory: {} ms", System.currentTimeMillis() - totalStart);
+        log.info("🔹 Total syncHistory time: {} ms", System.currentTimeMillis() - totalStart);
         return result;
     }
 
@@ -68,12 +68,12 @@ public class ECBSyncService {
         long step1 = System.currentTimeMillis();
         Currency eur = currencyRepository.findByCode("EUR")
                 .orElseThrow(() -> new RuntimeException("EUR currency not found"));
-        log.info("⏱️  Завантаження EUR: {} ms", System.currentTimeMillis() - step1);
+        log.info("⏱️  Loading EUR: {} ms", System.currentTimeMillis() - step1);
 
         long step2 = System.currentTimeMillis();
         Map<String, Currency> currencyMap = currencyRepository.findAll().stream()
                 .collect(HashMap::new, (m, c) -> m.put(c.getCode(), c), HashMap::putAll);
-        log.info("⏱️  Завантаження всіх валют: {} ms, кількість: {}",
+        log.info("⏱️  Loading all currencies: {} ms, count: {}",
                 System.currentTimeMillis() - step2, currencyMap.size());
 
         LocalDate minDate = data.keySet().stream().min(LocalDate::compareTo).orElse(LocalDate.now());
@@ -85,7 +85,7 @@ public class ECBSyncService {
                 .stream()
                 .map(r -> buildKey(r.getExchangeDate(), r.getCurrencyFrom().getId(), r.getCurrencyTo().getId()))
                 .collect(HashSet::new, HashSet::add, HashSet::addAll);
-        log.info("⏱️  Завантаження існуючих курсів: {} ms, кількість: {} (діапазон: {} - {})",
+        log.info("⏱️  Loading existing rates: {} ms, count: {} (date range: {} - {})",
                 System.currentTimeMillis() - step3, existingKeys.size(), minDate, maxDate);
 
         long step4 = System.currentTimeMillis();
@@ -127,7 +127,7 @@ public class ECBSyncService {
                     rateRepository.saveAll(newRates);
                     rateRepository.flush();
                     batchCount++;
-                    log.info("⏱️  Збережено batch #{}: {} записів за {} ms",
+                    log.info("⏱️  Saved batch #{}: {} records in {} ms",
                             batchCount, newRates.size(), System.currentTimeMillis() - batchStart);
                     newRates.clear();
                 }
@@ -138,14 +138,14 @@ public class ECBSyncService {
             long batchStart = System.currentTimeMillis();
             rateRepository.saveAll(newRates);
             rateRepository.flush();
-            log.info("⏱️  Збережено фінальний batch: {} записів за {} ms",
+            log.info("⏱️  Saved final batch: {} records in {} ms",
                     newRates.size(), System.currentTimeMillis() - batchStart);
         }
 
-        log.info("⏱️  Обробка даних і збереження: {} ms", System.currentTimeMillis() - step4);
+        log.info("⏱️  Data processing and saving: {} ms", System.currentTimeMillis() - step4);
 
         int saved = data.values().stream().mapToInt(Map::size).sum() - skipped;
-        log.info("🔹 sync() завершено за {} ms: {} збережено, {} пропущено",
+        log.info("🔹 sync() completed in {} ms: {} saved, {} skipped",
                 System.currentTimeMillis() - syncStart, saved, skipped);
         return saved;
     }
