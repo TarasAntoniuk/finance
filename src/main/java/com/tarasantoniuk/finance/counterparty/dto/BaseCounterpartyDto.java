@@ -32,8 +32,6 @@ public abstract class BaseCounterpartyDto {
     @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
 
-    private Long countryId;
-
     private Boolean isActive;
 
     @Size(max = 1000, message = "Notes must not exceed 1000 characters")
@@ -96,14 +94,6 @@ public abstract class BaseCounterpartyDto {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public Long getCountryId() {
-        return countryId;
-    }
-
-    public void setCountryId(Long countryId) {
-        this.countryId = countryId;
     }
 
     public Boolean getIsActive() {
