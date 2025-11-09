@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.country.entity;
 
 import com.tarasantoniuk.finance.common.entity.BaseEntity;
+import com.tarasantoniuk.finance.currency.entity.Currency;
 import jakarta.persistence.*;
 
 import java.util.Objects;
@@ -22,14 +23,19 @@ public class Country extends BaseEntity {
     @Column(name = "phone_code", length = 10)
     private String phoneCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_id")
+    private Currency currency;
+
     public Country() {
     }
 
-    public Country(Long id, String name, String isoCode, String phoneCode) {
+    public Country(Long id, String name, String isoCode, String phoneCode, Currency currency) {
         this.id = id;
         this.name = name;
         this.isoCode = isoCode;
         this.phoneCode = phoneCode;
+        this.currency = currency;
     }
 
     public Long getId() {
@@ -62,6 +68,14 @@ public class Country extends BaseEntity {
 
     public void setPhoneCode(String phoneCode) {
         this.phoneCode = phoneCode;
+    }
+
+    public Currency getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
     }
 
     @Override

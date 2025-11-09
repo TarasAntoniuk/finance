@@ -1,27 +1,21 @@
 package com.tarasantoniuk.finance.country.dto;
 
+import com.tarasantoniuk.finance.currency.dto.CurrencyResponseDTO;
+
 import java.time.LocalDateTime;
 
-public class CountryResponseDTO {
+/**
+ * DTO for country responses
+ */
+public class CountryResponseDTO extends BaseCountryDto {
 
     private Long id;
-    private String name;
-    private String isoCode;
-    private String phoneCode;
+    private CurrencyResponseDTO currency;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public CountryResponseDTO() {
-    }
-
-    public CountryResponseDTO(Long id, String name, String isoCode, String phoneCode,
-                              LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.name = name;
-        this.isoCode = isoCode;
-        this.phoneCode = phoneCode;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        super();
     }
 
     public Long getId() {
@@ -32,28 +26,12 @@ public class CountryResponseDTO {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public CurrencyResponseDTO getCurrency() {
+        return currency;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getIsoCode() {
-        return isoCode;
-    }
-
-    public void setIsoCode(String isoCode) {
-        this.isoCode = isoCode;
-    }
-
-    public String getPhoneCode() {
-        return phoneCode;
-    }
-
-    public void setPhoneCode(String phoneCode) {
-        this.phoneCode = phoneCode;
+    public void setCurrency(CurrencyResponseDTO currency) {
+        this.currency = currency;
     }
 
     public LocalDateTime getCreatedAt() {
