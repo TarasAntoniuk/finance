@@ -142,7 +142,10 @@
                         <exclude>**/entity/**</exclude>
                         <exclude>**/model/**</exclude>
                         <!-- Mappers (generated or simple) -->
-                        <exclude>**/mapper/**</exclude>
+                        <!--<exclude>**/mapper/**</exclude>-->
+                        <!-- MapStruct generated implementations -->
+                        <exclude>**/*MapperImpl.class</exclude>
+                        <exclude>**/*MapperImpl$*.class</exclude>
                         <!-- Exceptions -->
                         <exclude>**/exception/**</exclude>
                         <exclude>**/exeption/**</exclude>

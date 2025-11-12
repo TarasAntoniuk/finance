@@ -433,4 +433,19 @@ class OrganizationMapperTest {
         assertThat(entity.getEmail()).isNull();
         assertThat(entity.getPhone()).isNull();
     }
+
+    @Test
+    void toEntity_shouldHandleNullCountryId() {
+        // Given
+        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        requestDTO.setName("Test Org");
+        requestDTO.setCountryId(null); // ← null!
+
+        // When
+        Organization entity = organizationMapper.toEntity(requestDTO);
+
+        // Then
+        assertThat(entity.getName()).isEqualTo("Test Org");
+        assertThat(entity.getCountry()).isNull();
+    }
 }

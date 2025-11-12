@@ -595,4 +595,36 @@ class AccountingPolicyMapperTest {
         AccountingPolicy futureEntity = accountingPolicyMapper.toEntity(future);
         assertThat(futureEntity.getYear()).isEqualTo(2030);
     }
+
+    @Test
+    void toEntity_shouldHandleNullOrganizationId() {
+        // Given
+        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        requestDTO.setOrganizationId(null); // ← null!
+        requestDTO.setYear(2024);
+        requestDTO.setCurrencyId(1L);
+
+        // When
+        AccountingPolicy entity = accountingPolicyMapper.toEntity(requestDTO);
+
+        // Then
+        assertThat(entity.getOrganization()).isNull();
+        assertThat(entity.getCurrency()).isNotNull();
+    }
+
+    @Test
+    void toEntity_shouldHandleNullCurrencyId() {
+        // Given
+        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        requestDTO.setOrganizationId(1L);
+        requestDTO.setYear(2024);
+        requestDTO.setCurrencyId(null); // ← null!
+
+        // When
+        AccountingPolicy entity = accountingPolicyMapper.toEntity(requestDTO);
+
+        // Then
+        assertThat(entity.getOrganization()).isNotNull();
+        assertThat(entity.getCurrency()).isNull();
+    }
 }
