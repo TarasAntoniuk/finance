@@ -1,26 +1,26 @@
 package com.tarasantoniuk.finance.country.mapper;
 
-
 import com.tarasantoniuk.finance.country.dto.CountryRequestDTO;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
 import com.tarasantoniuk.finance.country.entity.Country;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import com.tarasantoniuk.finance.currency.entity.Currency;
+import com.tarasantoniuk.finance.currency.mapper.CurrencyMapper;
+import org.mapstruct.*;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        uses = {CurrencyMapper.class})  // Використовуємо CurrencyMapper для маппінгу Currency
 public interface CountryMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-//    @Mapping(target = "organizations", ignore = true)
+    @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
     Country toEntity(CountryRequestDTO requestDTO);
 
+    // MapStruct автоматично використає CurrencyMapper.toResponseDTO() для currency
     CountryResponseDTO toResponseDTO(Country country);
 
     List<CountryResponseDTO> toResponseDTOList(List<Country> countries);
@@ -28,6 +28,17 @@ public interface CountryMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-        //@Mapping(target = "organizations", ignore = true)
+    @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
     void updateEntityFromDTO(CountryRequestDTO requestDTO, @MappingTarget Country country);
+
+    // Helper method для конвертації currencyId в Currency
+    @Named("currencyIdToCurrency")
+    default Currency currencyIdToCurrency(Long currencyId) {
+        if (currencyId == null) {
+            return null;
+        }
+        Currency currency = new Currency();
+        currency.setId(currencyId);
+        return currency;
+    }
 }
