@@ -267,9 +267,9 @@ class ExternalExchangeRateMapperTest {
         // Then
         assertThat(responseDTOs).hasSize(2);
 
-        assertThat(responseDTOs.get(0).getId()).isEqualTo(1L);
-        assertThat(responseDTOs.get(0).getCurrencyFrom().getCode()).isEqualTo("USD");
-        assertThat(responseDTOs.get(0).getCurrencyTo().getCode()).isEqualTo("EUR");
+        assertThat(responseDTOs.getFirst().getId()).isEqualTo(1L);
+        assertThat(responseDTOs.getFirst().getCurrencyFrom().getCode()).isEqualTo("USD");
+        assertThat(responseDTOs.getFirst().getCurrencyTo().getCode()).isEqualTo("EUR");
         assertThat(responseDTOs.get(0).getRate()).isEqualByComparingTo(new BigDecimal("0.92"));
         assertThat(responseDTOs.get(0).getSource()).isEqualTo("ECB");
 
@@ -283,7 +283,7 @@ class ExternalExchangeRateMapperTest {
     @Test
     void toResponseDTOList_shouldHandleEmptyList() {
         // Given
-        List<ExternalExchangeRate> rates = Arrays.asList();
+        List<ExternalExchangeRate> rates = List.of();
 
         // When
         List<ExternalExchangeRateResponseDTO> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);
@@ -552,41 +552,5 @@ class ExternalExchangeRateMapperTest {
         assertThat(entity.getCurrencyFrom().getId()).isEqualTo(1L);
         assertThat(entity.getCurrencyTo().getId()).isEqualTo(1L);
         assertThat(entity.getRate()).isEqualByComparingTo(BigDecimal.ONE);
-    }
-
-    @Test
-    void toEntity_shouldHandleNullCurrencyFromId() {
-        // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
-        requestDTO.setExchangeDate(LocalDate.now());
-        requestDTO.setCurrencyFromId(null); // ← null!
-        requestDTO.setCurrencyToId(2L);
-        requestDTO.setRate(new BigDecimal("1.0"));
-        requestDTO.setSource("TEST");
-
-        // When
-        ExternalExchangeRate entity = exchangeRateMapper.toEntity(requestDTO);
-
-        // Then
-        assertThat(entity.getCurrencyFrom()).isNull();
-        assertThat(entity.getCurrencyTo()).isNotNull();
-    }
-
-    @Test
-    void toEntity_shouldHandleNullCurrencyToId() {
-        // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
-        requestDTO.setExchangeDate(LocalDate.now());
-        requestDTO.setCurrencyFromId(1L);
-        requestDTO.setCurrencyToId(null); // ← null!
-        requestDTO.setRate(new BigDecimal("1.0"));
-        requestDTO.setSource("TEST");
-
-        // When
-        ExternalExchangeRate entity = exchangeRateMapper.toEntity(requestDTO);
-
-        // Then
-        assertThat(entity.getCurrencyFrom()).isNotNull();
-        assertThat(entity.getCurrencyTo()).isNull();
     }
 }

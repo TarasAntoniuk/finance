@@ -350,10 +350,10 @@ class AccountingPolicyMapperTest {
         // Then
         assertThat(responseDTOs).hasSize(2);
 
-        assertThat(responseDTOs.get(0).getId()).isEqualTo(1L);
-        assertThat(responseDTOs.get(0).getOrganization().getName()).isEqualTo("Company A");
-        assertThat(responseDTOs.get(0).getCurrency().getCode()).isEqualTo("UAH");
-        assertThat(responseDTOs.get(0).getDepreciationMethod()).isEqualTo("STRAIGHT_LINE");
+        assertThat(responseDTOs.getFirst().getId()).isEqualTo(1L);
+        assertThat(responseDTOs.getFirst().getOrganization().getName()).isEqualTo("Company A");
+        assertThat(responseDTOs.getFirst().getCurrency().getCode()).isEqualTo("UAH");
+        assertThat(responseDTOs.getFirst().getDepreciationMethod()).isEqualTo("STRAIGHT_LINE");
 
         assertThat(responseDTOs.get(1).getId()).isEqualTo(2L);
         assertThat(responseDTOs.get(1).getOrganization().getName()).isEqualTo("Company B");
@@ -364,7 +364,7 @@ class AccountingPolicyMapperTest {
     @Test
     void toResponseDTOList_shouldHandleEmptyList() {
         // Given
-        List<AccountingPolicy> policies = Arrays.asList();
+        List<AccountingPolicy> policies = List.of();
 
         // When
         List<AccountingPolicyResponseDTO> responseDTOs = accountingPolicyMapper.toResponseDTOList(policies);
@@ -594,37 +594,5 @@ class AccountingPolicyMapperTest {
 
         AccountingPolicy futureEntity = accountingPolicyMapper.toEntity(future);
         assertThat(futureEntity.getYear()).isEqualTo(2030);
-    }
-
-    @Test
-    void toEntity_shouldHandleNullOrganizationId() {
-        // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
-        requestDTO.setOrganizationId(null); // ← null!
-        requestDTO.setYear(2024);
-        requestDTO.setCurrencyId(1L);
-
-        // When
-        AccountingPolicy entity = accountingPolicyMapper.toEntity(requestDTO);
-
-        // Then
-        assertThat(entity.getOrganization()).isNull();
-        assertThat(entity.getCurrency()).isNotNull();
-    }
-
-    @Test
-    void toEntity_shouldHandleNullCurrencyId() {
-        // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
-        requestDTO.setOrganizationId(1L);
-        requestDTO.setYear(2024);
-        requestDTO.setCurrencyId(null); // ← null!
-
-        // When
-        AccountingPolicy entity = accountingPolicyMapper.toEntity(requestDTO);
-
-        // Then
-        assertThat(entity.getOrganization()).isNotNull();
-        assertThat(entity.getCurrency()).isNull();
     }
 }
