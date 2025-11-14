@@ -1,11 +1,15 @@
 package com.tarasantoniuk.finance.counterparty.mapper;
 
+import com.tarasantoniuk.finance.accountingpolicy.mapper.AccountingPolicyMapper;
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.country.entity.Country;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -15,8 +19,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-class CounterpartyMapperTest {
+
+class CounterpartyMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private CounterpartyMapper counterpartyMapper;

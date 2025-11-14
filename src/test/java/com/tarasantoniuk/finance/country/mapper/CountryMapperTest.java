@@ -1,10 +1,14 @@
 package com.tarasantoniuk.finance.country.mapper;
 
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.counterparty.mapper.CounterpartyMapper;
 import com.tarasantoniuk.finance.country.dto.CountryRequestDTO;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
 import com.tarasantoniuk.finance.country.entity.Country;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -14,8 +18,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-class CountryMapperTest {
+
+class CountryMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private CountryMapper countryMapper;

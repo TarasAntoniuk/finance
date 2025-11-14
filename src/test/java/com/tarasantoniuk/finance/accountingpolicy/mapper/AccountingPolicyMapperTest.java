@@ -3,10 +3,18 @@ package com.tarasantoniuk.finance.accountingpolicy.mapper;
 import com.tarasantoniuk.finance.accountingpolicy.dto.AccountingPolicyRequestDTO;
 import com.tarasantoniuk.finance.accountingpolicy.dto.AccountingPolicyResponseDTO;
 import com.tarasantoniuk.finance.accountingpolicy.entity.AccountingPolicy;
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.country.entity.Country;
+import com.tarasantoniuk.finance.country.mapper.CountryMapper;
+import com.tarasantoniuk.finance.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import com.tarasantoniuk.finance.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.organization.entity.Organization;
+import com.tarasantoniuk.finance.organization.mapper.OrganizationMapper;
+import com.tarasantoniuk.finance.organization.mapper.OrganizationMapperImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -16,11 +24,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-class AccountingPolicyMapperTest {
+
+class AccountingPolicyMapperTest extends BaseIntegrationTest {
+
 
     @Autowired
-    private AccountingPolicyMapper accountingPolicyMapper;
+    AccountingPolicyMapper accountingPolicyMapper;
+
 
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
