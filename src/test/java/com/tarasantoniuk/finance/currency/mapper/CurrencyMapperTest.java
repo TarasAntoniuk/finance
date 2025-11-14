@@ -1,9 +1,13 @@
 package com.tarasantoniuk.finance.currency.mapper;
 
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.country.mapper.CountryMapper;
 import com.tarasantoniuk.finance.currency.dto.CurrencyRequestDTO;
 import com.tarasantoniuk.finance.currency.dto.CurrencyResponseDTO;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -14,7 +18,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class CurrencyMapperTest {
+class CurrencyMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private CurrencyMapper currencyMapper;

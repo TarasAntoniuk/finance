@@ -1,10 +1,14 @@
 package com.tarasantoniuk.finance.externalexchangerate.mapper;
 
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import com.tarasantoniuk.finance.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
 import com.tarasantoniuk.finance.externalexchangerate.entity.ExternalExchangeRate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -17,7 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class ExternalExchangeRateMapperTest {
+class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private ExternalExchangeRateMapper exchangeRateMapper;
@@ -267,9 +271,9 @@ class ExternalExchangeRateMapperTest {
         // Then
         assertThat(responseDTOs).hasSize(2);
 
-        assertThat(responseDTOs.get(0).getId()).isEqualTo(1L);
-        assertThat(responseDTOs.get(0).getCurrencyFrom().getCode()).isEqualTo("USD");
-        assertThat(responseDTOs.get(0).getCurrencyTo().getCode()).isEqualTo("EUR");
+        assertThat(responseDTOs.getFirst().getId()).isEqualTo(1L);
+        assertThat(responseDTOs.getFirst().getCurrencyFrom().getCode()).isEqualTo("USD");
+        assertThat(responseDTOs.getFirst().getCurrencyTo().getCode()).isEqualTo("EUR");
         assertThat(responseDTOs.get(0).getRate()).isEqualByComparingTo(new BigDecimal("0.92"));
         assertThat(responseDTOs.get(0).getSource()).isEqualTo("ECB");
 
@@ -283,7 +287,7 @@ class ExternalExchangeRateMapperTest {
     @Test
     void toResponseDTOList_shouldHandleEmptyList() {
         // Given
-        List<ExternalExchangeRate> rates = Arrays.asList();
+        List<ExternalExchangeRate> rates = List.of();
 
         // When
         List<ExternalExchangeRateResponseDTO> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);

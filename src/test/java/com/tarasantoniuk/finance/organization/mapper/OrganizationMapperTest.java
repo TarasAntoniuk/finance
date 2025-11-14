@@ -1,12 +1,16 @@
 package com.tarasantoniuk.finance.organization.mapper;
 
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
 import com.tarasantoniuk.finance.country.entity.Country;
 import com.tarasantoniuk.finance.currency.entity.Currency;
+import com.tarasantoniuk.finance.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import com.tarasantoniuk.finance.organization.dto.OrganizationRequestDTO;
 import com.tarasantoniuk.finance.organization.dto.OrganizationResponseDTO;
 import com.tarasantoniuk.finance.organization.entity.Organization;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -17,7 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class OrganizationMapperTest {
+class OrganizationMapperTest extends BaseIntegrationTest {
 
     @Autowired
     private OrganizationMapper organizationMapper;
@@ -432,5 +436,20 @@ class OrganizationMapperTest {
         assertThat(entity.getAddress()).isNull();
         assertThat(entity.getEmail()).isNull();
         assertThat(entity.getPhone()).isNull();
+    }
+
+    @Test
+    void toEntity_shouldHandleNullCountryId() {
+        // Given
+        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        requestDTO.setName("Test Org");
+        requestDTO.setCountryId(null); // ← null!
+
+        // When
+        Organization entity = organizationMapper.toEntity(requestDTO);
+
+        // Then
+        assertThat(entity.getName()).isEqualTo("Test Org");
+        assertThat(entity.getCountry()).isNull();
     }
 }
