@@ -7,7 +7,7 @@ import com.tarasantoniuk.finance.accountingpolicy.exception.AccountingPolicyAlre
 import com.tarasantoniuk.finance.accountingpolicy.exception.AccountingPolicyNotFoundException;
 import com.tarasantoniuk.finance.accountingpolicy.service.AccountingPolicyService;
 import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
-import com.tarasantoniuk.finance.organization.exeption.OrganizationNotFoundException;
+import com.tarasantoniuk.finance.organization.exception.OrganizationNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

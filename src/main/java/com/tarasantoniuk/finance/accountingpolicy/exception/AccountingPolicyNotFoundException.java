@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.accountingpolicy.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
+import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 
 /**
  * Exception thrown when an accounting policy is not found

@@ -21,7 +21,6 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <jacoco.version>0.8.12</jacoco.version>
-
         <!-- Test coverage thresholds -->
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
         <jacoco.branch.coverage>0.75</jacoco.branch.coverage>
@@ -141,14 +140,12 @@
                         <exclude>**/dto/**</exclude>
                         <exclude>**/entity/**</exclude>
                         <exclude>**/model/**</exclude>
-                        <!-- Mappers (generated or simple) -->
-                        <!--<exclude>**/mapper/**</exclude>-->
+
                         <!-- MapStruct generated implementations -->
                         <exclude>**/*MapperImpl.class</exclude>
                         <exclude>**/*MapperImpl$*.class</exclude>
                         <!-- Exceptions -->
                         <exclude>**/exception/**</exclude>
-                        <exclude>**/exeption/**</exclude>
                         <!-- Constants -->
                         <exclude>**/constant/**</exclude>
                     </excludes>

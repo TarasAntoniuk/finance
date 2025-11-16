@@ -1,6 +1,6 @@
-package com.tarasantoniuk.finance.organization.exeption;
+package com.tarasantoniuk.finance.organization.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
+import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 
 /**
  * Exception thrown when an organization is not found

@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.country.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
+import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 
 
 /**

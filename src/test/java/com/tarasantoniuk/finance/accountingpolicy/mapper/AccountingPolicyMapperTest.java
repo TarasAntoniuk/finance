@@ -5,18 +5,10 @@ import com.tarasantoniuk.finance.accountingpolicy.dto.AccountingPolicyResponseDT
 import com.tarasantoniuk.finance.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.country.entity.Country;
-import com.tarasantoniuk.finance.country.mapper.CountryMapper;
-import com.tarasantoniuk.finance.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.currency.entity.Currency;
-import com.tarasantoniuk.finance.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.organization.entity.Organization;
-import com.tarasantoniuk.finance.organization.mapper.OrganizationMapper;
-import com.tarasantoniuk.finance.organization.mapper.OrganizationMapperImpl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;

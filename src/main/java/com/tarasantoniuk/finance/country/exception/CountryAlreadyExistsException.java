@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.country.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 
 
 /**

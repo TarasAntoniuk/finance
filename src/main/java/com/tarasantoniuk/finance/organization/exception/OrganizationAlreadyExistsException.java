@@ -1,6 +1,6 @@
-package com.tarasantoniuk.finance.organization.exeption;
+package com.tarasantoniuk.finance.organization.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 
 /**
  * Exception thrown when an organization already exists

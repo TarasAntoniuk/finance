@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.externalexchangerate.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 
 import java.time.LocalDate;
 

@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.common;
 
-import com.tarasantoniuk.finance.common.exeption.InvalidOperationException;
-import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
-import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
+import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
+import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.counterparty.exception.CounterpartyNotFoundException;
 import com.tarasantoniuk.finance.counterparty.exception.DuplicateCounterpartyException;
 import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;

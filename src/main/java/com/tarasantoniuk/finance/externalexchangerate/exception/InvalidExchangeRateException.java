@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.externalexchangerate.exception;
 
-import com.tarasantoniuk.finance.common.exeption.InvalidOperationException;
+import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 
 /**
  * Exception thrown when invalid exchange rate operation is attempted

@@ -9,7 +9,7 @@ import com.tarasantoniuk.finance.accountingpolicy.mapper.AccountingPolicyMapper;
 import com.tarasantoniuk.finance.accountingpolicy.repository.AccountingPolicyRepository;
 import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.organization.exeption.OrganizationNotFoundException;
+import com.tarasantoniuk.finance.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.organization.repository.OrganizationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.accountingpolicy.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceAlreadyExistsException;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 
 /**
  * Exception thrown when an accounting policy already exists

@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.common.exeption;
+package com.tarasantoniuk.finance.common.exception;
 
 /**
  * Base exception for invalid operation errors

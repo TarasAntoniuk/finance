@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.organization.exeption;
+package com.tarasantoniuk.finance.organization.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;

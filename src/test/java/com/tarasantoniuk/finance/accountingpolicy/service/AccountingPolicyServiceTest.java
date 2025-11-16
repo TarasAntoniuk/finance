@@ -11,7 +11,7 @@ import com.tarasantoniuk.finance.currency.entity.Currency;
 import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.organization.entity.Organization;
-import com.tarasantoniuk.finance.organization.exeption.OrganizationNotFoundException;
+import com.tarasantoniuk.finance.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.organization.repository.OrganizationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

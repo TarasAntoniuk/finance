@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.counterparty.exception;
 
-import com.tarasantoniuk.finance.common.exeption.ResourceNotFoundException;
+import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 
 /**
  * Exception thrown when a counterparty is not found
