@@ -45,19 +45,41 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Clean up existing data to prevent duplicate key errors
+        // Clean up existing data
         bankAccountRepository.deleteAll();
         bankRepository.deleteAll();
+        currencyRepository.deleteAll();
+        countryRepository.deleteAll();
 
-        // Create or find country
-        Country ukraine = countryRepository.findAll().stream()
-                .filter(c -> "UKR".equals(c.getIsoCode()))
-                .findFirst()
+        // Create country
+        Country ukraine = new Country();
+        ukraine.setName("Ukraine");
+        ukraine.setIsoCode("UKR");
+        ukraine = countryRepository.save(ukraine);
+
+        // Find or Create currencies
+        uah = currencyRepository.findByCode("UAH")
                 .orElseGet(() -> {
-                    Country country = new Country();
-                    country.setName("Ukraine");
-                    country.setIsoCode("UKR");
-                    return countryRepository.save(country);
+                    Currency c = new Currency();
+                    c.setCode("UAH");
+                    c.setName("Ukrainian Hryvnia");
+                    c.setSymbol("₴");
+                    c.setNumericCode("980");
+                    c.setMinorUnit(2);
+                    c.setIsActive(true);
+                    return currencyRepository.save(c);
+                });
+
+        usd = currencyRepository.findByCode("USD")
+                .orElseGet(() -> {
+                    Currency c = new Currency();
+                    c.setCode("USD");
+                    c.setName("US Dollar");
+                    c.setSymbol("$");
+                    c.setNumericCode("840");
+                    c.setMinorUnit(2);
+                    c.setIsActive(true);
+                    return currencyRepository.save(c);
                 });
 
         // Create banks
@@ -74,35 +96,6 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
         monobank.setCountry(ukraine);
         monobank.setIsActive(true);
         monobank = bankRepository.save(monobank);
-
-        // Create or find currencies
-        uah = currencyRepository.findAll().stream()
-                .filter(c -> "UAH".equals(c.getCode()))
-                .findFirst()
-                .orElseGet(() -> {
-                    Currency currency = new Currency();
-                    currency.setCode("UAH");
-                    currency.setName("Ukrainian Hryvnia");
-                    currency.setSymbol("₴");
-                    currency.setNumericCode("980");
-                    currency.setMinorUnit(2);
-                    currency.setIsActive(true);
-                    return currencyRepository.save(currency);
-                });
-
-        usd = currencyRepository.findAll().stream()
-                .filter(c -> "USD".equals(c.getCode()))
-                .findFirst()
-                .orElseGet(() -> {
-                    Currency currency = new Currency();
-                    currency.setCode("USD");
-                    currency.setName("US Dollar");
-                    currency.setSymbol("$");
-                    currency.setNumericCode("840");
-                    currency.setMinorUnit(2);
-                    currency.setIsActive(true);
-                    return currencyRepository.save(currency);
-                });
 
         // Create organization accounts
         orgAccount1 = new BankAccount();

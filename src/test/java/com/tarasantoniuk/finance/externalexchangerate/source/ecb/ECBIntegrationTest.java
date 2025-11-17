@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.externalexchangerate.source.ecb;
 
+import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.currency.entity.Currency;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.externalexchangerate.entity.ExternalExchangeRate;
@@ -7,14 +8,8 @@ import com.tarasantoniuk.finance.externalexchangerate.repository.ExternalExchang
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,27 +19,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Testcontainers
+
 @Transactional
-class ECBIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-
-        // ВИМКНУТИ ECB sync
-        registry.add("ecb.sync.enabled", () -> false);
-        registry.add("ecb.sync.initial-load", () -> false);
-    }
+class ECBIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ECBSyncService syncService;
@@ -57,9 +34,6 @@ class ECBIntegrationTest {
 
     @MockitoBean
     private ECBClient client;
-
-    @MockitoBean
-    private ECBScheduler scheduler;
 
     @BeforeEach
     void setUp() {
