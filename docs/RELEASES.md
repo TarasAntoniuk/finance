@@ -8,6 +8,52 @@
 **Production release**: 1.0.0
 
 All versions before production release are numbered as **0.0.x** where x increments with each release.
+---
+
+## Version 0.0.3 – Banking System Module
+
+**Release Date**: November 2025  
+**Status**: Current Version
+
+### Features Implemented
+
+#### Banking System
+- ✅ Bank management (CRUD operations)
+    - Full CRUD operations for banks with country relationships
+    - SWIFT code validation and unique constraints
+    - Bank activation/deactivation functionality
+    - Search by country and active status
+    - Counterparty relationship support
+
+- ✅ Bank Account management (CRUD operations)
+    - Multi-holder bank accounts (Organizations and Counterparties)
+    - Account status management (Active, Inactive, Closed)
+    - Default account designation per holder
+    - Account number uniqueness validation
+    - Filtering by holder, bank, and status
+
+#### Technical Implementation
+- ✅ RESTful API with layered architecture (Controller → Service → Repository)
+- ✅ JPA/Hibernate with PostgreSQL, indexed queries for performance
+- ✅ MapStruct for DTO-Entity conversions
+- ✅ Jakarta Validation with custom business rules
+- ✅ OpenAPI/Swagger annotations for all endpoints
+- ✅ Comprehensive test coverage with Testcontainers for integration tests
+- ✅ Custom exception hierarchy with proper HTTP status codes
+- ✅ Discriminator pattern for account holder types
+- ✅ Composite indexes on frequently queried fields (SWIFT codes, account numbers, holder identifiers)
+- ✅ Immutable audit fields (createdAt, updatedAt) with JPA auditing
+- ✅ Branch coverage > 95% with unit and integration tests
+
+#### API Endpoints
+- `/api/banks` - Bank management
+- `/api/bank-accounts` - Bank account management
+
+### Known Limitations
+- No frontend interface
+- No authentication/authorization
+- No transaction history tracking
+- No account balance tracking (planned for 0.0.4)
 
 ---
 

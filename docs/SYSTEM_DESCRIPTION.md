@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This system is a prototype for **financial accounting**, focusing on **currency rate management** and backend operations.  
+This system is a prototype for **financial accounting**, focusing on **currency rate management**, **banking operations**, and backend services.  
 It demonstrates architecture, service design, and automated workflows as a foundation for future development.
 
 > For technology details see [TECH_STACK.md](TECH_STACK.md)  
@@ -32,6 +32,7 @@ It demonstrates architecture, service design, and automated workflows as a found
 - **Repository Pattern**: Spring Data JPA repositories
 - **Service Layer**: Business logic separation
 - **REST API**: RESTful endpoint design
+- **Discriminator Pattern**: Multi-type entity handling
 
 ---
 
@@ -83,6 +84,30 @@ It demonstrates architecture, service design, and automated workflows as a found
 
 **Entities**: `ExternalExchangeRate`
 
+### 6. Bank Management
+**Purpose**: Manage banking institutions
+
+- Full CRUD operations for banks
+- SWIFT code validation and unique constraints
+- Country relationships
+- Bank activation/deactivation
+- Search by country and active status
+- Counterparty relationships
+
+**Entities**: `Bank`
+
+### 7. Bank Account Management
+**Purpose**: Manage bank accounts for organizations and counterparties
+
+- Multi-holder bank accounts (Organizations and Counterparties)
+- Account status management (Active, Inactive, Closed)
+- Default account designation per holder
+- Account number uniqueness validation
+- Filtering by holder, bank, and status
+- Discriminator pattern for holder types
+
+**Entities**: `BankAccount`
+
 ---
 
 ## Data Model
@@ -91,11 +116,13 @@ It demonstrates architecture, service design, and automated workflows as a found
 
 ```
 Country ──→ Organization ──→ AccountingPolicy ──→ Currency (base currency)
-                                      ↓
-                            ExternalExchangeRate
-                                   ↙    ↖
-                          Currency    Currency
-                        (currencyFrom) (currencyTo)
+    ↓              ↓
+   Bank      BankAccount (holder: ORGANIZATION)
+    ↓              ↓
+BankAccount    Currency
+(bank accounts)
+
+Counterparty ──→ BankAccount (holder: COUNTERPARTY)
 ```
 
 ### Key Entities
@@ -162,6 +189,36 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 - `updatedAt` (LocalDateTime) — Last update timestamp
 - **Unique constraint**: (exchangeDate, currency_from_id, currency_to_id, source)
 
+**Bank**
+- `id` (Long, PK) — Primary key
+- `name` (String, 200 chars, NOT NULL) — Bank name
+- `swiftCode` (String, 11 chars, UNIQUE, NOT NULL) — SWIFT/BIC code
+- `country_id` (Long, FK, NOT NULL) — Reference to Country
+- `counterparty_id` (Long, FK) — Reference to Counterparty (optional)
+- `address` (String, 500 chars) — Bank address
+- `phoneNumber` (String, 20 chars) — Contact phone
+- `website` (String, 200 chars) — Bank website
+- `isActive` (Boolean, NOT NULL, DEFAULT true) — Active/inactive flag
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
+- **Index**: swiftCode (unique)
+
+**BankAccount**
+- `id` (Long, PK) — Primary key
+- `accountNumber` (String, 34 chars, UNIQUE, NOT NULL) — Bank account number (IBAN format)
+- `holderType` (String, 50 chars, NOT NULL) — Discriminator: ORGANIZATION or COUNTERPARTY
+- `holderId` (Long, NOT NULL) — Reference to Organization or Counterparty
+- `bank_id` (Long, FK, NOT NULL) — Reference to Bank
+- `currency_id` (Long, FK, NOT NULL) — Account currency (reference to Currency)
+- `accountName` (String, 200 chars) — Account description/name
+- `status` (String, 20 chars) — Account status: ACTIVE, INACTIVE, CLOSED
+- `isDefault` (Boolean, DEFAULT false) — Default account flag for holder
+- `createdAt` (LocalDateTime, NOT NULL, immutable) — Creation timestamp
+- `updatedAt` (LocalDateTime) — Last update timestamp
+- **Unique constraint**: accountNumber
+- **Composite index**: (holderType, holderId) for fast holder lookups
+- **Index**: bank_id, status
+
 ---
 
 ## API Structure
@@ -177,6 +234,8 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 | Organizations       | `/api/organizations`       | GET, POST, PUT, DELETE |
 | Accounting Policies | `/api/accounting-policies` | GET, POST, PUT, DELETE |
 | Exchange Rates      | `/api/exchange-rates`      | GET, POST, PUT, DELETE |
+| Banks               | `/api/banks`               | GET, POST, PUT, DELETE, PATCH |
+| Bank Accounts       | `/api/bank-accounts`       | GET, POST, PUT, DELETE, PATCH |
 
 **API Documentation**: Available via Swagger UI at `/swagger-ui.html`
 
@@ -187,19 +246,26 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 ### Unit Tests
 - Service layer business logic
 - Validation rules
-- Mapper functionality
-- JUnit 5 framework
+- Mapper functionality (>95% branch coverage)
+- JUnit 5 + Mockito framework
 
 ### Integration Tests
 - Full API endpoint testing
 - Database operations
 - Real PostgreSQL via Testcontainers
+- Repository query testing
 - End-to-end scenarios
+
+### Test Coverage
+- JaCoCo reports generated on each build
+- Minimum requirements: 80% line coverage, 75% branch coverage
+- Current achievement: >95% branch coverage for core modules
 
 ### CI/CD
 - Automated test execution on every push
 - Tests must pass before merge to `dev`
 - GitHub Actions workflow
+- Separate coverage reporting workflow
 
 ---
 
@@ -225,30 +291,30 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 
 ### Not Yet Implemented
 - ❌ Frontend interface
-- ❌ Historical data tables
 - ❌ User authentication/authorization
-- ❌ Account and balance management
+- ❌ Account balance tracking
 - ❌ Transaction processing
 - ❌ Financial reporting
-- ❌ Multi-currency operations
-- ❌ Audit logging for accounting policies
+- ❌ Payment document management
+- ❌ Audit logging
 
 ### Technical Debt
 - Basic error handling (needs improvement)
-- Limited validation rules
 - No caching layer
-- No database migrations tool
+- No database migrations tool (Liquibase/Flyway)
 
 ---
 
 ## Design Principles
 
 1. **Modularity**: Independent, loosely coupled modules
-2. **Testability**: Comprehensive test coverage
+2. **Testability**: Comprehensive test coverage (>95% branch coverage)
 3. **Maintainability**: Clean code, clear structure
 4. **Scalability**: Architecture supports growth
-5. **API-First**: RESTful design with documentation
+5. **API-First**: RESTful design with OpenAPI documentation
 6. **Simplicity**: No unnecessary complexity
+7. **Data Integrity**: Database constraints and validation
+8. **Immutability**: Audit fields (createdAt, updatedAt) with JPA auditing
 
 ---
 
@@ -267,7 +333,10 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 
 ## Performance Considerations
 
-**Current Approach**: Basic implementation
+**Current Approach**:
+- Database indexes on frequently queried fields
+- Composite indexes for complex queries
+- Optimistic locking preparation
 
 **Future Optimizations**:
 - Database query optimization
@@ -278,5 +347,5 @@ Country ──→ Organization ──→ AccountingPolicy ──→ Currency (ba
 
 ---
 
-**Document Version**: 0.0.2  
+**Document Version**: 0.0.3  
 **Last Updated**: November 2025
