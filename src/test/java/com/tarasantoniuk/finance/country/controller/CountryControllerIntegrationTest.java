@@ -1,15 +1,13 @@
 package com.tarasantoniuk.finance.country.controller;
 
-
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.country.dto.CountryRequestDTO;
 import com.tarasantoniuk.finance.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.country.service.CountryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,8 +21,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Integration test для CountryController
- * Використовує MockMvc для тестування REST endpoints
+ * Integration test for CountryController
+ * Uses MockMvc to test REST endpoints
  */
 @WebMvcTest(CountryController.class)
 class CountryControllerIntegrationTest {
@@ -81,6 +79,35 @@ class CountryControllerIntegrationTest {
     }
 
     @Test
+    void getCountryByIsoCode_WhenExists_ShouldReturnCountry() throws Exception {
+        // Given
+        CountryResponseDTO country = new CountryResponseDTO();
+        country.setId(1L);
+        country.setName("United States");
+        country.setIsoCode("USA");
+
+        when(countryService.getCountryByIsoCode("USA")).thenReturn(country);
+
+        // When & Then
+        mockMvc.perform(get("/api/countries/iso/USA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.isoCode").value("USA"))
+                .andExpect(jsonPath("$.name").value("United States"));
+    }
+
+    @Test
+    void getCountryByIsoCode_WhenNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(countryService.getCountryByIsoCode("XXX"))
+                .thenThrow(CountryNotFoundException.byIsoCode("XXX"));
+
+        // When & Then
+        mockMvc.perform(get("/api/countries/iso/XXX"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void createCountry_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
         CountryRequestDTO requestDTO = new CountryRequestDTO();
@@ -112,6 +139,62 @@ class CountryControllerIntegrationTest {
 
         // When & Then
         mockMvc.perform(post("/api/countries")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateCountry_WhenValid_ShouldReturnUpdatedCountry() throws Exception {
+        // Given
+        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        requestDTO.setName("United States of America");
+        requestDTO.setIsoCode("USA");
+        requestDTO.setPhoneCode("+1");
+
+        CountryResponseDTO responseDTO = new CountryResponseDTO();
+        responseDTO.setId(1L);
+        responseDTO.setName("United States of America");
+        responseDTO.setIsoCode("USA");
+
+        when(countryService.updateCountry(any(Long.class), any(CountryRequestDTO.class)))
+                .thenReturn(responseDTO);
+
+        // When & Then
+        mockMvc.perform(put("/api/countries/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("United States of America"))
+                .andExpect(jsonPath("$.isoCode").value("USA"));
+    }
+
+    @Test
+    void updateCountry_WhenNotExists_ShouldReturnNotFound() throws Exception {
+        // Given
+        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        requestDTO.setName("United States");
+        requestDTO.setIsoCode("USA");
+        requestDTO.setPhoneCode("+1");
+
+        when(countryService.updateCountry(any(Long.class), any(CountryRequestDTO.class)))
+                .thenThrow(CountryNotFoundException.byId(999L));
+
+        // When & Then
+        mockMvc.perform(put("/api/countries/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updateCountry_WhenInvalid_ShouldReturnBadRequest() throws Exception {
+        // Given - invalid request (missing required fields)
+        CountryRequestDTO requestDTO = new CountryRequestDTO();
+
+        // When & Then
+        mockMvc.perform(put("/api/countries/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isBadRequest());

@@ -263,7 +263,126 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
         when(organizationRepository.existsById(1L)).thenReturn(true);
         when(currencyRepository.existsById(1L)).thenReturn(true);
-//        when(accountingPolicyRepository.existsByOrganizationIdAndYear(1L, 2024)).thenReturn(false);
+        when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
+        when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
+
+        // When
+        AccountingPolicyResponseDTO result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(accountingPolicyRepository, times(1)).save(accountingPolicy);
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenNotExists_ShouldThrowException() {
+        // Given
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(AccountingPolicyNotFoundException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenOrganizationNotExists_ShouldThrowException() {
+        // Given
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(1L)).thenReturn(false);
+
+        // When & Then
+        assertThrows(OrganizationNotFoundException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenCurrencyNotExists_ShouldThrowException() {
+        // Given
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(1L)).thenReturn(true);
+        when(currencyRepository.existsById(1L)).thenReturn(false);
+
+        // When & Then
+        assertThrows(CurrencyNotFoundException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenChangingOrganizationToExisting_ShouldThrowException() {
+        // Given
+        accountingPolicy.getOrganization().setId(1L);
+        accountingPolicy.setYear(2024);
+
+        requestDTO.setOrganizationId(2L); // Змінюємо організацію
+        requestDTO.setYear(2024);
+
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(2L)).thenReturn(true);
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2024)).thenReturn(true);
+
+        // When & Then
+        assertThrows(AccountingPolicyAlreadyExistsException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenChangingYearToExisting_ShouldThrowException() {
+        // Given
+        accountingPolicy.getOrganization().setId(1L);
+        accountingPolicy.setYear(2024);
+
+        requestDTO.setOrganizationId(1L);
+        requestDTO.setYear(2025); // Змінюємо рік
+
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(1L)).thenReturn(true);
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+        when(accountingPolicyRepository.existsByOrganizationIdAndYear(1L, 2025)).thenReturn(true);
+
+        // When & Then
+        assertThrows(AccountingPolicyAlreadyExistsException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenChangingBothOrganizationAndYearToExisting_ShouldThrowException() {
+        // Given
+        accountingPolicy.getOrganization().setId(1L);
+        accountingPolicy.setYear(2024);
+
+        requestDTO.setOrganizationId(2L); // Змінюємо організацію
+        requestDTO.setYear(2025); // І рік
+
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(2L)).thenReturn(true);
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2025)).thenReturn(true);
+
+        // When & Then
+        assertThrows(AccountingPolicyAlreadyExistsException.class,
+                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
+        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
+    }
+
+    @Test
+    void updateAccountingPolicy_WhenChangingOrganizationToNonExisting_ShouldSucceed() {
+        // Given
+        accountingPolicy.getOrganization().setId(1L);
+        accountingPolicy.setYear(2024);
+
+        requestDTO.setOrganizationId(2L); // Змінюємо організацію
+        requestDTO.setYear(2024);
+
+        when(accountingPolicyRepository.findById(1L)).thenReturn(Optional.of(accountingPolicy));
+        when(organizationRepository.existsById(2L)).thenReturn(true);
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2024)).thenReturn(false); // Немає дубліката
         when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
@@ -284,8 +403,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
         // When
-        //AccountingPolicyResponseDTO result =
-                accountingPolicyService.activateAccountingPolicy(1L);
+        accountingPolicyService.activateAccountingPolicy(1L);
 
         // Then
         assertTrue(accountingPolicy.getIsActive());
@@ -300,8 +418,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
         // When
-        //AccountingPolicyResponseDTO result =
-                accountingPolicyService.deactivateAccountingPolicy(1L);
+        accountingPolicyService.deactivateAccountingPolicy(1L);
 
         // Then
         assertFalse(accountingPolicy.getIsActive());
@@ -329,5 +446,78 @@ class AccountingPolicyServiceTest {
         assertThrows(AccountingPolicyNotFoundException.class,
                 () -> accountingPolicyService.deleteAccountingPolicy(1L));
         verify(accountingPolicyRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void getActiveAccountingPoliciesByOrganization_ShouldReturnOnlyActivePolicies() {
+        // Given
+        List<AccountingPolicy> activePolicies = Collections.singletonList(accountingPolicy);
+        when(accountingPolicyRepository.findByOrganizationIdAndIsActive(1L, true))
+                .thenReturn(activePolicies);
+        when(accountingPolicyMapper.toResponseDTOList(activePolicies))
+                .thenReturn(Collections.singletonList(responseDTO));
+
+        // When
+        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+                .getActiveAccountingPoliciesByOrganization(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActive(1L, true);
+    }
+
+    @Test
+    void getActiveAccountingPoliciesByOrganization_WhenNoActivePolicies_ShouldReturnEmptyList() {
+        // Given
+        when(accountingPolicyRepository.findByOrganizationIdAndIsActive(1L, true))
+                .thenReturn(Collections.emptyList());
+        when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+                .getActiveAccountingPoliciesByOrganization(1L);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActive(1L, true);
+    }
+
+    @Test
+    void getAccountingPoliciesByCurrency_ShouldReturnFilteredList() {
+        // Given
+        List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
+        when(accountingPolicyRepository.findByCurrencyId(1L)).thenReturn(policies);
+        when(accountingPolicyMapper.toResponseDTOList(policies))
+                .thenReturn(Collections.singletonList(responseDTO));
+
+        // When
+        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+                .getAccountingPoliciesByCurrency(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(accountingPolicyRepository, times(1)).findByCurrencyId(1L);
+    }
+
+    @Test
+    void getAccountingPoliciesByCurrency_WhenNoPolicies_ShouldReturnEmptyList() {
+        // Given
+        when(accountingPolicyRepository.findByCurrencyId(1L))
+                .thenReturn(Collections.emptyList());
+        when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+                .getAccountingPoliciesByCurrency(1L);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(accountingPolicyRepository, times(1)).findByCurrencyId(1L);
     }
 }

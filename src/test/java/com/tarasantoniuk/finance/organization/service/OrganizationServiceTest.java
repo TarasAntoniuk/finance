@@ -191,12 +191,13 @@ class OrganizationServiceTest {
         verify(organizationRepository, never()).save(any(Organization.class));
     }
 
+    // ========== UPDATE TESTS - COMPREHENSIVE BRANCH COVERAGE ==========
+
     @Test
     void updateOrganization_WhenValid_ShouldReturnUpdatedOrganization() {
         // Given
         when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
         when(countryRepository.existsById(1L)).thenReturn(true);
-        //when(organizationRepository.existsByRegistrationNumber("12345678")).thenReturn(false);
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
@@ -209,8 +210,70 @@ class OrganizationServiceTest {
     }
 
     @Test
-    void updateOrganization_WhenChangingToExistingRegistrationNumber_ShouldThrowException() {
+    void updateOrganization_WhenNotExists_ShouldThrowException() {
         // Given
+        when(organizationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(OrganizationNotFoundException.class,
+                () -> organizationService.updateOrganization(1L, requestDTO));
+        verify(organizationRepository, never()).save(any(Organization.class));
+    }
+
+    @Test
+    void updateOrganization_WhenCountryNotExists_ShouldThrowException() {
+        // Given
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
+        when(countryRepository.existsById(1L)).thenReturn(false);
+
+        // When & Then
+        assertThrows(CountryNotFoundException.class,
+                () -> organizationService.updateOrganization(1L, requestDTO));
+        verify(organizationRepository, never()).save(any(Organization.class));
+    }
+
+    @Test
+    void updateOrganization_WhenRegistrationNumberIsNull_ShouldNotCheckDuplicate() {
+        // Given
+        requestDTO.setRegistrationNumber(null);
+
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
+        when(countryRepository.existsById(1L)).thenReturn(true);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
+
+        // When
+        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(organizationRepository, never()).existsByRegistrationNumber(anyString());
+        verify(organizationRepository, times(1)).save(organization);
+    }
+
+    @Test
+    void updateOrganization_WhenRegistrationNumberNotChanged_ShouldNotCheckDuplicate() {
+        // Given - same registration number
+        organization.setRegistrationNumber("12345678");
+        requestDTO.setRegistrationNumber("12345678");
+
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
+        when(countryRepository.existsById(1L)).thenReturn(true);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
+
+        // When
+        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(organizationRepository, never()).existsByRegistrationNumber(anyString());
+        verify(organizationRepository, times(1)).save(organization);
+    }
+
+    @Test
+    void updateOrganization_WhenChangingToExistingRegistrationNumber_ShouldThrowException() {
+        // Given - changing registration number to existing one
         organization.setRegistrationNumber("11111111");
         requestDTO.setRegistrationNumber("12345678");
 
@@ -221,7 +284,31 @@ class OrganizationServiceTest {
         // When & Then
         assertThrows(OrganizationAlreadyExistsException.class,
                 () -> organizationService.updateOrganization(1L, requestDTO));
+        verify(organizationRepository, never()).save(any(Organization.class));
     }
+
+    @Test
+    void updateOrganization_WhenChangingToNonExistingRegistrationNumber_ShouldSucceed() {
+        // Given - changing registration number to non-existing one
+        organization.setRegistrationNumber("11111111");
+        requestDTO.setRegistrationNumber("99999999");
+
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
+        when(countryRepository.existsById(1L)).thenReturn(true);
+        when(organizationRepository.existsByRegistrationNumber("99999999")).thenReturn(false);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
+
+        // When
+        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(organizationRepository, times(1)).existsByRegistrationNumber("99999999");
+        verify(organizationRepository, times(1)).save(organization);
+    }
+
+    // ========== DELETE TESTS ==========
 
     @Test
     void deleteOrganization_WhenExists_ShouldDeleteSuccessfully() {
@@ -244,5 +331,19 @@ class OrganizationServiceTest {
         assertThrows(OrganizationNotFoundException.class,
                 () -> organizationService.deleteOrganization(1L));
         verify(organizationRepository, never()).deleteById(anyLong());
+    }
+
+    @Test
+    void updateOrganization_WhenDifferentCountryNotExists_ShouldThrowException() {
+        // Given
+        requestDTO.setCountryId(999L); // Different country
+
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
+        when(countryRepository.existsById(999L)).thenReturn(false);
+
+        // When & Then
+        assertThrows(CountryNotFoundException.class,
+                () -> organizationService.updateOrganization(1L, requestDTO));
+        verify(organizationRepository, never()).save(any(Organization.class));
     }
 }

@@ -98,6 +98,45 @@ class CountryServiceTest {
     }
 
     @Test
+    void getCountryByIsoCode_WhenExists_ShouldReturnCountry() {
+        // Given
+        when(countryRepository.findByIsoCode("USA")).thenReturn(Optional.of(country));
+        when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
+
+        // When
+        CountryResponseDTO result = countryService.getCountryByIsoCode("USA");
+
+        // Then
+        assertNotNull(result);
+        assertEquals("USA", result.getIsoCode());
+        verify(countryRepository, times(1)).findByIsoCode("USA");
+    }
+
+    @Test
+    void getCountryByIsoCode_WhenNotExists_ShouldThrowException() {
+        // Given
+        when(countryRepository.findByIsoCode("XXX")).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(CountryNotFoundException.class,
+                () -> countryService.getCountryByIsoCode("XXX"));
+    }
+
+    @Test
+    void getCountryByIsoCode_WhenDifferentCase_ShouldStillFind() {
+        // Given
+        when(countryRepository.findByIsoCode("usa")).thenReturn(Optional.of(country));
+        when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
+
+        // When
+        CountryResponseDTO result = countryService.getCountryByIsoCode("usa");
+
+        // Then
+        assertNotNull(result);
+        verify(countryRepository, times(1)).findByIsoCode("usa");
+    }
+
+    @Test
     void createCountry_WhenValid_ShouldReturnCreatedCountry() {
         // Given
         when(countryRepository.existsByIsoCode("USA")).thenReturn(false);
@@ -125,11 +164,12 @@ class CountryServiceTest {
         verify(countryRepository, never()).save(any(Country.class));
     }
 
+    // ========== UPDATE TESTS - COMPREHENSIVE BRANCH COVERAGE ==========
+
     @Test
     void updateCountry_WhenValid_ShouldReturnUpdatedCountry() {
         // Given
         when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
-//        when(countryRepository.existsByIsoCode("USA")).thenReturn(false);
         when(countryRepository.save(country)).thenReturn(country);
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
@@ -140,6 +180,73 @@ class CountryServiceTest {
         assertNotNull(result);
         verify(countryRepository, times(1)).save(country);
     }
+
+    @Test
+    void updateCountry_WhenNotExists_ShouldThrowException() {
+        // Given
+        when(countryRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(CountryNotFoundException.class,
+                () -> countryService.updateCountry(1L, requestDTO));
+        verify(countryRepository, never()).save(any(Country.class));
+    }
+
+    @Test
+    void updateCountry_WhenIsoCodeNotChanged_ShouldNotCheckDuplicate() {
+        // Given - same ISO code
+        country.setIsoCode("USA");
+        requestDTO.setIsoCode("USA");
+
+        when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
+        when(countryRepository.save(country)).thenReturn(country);
+        when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
+
+        // When
+        CountryResponseDTO result = countryService.updateCountry(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(countryRepository, never()).existsByIsoCode(anyString());
+        verify(countryRepository, times(1)).save(country);
+    }
+
+    @Test
+    void updateCountry_WhenChangingToExistingIsoCode_ShouldThrowException() {
+        // Given - changing ISO code to existing one
+        country.setIsoCode("USA");
+        requestDTO.setIsoCode("CAN");
+
+        when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
+        when(countryRepository.existsByIsoCode("CAN")).thenReturn(true);
+
+        // When & Then
+        assertThrows(CountryAlreadyExistsException.class,
+                () -> countryService.updateCountry(1L, requestDTO));
+        verify(countryRepository, never()).save(any(Country.class));
+    }
+
+    @Test
+    void updateCountry_WhenChangingToNonExistingIsoCode_ShouldSucceed() {
+        // Given - changing ISO code to non-existing one
+        country.setIsoCode("USA");
+        requestDTO.setIsoCode("MEX");
+
+        when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
+        when(countryRepository.existsByIsoCode("MEX")).thenReturn(false);
+        when(countryRepository.save(country)).thenReturn(country);
+        when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
+
+        // When
+        CountryResponseDTO result = countryService.updateCountry(1L, requestDTO);
+
+        // Then
+        assertNotNull(result);
+        verify(countryRepository, times(1)).existsByIsoCode("MEX");
+        verify(countryRepository, times(1)).save(country);
+    }
+
+    // ========== DELETE TESTS ==========
 
     @Test
     void deleteCountry_WhenExists_ShouldDeleteSuccessfully() {
