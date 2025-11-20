@@ -23,6 +23,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
+import org.springframework.data.domain.*;
+import org.mockito.ArgumentCaptor;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -101,18 +106,102 @@ class ExternalExchangeRateServiceTest {
     }
 
     @Test
-    void getAllExchangeRates_ShouldReturnAllRates() {
+    void getAllExchangeRates_ShouldReturnPagedRates() {
+        // Given
+        int page = 0;
+        int size = 200;
+
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
+                1);
 
-        when(exchangeRateRepository.findAll()).thenReturn(rates);
-        when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
+        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
+        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getAllExchangeRates();
+        // When
+        PageResponse<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getAllExchangeRates(page, size);
 
+        // Then
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(exchangeRateRepository).findAll();
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(0, metadata.getCurrentPage());
+        assertEquals(1, metadata.getTotalPages());
+        assertEquals(200, metadata.getPageSize());
+        assertEquals(1, metadata.getTotalElements());
+        assertFalse(metadata.isHasNext());
+        assertFalse(metadata.isHasPrevious());
+
+        verify(exchangeRateRepository).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void getAllExchangeRates_WithMultiplePages_ShouldReturnCorrectMetadata() {
+        // Given
+        int page = 1;
+        int size = 200;
+
+        List<ExternalExchangeRate> rates = List.of(exchangeRate);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
+                450); // Total 450 elements = 3 pages
+
+        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
+        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
+
+        // When
+        PageResponse<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getAllExchangeRates(page, size);
+
+        // Then
+        assertNotNull(result);
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(1, metadata.getCurrentPage());
+        assertEquals(3, metadata.getTotalPages());
+        assertEquals(200, metadata.getPageSize());
+        assertEquals(450, metadata.getTotalElements());
+        assertTrue(metadata.isHasNext());
+        assertTrue(metadata.isHasPrevious());
+    }
+
+    @Test
+    void getAllExchangeRates_ShouldSortByDateDescAndIdDesc() {
+        // Given
+        int page = 0;
+        int size = 200;
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size), 0);
+
+        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
+
+        // When
+        exchangeRateService.getAllExchangeRates(page, size);
+
+        // Then
+        verify(exchangeRateRepository).findAll(pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+
+        assertEquals(page, capturedPageable.getPageNumber());
+        assertEquals(size, capturedPageable.getPageSize());
+
+        Sort sort = capturedPageable.getSort();
+        assertTrue(sort.isSorted());
+        assertEquals(2, sort.stream().count());
+
+        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
+        assertNotNull(dateOrder);
+        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
+
+        Sort.Order idOrder = sort.getOrderFor("id");
+        assertNotNull(idOrder);
+        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     // ========== CREATE TESTS ==========
