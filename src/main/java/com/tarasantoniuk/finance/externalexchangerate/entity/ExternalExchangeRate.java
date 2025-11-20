@@ -11,7 +11,12 @@ import java.util.Objects;
 
 @Entity
 @Table(name = "external_exchange_rates",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"exchange_date", "currency_from_id", "currency_to_id", "source"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"exchange_date", "currency_from_id", "currency_to_id", "source"}
+        ),
+        indexes = {
+                @Index(name = "idx_exchange_rate_date_id", columnList = "exchange_date, id")
+        }
+)
 public class ExternalExchangeRate extends BaseEntity {
 
     @Id

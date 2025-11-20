@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.externalexchangerate.service;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
@@ -10,6 +12,12 @@ import com.tarasantoniuk.finance.externalexchangerate.exception.ExchangeRateNotF
 import com.tarasantoniuk.finance.externalexchangerate.exception.InvalidExchangeRateException;
 import com.tarasantoniuk.finance.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import com.tarasantoniuk.finance.externalexchangerate.repository.ExternalExchangeRateRepository;
+
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,9 +42,31 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getAllExchangeRates() {
-        List<ExternalExchangeRate> rates = exchangeRateRepository.findAll();
-        return exchangeRateMapper.toResponseDTOList(rates);
+    public PageResponse<ExternalExchangeRateResponseDTO> getAllExchangeRates(int page, int size) {
+        // Сортування по даті (найновіші першими) та по ID для стабільності
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
+
+        Page<ExternalExchangeRate> ratePage = exchangeRateRepository.findAll(pageable);
+
+        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+                .stream()
+                .map(exchangeRateMapper::toResponseDTO)
+                .toList();
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(ratePage.getNumber())
+                .totalPages(ratePage.getTotalPages())
+                .pageSize(ratePage.getSize())
+                .totalElements(ratePage.getTotalElements())
+                .hasNext(ratePage.hasNext())
+                .hasPrevious(ratePage.hasPrevious())
+                .build();
+
+        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     @Transactional(readOnly = true)

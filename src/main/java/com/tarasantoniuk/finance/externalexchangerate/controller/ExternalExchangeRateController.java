@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.externalexchangerate.controller;
 
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
 import com.tarasantoniuk.finance.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
 import com.tarasantoniuk.finance.externalexchangerate.service.ExternalExchangeRateService;
@@ -30,11 +31,34 @@ public class ExternalExchangeRateController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all exchange rates", description = "Retrieve a list of all exchange rates. Pagination scheduled soon.")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getAllExchangeRates() {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService.getAllExchangeRates();
-        return ResponseEntity.ok(rates);
+    @Operation(
+            summary = "Get all exchange rates",
+            description = """
+        Retrieve a paginated list of all exchange rates, sorted by date (newest first).
+        
+        Examples:
+        - GET /api/exchange-rates - first page with default settings
+        - GET /api/exchange-rates?page=1 - second page
+        - GET /api/exchange-rates?page=0&size=100 - first page with 100 items
+        """
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getAllExchangeRates(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page", example = "200")
+            @RequestParam(defaultValue = "200") int size,
+            @Parameter(description = "Maximum allowed page size", example = "500")
+            @RequestParam(defaultValue = "500") int maxSize) {
+
+        if (size > maxSize) {
+            size = maxSize;
+        }
+
+        PageResponse<ExternalExchangeRateResponseDTO> response =
+                exchangeRateService.getAllExchangeRates(page, size);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
