@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.externalexchangerate.service;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.currency.entity.Currency;
 import com.tarasantoniuk.finance.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.currency.repository.CurrencyRepository;
@@ -14,21 +16,19 @@ import com.tarasantoniuk.finance.externalexchangerate.repository.ExternalExchang
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import com.tarasantoniuk.finance.common.dto.PageMetadata;
-import com.tarasantoniuk.finance.common.dto.PageResponse;
-import org.springframework.data.domain.*;
-import org.mockito.ArgumentCaptor;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -575,71 +575,149 @@ class ExternalExchangeRateServiceTest {
     }
 
     @Test
-    void getExchangeRatesByCurrencyPair_ShouldReturnFilteredRates() {
+    void getExchangeRatesByCurrencyPair_ShouldReturnPagedRates() {
+        // Given
+        int page = 0;
+        int size = 200;
+
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
+                1);
 
-        when(exchangeRateRepository.findByCurrencyFromIdAndCurrencyToId(1L, 2L)).thenReturn(rates);
-        when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
+        when(exchangeRateRepository.findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class)))
+                .thenReturn(ratePage);
+        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L);
+        // When
+        PageResponse<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, page, size);
 
+        // Then
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByCurrencyFromIdAndCurrencyToId(1L, 2L);
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(0, metadata.getCurrentPage());
+        assertEquals(1, metadata.getTotalPages());
+        assertEquals(200, metadata.getPageSize());
+        assertEquals(1, metadata.getTotalElements());
+        assertFalse(metadata.isHasNext());
+        assertFalse(metadata.isHasPrevious());
+
+        verify(exchangeRateRepository).findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class));
     }
 
     @Test
-    void getExchangeRatesBySource_ShouldReturnFilteredRates() {
-        String source = "NBU";
-        List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+    void getExchangeRatesByCurrencyPair_ShouldSortByDateDescAndIdDesc() {
+        // Given
+        int page = 0;
+        int size = 200;
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        when(exchangeRateRepository.findBySource(source)).thenReturn(rates);
-        when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size), 0);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesBySource(source);
+        when(exchangeRateRepository.findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class)))
+                .thenReturn(ratePage);
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(exchangeRateRepository).findBySource(source);
+        // When
+        exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, page, size);
+
+        // Then
+        verify(exchangeRateRepository).findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+
+        assertEquals(page, capturedPageable.getPageNumber());
+        assertEquals(size, capturedPageable.getPageSize());
+
+        Sort sort = capturedPageable.getSort();
+        assertTrue(sort.isSorted());
+        assertEquals(2, sort.stream().count());
+
+        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
+        assertNotNull(dateOrder);
+        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
+
+        Sort.Order idOrder = sort.getOrderFor("id");
+        assertNotNull(idOrder);
+        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     @Test
-    void getExchangeRatesByDateRange_ShouldReturnFilteredRates() {
+    void getExchangeRatesByDateRange_ShouldReturnPagedRates() {
+        // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
+        int page = 0;
+        int size = 200;
+
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
+                1);
 
-        when(exchangeRateRepository.findByExchangeDateBetween(startDate, endDate)).thenReturn(rates);
-        when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
+        when(exchangeRateRepository.findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class)))
+                .thenReturn(ratePage);
+        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByDateRange(startDate, endDate);
+        // When
+        PageResponse<ExternalExchangeRateResponseDTO> result =
+                exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
 
+        // Then
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDateBetween(startDate, endDate);
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(0, metadata.getCurrentPage());
+        assertEquals(1, metadata.getTotalPages());
+        assertEquals(200, metadata.getPageSize());
+        assertEquals(1, metadata.getTotalElements());
+        assertFalse(metadata.isHasNext());
+        assertFalse(metadata.isHasPrevious());
+
+        verify(exchangeRateRepository).findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class));
     }
 
     @Test
-    void getExchangeRatesByDateRangeAndCurrencyPair_ShouldReturnFilteredRates() {
+    void getExchangeRatesByDateRange_ShouldSortByDateDescAndIdDesc() {
+        // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
-        List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        int page = 0;
+        int size = 200;
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        when(exchangeRateRepository.findByExchangeDateBetweenAndCurrencyFromIdAndCurrencyToId(
-                startDate, endDate, 1L, 2L)).thenReturn(rates);
-        when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
+        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size), 0);
 
-        List<ExternalExchangeRateResponseDTO> result =
-                exchangeRateService.getExchangeRatesByDateRangeAndCurrencyPair(startDate, endDate, 1L, 2L);
+        when(exchangeRateRepository.findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class)))
+                .thenReturn(ratePage);
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDateBetweenAndCurrencyFromIdAndCurrencyToId(
-                startDate, endDate, 1L, 2L);
+        // When
+        exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
+
+        // Then
+        verify(exchangeRateRepository).findByExchangeDateBetween(eq(startDate), eq(endDate), pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+
+        assertEquals(page, capturedPageable.getPageNumber());
+        assertEquals(size, capturedPageable.getPageSize());
+
+        Sort sort = capturedPageable.getSort();
+        assertTrue(sort.isSorted());
+        assertEquals(2, sort.stream().count());
+
+        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
+        assertNotNull(dateOrder);
+        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
+
+        Sort.Order idOrder = sort.getOrderFor("id");
+        assertNotNull(idOrder);
+        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     @Test

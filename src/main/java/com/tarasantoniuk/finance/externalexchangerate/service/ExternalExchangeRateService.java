@@ -12,8 +12,6 @@ import com.tarasantoniuk.finance.externalexchangerate.exception.ExchangeRateNotF
 import com.tarasantoniuk.finance.externalexchangerate.exception.InvalidExchangeRateException;
 import com.tarasantoniuk.finance.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import com.tarasantoniuk.finance.externalexchangerate.repository.ExternalExchangeRateRepository;
-
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -88,34 +86,70 @@ public class ExternalExchangeRateService {
         return exchangeRateMapper.toResponseDTOList(rates);
     }
 
+//    @Transactional(readOnly = true)
+//    public List<ExternalExchangeRateResponseDTO> getExchangeRatesBySource(String source) {
+//        List<ExternalExchangeRate> rates = exchangeRateRepository.findBySource(source);
+//        return exchangeRateMapper.toResponseDTOList(rates);
+//    }
+
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesByCurrencyPair(Long currencyFromId, Long currencyToId) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findByCurrencyFromIdAndCurrencyToId(currencyFromId, currencyToId);
-        return exchangeRateMapper.toResponseDTOList(rates);
+    public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByDateRange(
+            LocalDate startDate, LocalDate endDate, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
+
+        Page<ExternalExchangeRate> ratePage = exchangeRateRepository
+                .findByExchangeDateBetween(startDate, endDate, pageable);
+
+        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+                .stream()
+                .map(exchangeRateMapper::toResponseDTO)
+                .toList();
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(ratePage.getNumber())
+                .totalPages(ratePage.getTotalPages())
+                .pageSize(ratePage.getSize())
+                .totalElements(ratePage.getTotalElements())
+                .hasNext(ratePage.hasNext())
+                .hasPrevious(ratePage.hasPrevious())
+                .build();
+
+        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesBySource(String source) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository.findBySource(source);
-        return exchangeRateMapper.toResponseDTOList(rates);
-    }
+    public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByCurrencyPair(
+            Long currencyFromId, Long currencyToId, int page, int size) {
 
-    @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDateRange(
-            LocalDate startDate, LocalDate endDate) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findByExchangeDateBetween(startDate, endDate);
-        return exchangeRateMapper.toResponseDTOList(rates);
-    }
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
 
-    @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDateRangeAndCurrencyPair(
-            LocalDate startDate, LocalDate endDate, Long currencyFromId, Long currencyToId) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findByExchangeDateBetweenAndCurrencyFromIdAndCurrencyToId(
-                        startDate, endDate, currencyFromId, currencyToId);
-        return exchangeRateMapper.toResponseDTOList(rates);
+        Page<ExternalExchangeRate> ratePage = exchangeRateRepository
+                .findByCurrencyFromIdAndCurrencyToId(currencyFromId, currencyToId, pageable);
+
+        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+                .stream()
+                .map(exchangeRateMapper::toResponseDTO)
+                .toList();
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(ratePage.getNumber())
+                .totalPages(ratePage.getTotalPages())
+                .pageSize(ratePage.getSize())
+                .totalElements(ratePage.getTotalElements())
+                .hasNext(ratePage.hasNext())
+                .hasPrevious(ratePage.hasPrevious())
+                .build();
+
+        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     @Transactional(readOnly = true)
