@@ -30,7 +30,7 @@ public class ExternalExchangeRateController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all exchange rates", description = "Retrieve a list of all exchange rates")
+    @Operation(summary = "Get all exchange rates", description = "Retrieve a list of all exchange rates. Pagination scheduled soon.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getAllExchangeRates() {
         List<ExternalExchangeRateResponseDTO> rates = exchangeRateService.getAllExchangeRates();
