@@ -226,55 +226,230 @@ class ExternalExchangeRateControllerIntegrationTest {
     }
 
     @Test
-    void getExchangeRatesByCurrencyPair_ShouldReturnFilteredList() throws Exception {
+    void getExchangeRatesByCurrencyPair_WithDefaultParameters_ShouldReturnPagedRates() throws Exception {
         // Given
         ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
         rate.setId(1L);
         rate.setRate(BigDecimal.valueOf(0.92));
 
-        when(exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L))
-                .thenReturn(List.of(rate));
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(200)
+                .totalElements(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        when(exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, 0, 200))
+                .thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/currency-pair")
                         .param("currencyFromId", "1")
                         .param("currencyToId", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].rate").value(0.92))
+                .andExpect(jsonPath("$.metadata.currentPage").value(0))
+                .andExpect(jsonPath("$.metadata.totalPages").value(1))
+                .andExpect(jsonPath("$.metadata.pageSize").value(200))
+                .andExpect(jsonPath("$.metadata.totalElements").value(1));
     }
 
     @Test
-    void getExchangeRatesBySource_ShouldReturnFilteredList() throws Exception {
+    void getExchangeRatesByCurrencyPair_WithCustomPageAndSize_ShouldReturnPagedRates() throws Exception {
         // Given
         ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
         rate.setId(1L);
+        rate.setRate(BigDecimal.valueOf(0.92));
 
-        when(exchangeRateService.getExchangeRatesBySource("NBU"))
-                .thenReturn(List.of(rate));
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(1)
+                .totalPages(5)
+                .pageSize(100)
+                .totalElements(450)
+                .hasNext(true)
+                .hasPrevious(true)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        when(exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, 1, 100))
+                .thenReturn(pageResponse);
 
         // When & Then
-        mockMvc.perform(get("/api/exchange-rates/source/NBU"))
+        mockMvc.perform(get("/api/exchange-rates/currency-pair")
+                        .param("currencyFromId", "1")
+                        .param("currencyToId", "2")
+                        .param("page", "1")
+                        .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.metadata.currentPage").value(1))
+                .andExpect(jsonPath("$.metadata.totalPages").value(5))
+                .andExpect(jsonPath("$.metadata.hasNext").value(true))
+                .andExpect(jsonPath("$.metadata.hasPrevious").value(true));
     }
 
     @Test
-    void getExchangeRatesByDateRange_ShouldReturnFilteredList() throws Exception {
+    void getExchangeRatesByCurrencyPair_WhenSizeExceedsMaxSize_ShouldLimitToMaxSize() throws Exception {
+        // Given
+        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        rate.setId(1L);
+        rate.setRate(BigDecimal.valueOf(0.92));
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(500)
+                .totalElements(100)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        // Requesting 1000 but should be limited to 500 (maxSize)
+        when(exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, 0, 500))
+                .thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/exchange-rates/currency-pair")
+                        .param("currencyFromId", "1")
+                        .param("currencyToId", "2")
+                        .param("size", "1000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.pageSize").value(500));
+    }
+
+    @Test
+    void getExchangeRatesByDateRange_WithDefaultParameters_ShouldReturnPagedRates() throws Exception {
         // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
         ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
         rate.setId(1L);
 
-        when(exchangeRateService.getExchangeRatesByDateRange(startDate, endDate))
-                .thenReturn(List.of(rate));
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(200)
+                .totalElements(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        when(exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, 0, 200))
+                .thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/exchange-rates/date-range")
                         .param("startDate", "2024-01-01")
                         .param("endDate", "2024-01-31"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.metadata.currentPage").value(0))
+                .andExpect(jsonPath("$.metadata.totalPages").value(1))
+                .andExpect(jsonPath("$.metadata.pageSize").value(200))
+                .andExpect(jsonPath("$.metadata.totalElements").value(1));
+    }
+
+    @Test
+    void getExchangeRatesByDateRange_WithCustomPageAndSize_ShouldReturnPagedRates() throws Exception {
+        // Given
+        LocalDate startDate = LocalDate.of(2024, 1, 1);
+        LocalDate endDate = LocalDate.of(2024, 12, 31);
+        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        rate.setId(1L);
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(2)
+                .totalPages(10)
+                .pageSize(50)
+                .totalElements(500)
+                .hasNext(true)
+                .hasPrevious(true)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        when(exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, 2, 50))
+                .thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/exchange-rates/date-range")
+                        .param("startDate", "2024-01-01")
+                        .param("endDate", "2024-12-31")
+                        .param("page", "2")
+                        .param("size", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.metadata.currentPage").value(2))
+                .andExpect(jsonPath("$.metadata.totalPages").value(10))
+                .andExpect(jsonPath("$.metadata.hasNext").value(true))
+                .andExpect(jsonPath("$.metadata.hasPrevious").value(true));
+    }
+
+    @Test
+    void getExchangeRatesByDateRange_WhenSizeExceedsMaxSize_ShouldLimitToMaxSize() throws Exception {
+        // Given
+        LocalDate startDate = LocalDate.of(2024, 1, 1);
+        LocalDate endDate = LocalDate.of(2024, 12, 31);
+        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        rate.setId(1L);
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(500)
+                .totalElements(100)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+                        .content(List.of(rate))
+                        .metadata(metadata)
+                        .build();
+
+        // Requesting 1000 but should be limited to 500 (maxSize)
+        when(exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, 0, 500))
+                .thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/exchange-rates/date-range")
+                        .param("startDate", "2024-01-01")
+                        .param("endDate", "2024-12-31")
+                        .param("size", "1000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.pageSize").value(500));
     }
 
     @Test

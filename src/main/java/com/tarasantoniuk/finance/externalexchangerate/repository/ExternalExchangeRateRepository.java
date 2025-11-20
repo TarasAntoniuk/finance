@@ -1,6 +1,8 @@
 package com.tarasantoniuk.finance.externalexchangerate.repository;
 
 import com.tarasantoniuk.finance.externalexchangerate.entity.ExternalExchangeRate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -56,17 +58,23 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
     List<ExternalExchangeRate> findByExchangeDateAndCurrencyFromId(LocalDate exchangeDate, Long currencyFromId);
 
     @Query("""
-    SELECT e FROM ExternalExchangeRate e 
-    WHERE e.currencyFrom.id = :currencyFromId 
-    AND e.exchangeDate = (
-        SELECT MAX(e2.exchangeDate) 
-        FROM ExternalExchangeRate e2 
-        WHERE e2.currencyFrom.id = :currencyFromId 
-        AND e2.exchangeDate <= :date
-    )
-    """)
+            SELECT e FROM ExternalExchangeRate e 
+            WHERE e.currencyFrom.id = :currencyFromId 
+            AND e.exchangeDate = (
+                SELECT MAX(e2.exchangeDate) 
+                FROM ExternalExchangeRate e2 
+                WHERE e2.currencyFrom.id = :currencyFromId 
+                AND e2.exchangeDate <= :date
+            )
+            """)
     List<ExternalExchangeRate> findLatestRatesByCurrencyFromBeforeDate(
             @Param("date") LocalDate date,
             @Param("currencyFromId") Long currencyFromId
     );
+
+    Page<ExternalExchangeRate> findByCurrencyFromIdAndCurrencyToId(
+            Long currencyFromId, Long currencyToId, Pageable pageable);
+
+    Page<ExternalExchangeRate> findByExchangeDateBetween(
+            LocalDate startDate, LocalDate endDate, Pageable pageable);
 }

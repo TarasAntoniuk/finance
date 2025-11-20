@@ -34,13 +34,13 @@ public class ExternalExchangeRateController {
     @Operation(
             summary = "Get all exchange rates",
             description = """
-        Retrieve a paginated list of all exchange rates, sorted by date (newest first).
-        
-        Examples:
-        - GET /api/exchange-rates - first page with default settings
-        - GET /api/exchange-rates?page=1 - second page
-        - GET /api/exchange-rates?page=0&size=100 - first page with 100 items
-        """
+                    Retrieve a paginated list of all exchange rates, sorted by date (newest first).
+                    
+                    Examples:
+                    - GET /api/exchange-rates - first page with default settings
+                    - GET /api/exchange-rates?page=1 - second page
+                    - GET /api/exchange-rates?page=0&size=100 - first page with 100 items
+                    """
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getAllExchangeRates(
@@ -97,59 +97,72 @@ public class ExternalExchangeRateController {
         return ResponseEntity.ok(rates);
     }
 
+    @GetMapping("/date-range")
+    @Operation(
+            summary = "Get exchange rates by date range",
+            description = """
+                    Retrieve paginated exchange rates within a date range, sorted by date (newest first).
+                    
+                    Examples:
+                    - GET /api/exchange-rates/date-range?startDate=2024-01-01&endDate=2024-12-31
+                    - GET /api/exchange-rates/date-range?startDate=2024-01-01&endDate=2024-12-31&page=1&size=100
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getExchangeRatesByDateRange(
+            @Parameter(description = "Start date", required = true, example = "2024-01-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "End date", required = true, example = "2024-12-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page", example = "200")
+            @RequestParam(defaultValue = "200") int size,
+            @Parameter(description = "Maximum allowed page size", example = "500")
+            @RequestParam(defaultValue = "500") int maxSize) {
+
+        if (size > maxSize) {
+            size = maxSize;
+        }
+
+        PageResponse<ExternalExchangeRateResponseDTO> response =
+                exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/currency-pair")
-    @Operation(summary = "Get exchange rates by currency pair",
-            description = "Retrieve all exchange rates for a specific currency pair")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesByCurrencyPair(
+    @Operation(
+            summary = "Get exchange rates by currency pair",
+            description = """
+                    Retrieve paginated exchange rates for a specific currency pair, sorted by date (newest first).
+                    
+                    Examples:
+                    - GET /api/exchange-rates/currency-pair?currencyFromId=1&currencyToId=2
+                    - GET /api/exchange-rates/currency-pair?currencyFromId=1&currencyToId=2&page=1&size=100
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getExchangeRatesByCurrencyPair(
             @Parameter(description = "Currency From ID", required = true, example = "1")
             @RequestParam Long currencyFromId,
             @Parameter(description = "Currency To ID", required = true, example = "2")
-            @RequestParam Long currencyToId) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
-                .getExchangeRatesByCurrencyPair(currencyFromId, currencyToId);
-        return ResponseEntity.ok(rates);
-    }
+            @RequestParam Long currencyToId,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page", example = "200")
+            @RequestParam(defaultValue = "200") int size,
+            @Parameter(description = "Maximum allowed page size", example = "500")
+            @RequestParam(defaultValue = "500") int maxSize) {
 
-    @GetMapping("/source/{source}")
-    @Operation(summary = "Get exchange rates by source",
-            description = "Retrieve all exchange rates from a specific source")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesBySource(
-            @Parameter(description = "Source name", required = true, example = "ECB")
-            @PathVariable String source) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService.getExchangeRatesBySource(source);
-        return ResponseEntity.ok(rates);
-    }
+        if (size > maxSize) {
+            size = maxSize;
+        }
 
-    @GetMapping("/date-range")
-    @Operation(summary = "Get exchange rates by date range",
-            description = "Retrieve exchange rates within a date range")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesByDateRange(
-            @Parameter(description = "Start date", required = true, example = "2024-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date", required = true, example = "2024-01-31")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
-                .getExchangeRatesByDateRange(startDate, endDate);
-        return ResponseEntity.ok(rates);
-    }
+        PageResponse<ExternalExchangeRateResponseDTO> response =
+                exchangeRateService.getExchangeRatesByCurrencyPair(currencyFromId, currencyToId, page, size);
 
-    @GetMapping("/date-range/currency-pair")
-    @Operation(summary = "Get exchange rates by date range and currency pair",
-            description = "Retrieve exchange rates for a currency pair within a date range")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesByDateRangeAndCurrencyPair(
-            @Parameter(description = "Start date", required = true, example = "2024-01-01")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date", required = true, example = "2024-01-31")
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @Parameter(description = "Currency From ID", required = true) @RequestParam Long currencyFromId,
-            @Parameter(description = "Currency To ID", required = true) @RequestParam Long currencyToId) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
-                .getExchangeRatesByDateRangeAndCurrencyPair(startDate, endDate, currencyFromId, currencyToId);
-        return ResponseEntity.ok(rates);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/latest/{date}")
