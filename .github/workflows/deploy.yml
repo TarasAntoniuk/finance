@@ -127,21 +127,27 @@ jobs:
           
             echo ""
             echo "🏥 Health check (with retry)..."
+            SUCCESS=false
             for i in {1..30}; do
               if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
                 echo ""
                 echo "✅ Application is healthy!"
-                exit 0
+                SUCCESS=true
+                break
               fi
               echo "⏳ Attempt $i/30 - waiting for application..."
               sleep 2
             done
           
-            echo ""
-            echo "❌ Health check failed after 60 seconds"
-            echo "📋 Application logs:"
-            docker logs finance-app --tail 50
-            exit 1
+            if [ "$SUCCESS" = true ]; then
+              exit 0
+            else
+              echo ""
+              echo "❌ Health check failed after 60 seconds"
+              echo "📋 Application logs:"
+              docker logs finance-app --tail 50
+              exit 1
+            fi
           ENDSSH
 
       - name: Deployment summary
