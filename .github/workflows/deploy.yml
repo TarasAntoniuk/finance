@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - stable
   workflow_dispatch:
 
 env:
@@ -23,12 +24,16 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
 
       - name: Run tests
         run: mvn clean test -Dspring.profiles.active=test
 
       - name: Package JAR
-        run: mvn clean package -DskipTests
+        run: |
+          mvn clean package -DskipTests
+          echo "📦 Built artifact:"
+          ls -lh target/*.jar
 
       - name: Setup SSH key
         env:
@@ -37,6 +42,24 @@ jobs:
           mkdir -p ~/.ssh
           printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+      - name: Clean up old Docker resources
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+            set -e
+            echo "🧹 Cleaning old Docker resources..."
+          
+            # Clean Docker
+            docker image prune -a -f || true
+            docker container prune -f || true
+          
+            # Remove old finance-core if exists
+            sudo rm -rf /srv/apps/finance-core 2>/dev/null || true
+          
+            echo "✅ Cleanup completed"
+            df -h | grep /dev/vda3
+          ENDSSH
 
       - name: Prepare deployment directories
         run: |
@@ -64,19 +87,24 @@ jobs:
             docker/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance/docker/
 
-      - name: Deploy with Docker Compose (HTTP only)
+      - name: Deploy with Docker Compose
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             cd /srv/apps/finance/docker
+          
+            echo "🔄 Stopping old containers..."
             docker compose down --remove-orphans || true
             docker rm -f finance-app finance-nginx finance-certbot finance-db 2>/dev/null || true
+          
+            echo "🚀 Starting new containers..."
             docker compose up -d --build app nginx
-            echo "✅ App + Nginx (HTTP) up for Certbot"
+          
+            echo "✅ Containers started"
           ENDSSH
 
-      - name: Deploy and setup SSL
+      - name: Setup SSL certificates
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
@@ -84,25 +112,16 @@ jobs:
             cd /srv/apps/finance/docker
 
             if [ ! -d "./certs/live/api.tarasantoniuk.com" ]; then
-              echo "🔐 Setting up SSL certificates for the first time..."
+              echo "🔐 Setting up SSL certificates..."
               bash init-letsencrypt.sh
             else
-              echo "✅ SSL certificates already exist, skipping initialization"
+              echo "✅ SSL certificates already exist"
             fi
 
+            echo "🔄 Starting all services with SSL..."
             docker compose up -d
-
+          
             echo "🚀 Deployment completed"
-          ENDSSH
-
-      - name: Restart Nginx with HTTPS
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
-            set -e
-            cd /srv/apps/finance/docker
-            docker compose up -d --build nginx
-            echo "✅ Nginx restarted with SSL"
           ENDSSH
 
       - name: Verify deployment
@@ -110,10 +129,36 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
-            sleep 10
-            echo "📦 Containers:"
+          
+            echo "📦 Running containers:"
             docker ps
+          
             echo ""
-            echo "🏥 Health check:"
-            curl -f http://localhost:8080/actuator/health || echo "⚠️ Health check failed"
+            echo "🏥 Health check (with retry)..."
+            for i in {1..30}; do
+              if curl -f http://localhost:8080/actuator/health 2>/dev/null; then
+                echo ""
+                echo "✅ Application is healthy!"
+                exit 0
+              fi
+              echo "⏳ Attempt $i/30 - waiting for application..."
+              sleep 2
+            done
+          
+            echo ""
+            echo "❌ Health check failed after 60 seconds"
+            echo "📋 Application logs:"
+            docker logs finance-app --tail 50
+            exit 1
           ENDSSH
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ Deployment to production completed successfully!"
+            echo "🌐 API: https://api.tarasantoniuk.com"
+            echo "📚 Docs: https://api.tarasantoniuk.com/swagger-ui/index.html"
+          else
+            echo "❌ Deployment failed! Check logs above."
+          fi
