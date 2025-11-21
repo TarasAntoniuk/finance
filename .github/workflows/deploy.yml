@@ -68,8 +68,23 @@ jobs:
             set -e
             APP_DIR=/srv/apps/finance
             sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs,certs/webroot}
-            sudo chown -R deploy:deploy $APP_DIR
+            sudo chown -R deploy:deploy $APP_DIR  
+            sudo chmod -R 755 $APP_DIR/docker/certs  
             echo "✅ Directories ready"
+          ENDSSH
+
+      - name: Fix permissions for SSL certificates
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
+            set -e
+            cd /srv/apps/finance/docker
+          
+            # Ensure proper ownership and permissions
+            sudo chown -R deploy:deploy certs/ logs/ 2>/dev/null || true
+            sudo chmod -R 755 certs/ 2>/dev/null || true
+          
+            echo "✅ Permissions configured"
           ENDSSH
 
       - name: Install rsync
