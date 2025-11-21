@@ -1,4 +1,4 @@
-name: CI/CD Deploy (new)
+name: CI/CD Deploy
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
-            APP_DIR=/srv/apps/finance-core
+            APP_DIR=/srv/apps/finance
             sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs,certs/webroot}
             sudo chown -R deploy:deploy $APP_DIR
             echo "✅ Directories ready"
@@ -56,23 +56,22 @@ jobs:
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
             target/*.jar \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/app/app.jar
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance/docker/app/app.jar
 
       - name: Copy Docker files
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
             docker/ \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance-core/docker/
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance/docker/
 
       - name: Deploy with Docker Compose (HTTP only)
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
-            cd /srv/apps/finance-core/docker
+            cd /srv/apps/finance/docker
             docker compose down --remove-orphans || true
-            docker rm -f finance-core-app finance-core-nginx finance-core-certbot finance-core-db 2>/dev/null || true
-            # Запускаємо Nginx і app без SSL, щоб Certbot зміг пройти HTTP challenge
+            docker rm -f finance-app finance-nginx finance-certbot finance-db 2>/dev/null || true
             docker compose up -d --build app nginx
             echo "✅ App + Nginx (HTTP) up for Certbot"
           ENDSSH
@@ -82,9 +81,8 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
-            cd /srv/apps/finance-core/docker
+            cd /srv/apps/finance/docker
 
-            # Перевірити чи існують сертифікати
             if [ ! -d "./certs/live/api.tarasantoniuk.com" ]; then
               echo "🔐 Setting up SSL certificates for the first time..."
               bash init-letsencrypt.sh
@@ -92,7 +90,6 @@ jobs:
               echo "✅ SSL certificates already exist, skipping initialization"
             fi
 
-            # Запустити або перезапустити сервіси
             docker compose up -d
 
             echo "🚀 Deployment completed"
@@ -103,7 +100,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
-            cd /srv/apps/finance-core/docker
+            cd /srv/apps/finance/docker
             docker compose up -d --build nginx
             echo "✅ Nginx restarted with SSL"
           ENDSSH

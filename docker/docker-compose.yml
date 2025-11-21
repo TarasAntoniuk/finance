@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
-    container_name: finance-core-db
+    container_name: finance-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: test_user
@@ -16,7 +16,7 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: finance-core-app
+    container_name: finance-app
     restart: unless-stopped
     depends_on:
       - db
@@ -30,7 +30,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: finance-core-nginx
+    container_name: finance-nginx
     restart: unless-stopped
     depends_on:
       - app
@@ -46,7 +46,7 @@ services:
 
   certbot:
     image: certbot/certbot
-    container_name: finance-core-certbot
+    container_name: finance-certbot
     volumes:
       - ./certs:/etc/letsencrypt
       - ./webroot:/var/www/certbot

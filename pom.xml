@@ -9,10 +9,11 @@
         <relativePath/>
     </parent>
     <groupId>com.tarasantoniuk</groupId>
-    <artifactId>finance-core</artifactId>
+    <artifactId>finance</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>finance-core</name>
+    <name>finance</name>
     <description>Prototype of accounting system</description>
+
 
     <properties>
         <java.version>21</java.version>

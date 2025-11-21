@@ -36,10 +36,10 @@ Explore the interactive API documentation:
 **Version**: 0.0.3  
 **Status**: Prototype / Active Development
 
-![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/jacoco.svg)
-![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/branches.svg)
+![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)
+![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/branches.svg)
 
-[![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance-core/badges/jacoco.svg)](https://github.com/TarasAntoniuk/finance-core/actions)
+[![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)](https://github.com/TarasAntoniuk/finance/actions)
 
 ### Implemented Features
 
@@ -87,7 +87,7 @@ Explore the interactive API documentation:
 ```bash
 # Clone repository
 git clone [repository-url]
-cd finance-core
+cd finance
 
 # Create configuration file
 # src/main/resources/env/env.dev.properties

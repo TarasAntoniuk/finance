@@ -177,8 +177,8 @@ mvn org.owasp:dependency-check-maven:check
 open target/dependency-check-report.html
 
 # Build Docker image
-docker build -t finance-core:test .
-docker run -p 8080:8080 finance-core:test
+docker build -t finance:test .
+docker run -p 8080:8080 finance:test
 ```
 
 ---
@@ -201,7 +201,7 @@ mvn clean install
 java --version  # Should be 21
 
 # Check Dockerfile syntax
-docker build --no-cache -t finance-core:test .
+docker build --no-cache -t finance:test .
 ```
 
 ### GitHub Actions fails:

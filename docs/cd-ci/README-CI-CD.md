@@ -195,9 +195,9 @@ This title will become the single commit message in stable.
 ### Add badges to README.md:
 
 ```markdown
-[![CI/CD](https://github.com/yourusername/finance-core/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/yourusername/finance-core/actions/workflows/ci-cd.yml)
-[![Coverage](.github/badges/jacoco.svg)](https://github.com/yourusername/finance-core/actions)
-[![codecov](https://codecov.io/gh/yourusername/finance-core/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/finance-core)
+[![CI/CD](https://github.com/TarasAntoniuk/finance/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/TarasAntoniuk/finance/actions/workflows/ci-cd.yml)
+[![Coverage](.github/badges/jacoco.svg)](https://github.com/TarasAntoniuk/finance/actions)
+[![codecov](https://codecov.io/gh/TarasAntoniuk/finance/branch/main/graph/badge.svg)](https://codecov.io/gh/TarasAntoniuk/finance)
 ```
 
 ### View results:
@@ -229,14 +229,14 @@ open target/dependency-check-report.html
 ### Run with Docker:
 ```bash
 # Build image
-docker build -t finance-core:local .
+docker build -t finance:local .
 
 # Run container
 docker run -p 8080:8080 \
   -e DB_URL=jdbc:postgresql://host.docker.internal:5432/finance \
   -e DB_USERNAME=postgres \
   -e DB_PASSWORD=postgres \
-  finance-core:local
+  finance:local
 ```
 
 ---
@@ -259,7 +259,7 @@ mvn clean install
 java --version  # Should be 21
 
 # Check Dockerfile syntax
-docker build --no-cache -t finance-core:test .
+docker build --no-cache -t finance:test .
 ```
 
 ### GitHub Actions fails
