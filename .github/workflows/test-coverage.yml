@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - dev
-      - stable  # 👈 Виправлено
+      - stable
   pull_request:
 
 permissions:
