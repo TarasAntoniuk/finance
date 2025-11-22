@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.core.counterparty.service.impl;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
@@ -7,16 +9,17 @@ import com.tarasantoniuk.finance.core.counterparty.exception.CounterpartyNotFoun
 import com.tarasantoniuk.finance.core.counterparty.exception.DuplicateCounterpartyException;
 import com.tarasantoniuk.finance.core.counterparty.mapper.CounterpartyMapper;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
-import com.tarasantoniuk.finance.core.counterparty.service.impl.CounterpartyServiceImpl;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -166,33 +169,142 @@ class CounterpartyServiceImplTest {
     // ========== GET ALL TESTS ==========
 
     @Test
-    void getAll_ShouldReturnAllCounterparties() {
+    void getAll_ShouldReturnPagedCounterparties() {
         // Given
+        int page = 0;
+        int size = 100;
+
         List<Counterparty> counterparties = List.of(counterparty);
-        when(counterpartyRepository.findAll()).thenReturn(counterparties);
+        Page<Counterparty> counterpartyPage = new PageImpl<>(counterparties,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
+                1);
+
+        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
         // When
-        List<CounterpartyResponseDto> result = counterpartyService.getAll();
+        PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
         // Then
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(counterpartyRepository).findAll();
+        assertNotNull(result.getContent());
+        assertEquals(1, result.getContent().size());
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(0, metadata.getCurrentPage());
+        assertEquals(1, metadata.getTotalPages());
+        assertEquals(100, metadata.getPageSize());
+        assertEquals(1, metadata.getTotalElements());
+        assertFalse(metadata.isHasNext());
+        assertFalse(metadata.isHasPrevious());
+
+        verify(counterpartyRepository).findAll(any(Pageable.class));
     }
 
     @Test
-    void getAll_WhenEmpty_ShouldReturnEmptyList() {
+    void getAll_WithMultiplePages_ShouldReturnCorrectMetadata() {
         // Given
-        when(counterpartyRepository.findAll()).thenReturn(List.of());
+        int page = 1;
+        int size = 100;
+
+        List<Counterparty> counterparties = List.of(counterparty);
+        Page<Counterparty> counterpartyPage = new PageImpl<>(counterparties,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
+                250); // Total 250 elements = 3 pages
+
+        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
         // When
-        List<CounterpartyResponseDto> result = counterpartyService.getAll();
+        PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
         // Then
         assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(counterpartyRepository).findAll();
+
+        PageMetadata metadata = result.getMetadata();
+        assertEquals(1, metadata.getCurrentPage());
+        assertEquals(3, metadata.getTotalPages());
+        assertEquals(100, metadata.getPageSize());
+        assertEquals(250, metadata.getTotalElements());
+        assertTrue(metadata.isHasNext());
+        assertTrue(metadata.isHasPrevious());
+    }
+
+    @Test
+    void getAll_WhenEmpty_ShouldReturnEmptyPage() {
+        // Given
+        int page = 0;
+        int size = 100;
+
+        Page<Counterparty> counterpartyPage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
+                0);
+
+        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+
+        // When
+        PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
+
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.getContent());
+        assertTrue(result.getContent().isEmpty());
+        assertEquals(0, result.getMetadata().getTotalElements());
+        verify(counterpartyRepository).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void getAll_ShouldSortByNameAscAndIdAsc() {
+        // Given
+        int page = 0;
+        int size = 100;
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        Page<Counterparty> counterpartyPage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size), 0);
+
+        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+
+        // When
+        counterpartyService.getAll(page, size);
+
+        // Then
+        verify(counterpartyRepository).findAll(pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+
+        assertEquals(page, capturedPageable.getPageNumber());
+        assertEquals(size, capturedPageable.getPageSize());
+
+        Sort sort = capturedPageable.getSort();
+        assertTrue(sort.isSorted());
+        assertEquals(2, sort.stream().count());
+
+        Sort.Order nameOrder = sort.getOrderFor("name");
+        assertNotNull(nameOrder);
+        assertEquals(Sort.Direction.ASC, nameOrder.getDirection());
+
+        Sort.Order idOrder = sort.getOrderFor("id");
+        assertNotNull(idOrder);
+        assertEquals(Sort.Direction.ASC, idOrder.getDirection());
+    }
+
+    @Test
+    void getAll_WithCustomPageSize_ShouldUseProvidedSize() {
+        // Given
+        int page = 0;
+        int size = 50;
+
+        Page<Counterparty> counterpartyPage = new PageImpl<>(List.of(),
+                PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
+                0);
+
+        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+
+        // When
+        PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
+
+        // Then
+        assertEquals(50, result.getMetadata().getPageSize());
     }
 
     // ========== UPDATE TESTS ==========

@@ -1,7 +1,8 @@
 package com.tarasantoniuk.finance.core.counterparty.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.core.counterparty.controller.CounterpartyController;
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
@@ -106,8 +107,8 @@ class CounterpartyControllerTest {
 
     @Test
     void create_WhenInvalidData_ShouldReturnBadRequest() throws Exception {
-        // Given
-        requestDto.setCode(null); // Required field is null
+        // Given - required field is null
+        requestDto.setCode(null);
 
         // When & Then
         mockMvc.perform(post("/api/counterparties")
@@ -151,38 +152,199 @@ class CounterpartyControllerTest {
     // ========== GET ALL TESTS ==========
 
     @Test
-    void getAll_ShouldReturnAllCounterparties() throws Exception {
+    void getAll_WithDefaultParameters_ShouldReturnPagedCounterparties() throws Exception {
         // Given
         CounterpartyResponseDto responseDto2 = new CounterpartyResponseDto();
         responseDto2.setId(2L);
         responseDto2.setCode("CP002");
         responseDto2.setName("Second Counterparty");
 
-        when(counterpartyService.getAll()).thenReturn(List.of(responseDto, responseDto2));
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(50)
+                .totalElements(2)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of(responseDto, responseDto2))
+                        .metadata(metadata)
+                        .build();
+
+        when(counterpartyService.getAll(0, 50)).thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/counterparties"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].code").value("CP001"))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].code").value("CP002"));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].code").value("CP001"))
+                .andExpect(jsonPath("$.content[1].id").value(2L))
+                .andExpect(jsonPath("$.content[1].code").value("CP002"))
+                .andExpect(jsonPath("$.metadata.currentPage").value(0))
+                .andExpect(jsonPath("$.metadata.totalPages").value(1))
+                .andExpect(jsonPath("$.metadata.pageSize").value(50))
+                .andExpect(jsonPath("$.metadata.totalElements").value(2))
+                .andExpect(jsonPath("$.metadata.hasNext").value(false))
+                .andExpect(jsonPath("$.metadata.hasPrevious").value(false));
 
-        verify(counterpartyService, times(1)).getAll();
+        verify(counterpartyService, times(1)).getAll(0, 50);
     }
 
     @Test
-    void getAll_WhenEmpty_ShouldReturnEmptyList() throws Exception {
+    void getAll_WithCustomPageAndSize_ShouldReturnPagedCounterparties() throws Exception {
         // Given
-        when(counterpartyService.getAll()).thenReturn(List.of());
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(1)
+                .totalPages(3)
+                .pageSize(50)
+                .totalElements(150)
+                .hasNext(true)
+                .hasPrevious(true)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of(responseDto))
+                        .metadata(metadata)
+                        .build();
+
+        when(counterpartyService.getAll(1, 50)).thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/counterparties")
+                        .param("page", "1")
+                        .param("size", "50"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.metadata.currentPage").value(1))
+                .andExpect(jsonPath("$.metadata.totalPages").value(3))
+                .andExpect(jsonPath("$.metadata.pageSize").value(50))
+                .andExpect(jsonPath("$.metadata.totalElements").value(150))
+                .andExpect(jsonPath("$.metadata.hasNext").value(true))
+                .andExpect(jsonPath("$.metadata.hasPrevious").value(true));
+
+        verify(counterpartyService, times(1)).getAll(1, 50);
+    }
+
+    @Test
+    void getAll_WhenSizeExceedsMaxSize_ShouldLimitToMaxSize() throws Exception {
+        // Given
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(1)
+                .pageSize(500)
+                .totalElements(10)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of(responseDto))
+                        .metadata(metadata)
+                        .build();
+
+        // Requesting 1000 but should be limited to 500 (maxSize)
+        when(counterpartyService.getAll(0, 500)).thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/counterparties")
+                        .param("size", "1000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.pageSize").value(500));
+
+        verify(counterpartyService, times(1)).getAll(0, 500);
+    }
+
+    @Test
+    void getAll_WhenEmpty_ShouldReturnEmptyPage() throws Exception {
+        // Given
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(0)
+                .pageSize(50)
+                .totalElements(0)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of())
+                        .metadata(metadata)
+                        .build();
+
+        when(counterpartyService.getAll(0, 50)).thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/counterparties"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
+                .andExpect(jsonPath("$.content", hasSize(0)))
+                .andExpect(jsonPath("$.metadata.totalElements").value(0));
 
-        verify(counterpartyService, times(1)).getAll();
+        verify(counterpartyService, times(1)).getAll(0, 50);
+    }
+
+    @Test
+    void getAll_WithOnlyPageParameter_ShouldUseDefaultSize() throws Exception {
+        // Given
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(2)
+                .totalPages(5)
+                .pageSize(50)
+                .totalElements(250)
+                .hasNext(true)
+                .hasPrevious(true)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of(responseDto))
+                        .metadata(metadata)
+                        .build();
+
+        when(counterpartyService.getAll(2, 50)).thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/counterparties")
+                        .param("page", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.pageSize").value(50));
+
+        verify(counterpartyService, times(1)).getAll(2, 50);
+    }
+
+    @Test
+    void getAll_WithOnlySizeParameter_ShouldUseDefaultPage() throws Exception {
+        // Given
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(0)
+                .totalPages(10)
+                .pageSize(20)
+                .totalElements(200)
+                .hasNext(true)
+                .hasPrevious(false)
+                .build();
+
+        PageResponse<CounterpartyResponseDto> pageResponse =
+                PageResponse.<CounterpartyResponseDto>builder()
+                        .content(List.of(responseDto))
+                        .metadata(metadata)
+                        .build();
+
+        when(counterpartyService.getAll(0, 20)).thenReturn(pageResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/counterparties")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.metadata.currentPage").value(0));
+
+        verify(counterpartyService, times(1)).getAll(0, 20);
     }
 
     // ========== UPDATE TESTS ==========
