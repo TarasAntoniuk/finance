@@ -10,7 +10,12 @@ import jakarta.validation.constraints.Size;
 import java.util.Objects;
 
 @Entity
-@Table(name = "counterparties")
+@Table(
+        name = "counterparties",
+        indexes = {
+                @Index(name = "idx_counterparty_name_id", columnList = "name, id")
+        }
+)
 public class Counterparty extends BaseEntity {
 
     @Id

@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.core.counterparty.service;
 
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
-
-import java.util.List;
 
 public interface CounterpartyService {
 
@@ -11,7 +10,7 @@ public interface CounterpartyService {
 
     CounterpartyResponseDto getById(Long id);
 
-    List<CounterpartyResponseDto> getAll();
+    PageResponse<CounterpartyResponseDto> getAll(int page, int size);
 
     CounterpartyResponseDto update(Long id, CounterpartyRequestDto request);
 

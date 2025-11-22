@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.core.counterparty.service.impl;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
@@ -11,11 +13,14 @@ import com.tarasantoniuk.finance.core.counterparty.service.CounterpartyService;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -53,10 +58,33 @@ public class CounterpartyServiceImpl implements CounterpartyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CounterpartyResponseDto> getAll() {
-        return counterpartyRepository.findAll().stream()
+    public PageResponse<CounterpartyResponseDto> getAll(int page, int size) {
+        // Sort by name alphabetically (A-Z)
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Direction.ASC, "name", "id"));
+
+        Page<Counterparty> counterpartyPage = counterpartyRepository.findAll(pageable);
+
+        // Map entities to DTOs
+        List<CounterpartyResponseDto> dtos = counterpartyPage.getContent()
+                .stream()
                 .map(counterpartyMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        // Build metadata
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(counterpartyPage.getNumber())
+                .totalPages(counterpartyPage.getTotalPages())
+                .pageSize(counterpartyPage.getSize())
+                .totalElements(counterpartyPage.getTotalElements())
+                .hasNext(counterpartyPage.hasNext())
+                .hasPrevious(counterpartyPage.hasPrevious())
+                .build();
+
+        return PageResponse.<CounterpartyResponseDto>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     @Override
