@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounting-policies")
-@Tag(name = "Accounting Policy", description = "Accounting policy management API")
+@Tag(name = "Core - Accounting Policy", description = "Accounting policy management API")
 public class AccountingPolicyController {
 
     private final AccountingPolicyService accountingPolicyService;

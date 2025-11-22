@@ -21,7 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/exchange-rates")
-@Tag(name = "Exchange Rate", description = "External exchange rate management API")
+@Tag(name = "Core - Exchange Rate", description = "External exchange rate management API")
 public class ExternalExchangeRateController {
 
     private final ExternalExchangeRateService exchangeRateService;

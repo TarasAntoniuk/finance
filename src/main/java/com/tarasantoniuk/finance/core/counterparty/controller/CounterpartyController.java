@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/counterparties")
-@Tag(name = "Counterparty", description = "Counterparty management API")
+@Tag(name = "Core - Counterparty", description = "Counterparty management API")
 public class CounterpartyController {
 
     private final CounterpartyService counterpartyService;

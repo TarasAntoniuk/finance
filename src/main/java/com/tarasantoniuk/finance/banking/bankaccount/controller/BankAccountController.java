@@ -19,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bank-accounts")
-@Tag(name = "Bank Account", description = "Bank account management API")
+@Tag(name = "Banking - Bank Account", description = "Bank account management API")
 public class BankAccountController {
 
     private final BankAccountService bankAccountService;

@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/countries")
-@Tag(name = "Country", description = "Country management API")
+@Tag(name = "Core - Country", description = "Country management API")
 public class CountryController {
 
     private final CountryService countryService;

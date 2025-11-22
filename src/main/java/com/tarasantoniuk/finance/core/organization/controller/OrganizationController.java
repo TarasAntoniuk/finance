@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/organizations")
-@Tag(name = "Organization", description = "Organization management API")
+@Tag(name = "Core - Organization", description = "Organization management API")
 public class OrganizationController {
 
     private final OrganizationService organizationService;

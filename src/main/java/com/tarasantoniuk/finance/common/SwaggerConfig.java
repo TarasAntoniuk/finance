@@ -1,6 +1,5 @@
 package com.tarasantoniuk.finance.common;
 
-
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
@@ -37,15 +36,16 @@ public class SwaggerConfig {
         license.setUrl("https://www.apache.org/licenses/LICENSE-2.0.html");
 
         Info info = new Info()
-                .title("Accounting Management API")
-                .version("1.0.0")
-                .description("REST API for managing countries, organizations, currencies, " +
-                        "accounting policies, and external exchange rates")
+                .title("Finance Accounting System API")
+                .version("0.0.3")
+                .description("Comprehensive accounting system for managing financial records, " +
+                        "banking operations, and organizational accounts. " +
+                        "Currently supports accounting and banking domains with planned warehouse inventory management with cell-based storage.")
                 .contact(contact)
                 .license(license);
 
         return new OpenAPI()
                 .info(info)
-                .servers(List.of( productionServer, localServer));
+                .servers(List.of(productionServer, localServer));
     }
 }
