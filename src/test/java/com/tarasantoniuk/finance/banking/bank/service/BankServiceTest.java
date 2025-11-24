@@ -7,7 +7,6 @@ import com.tarasantoniuk.finance.banking.bank.exception.BankNotFoundException;
 import com.tarasantoniuk.finance.banking.bank.exception.DuplicateBankException;
 import com.tarasantoniuk.finance.banking.bank.mapper.BankMapper;
 import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
-import com.tarasantoniuk.finance.banking.bank.service.BankService;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -73,124 +72,100 @@ class BankServiceTest {
 
     @Test
     void getAllBanks_ShouldReturnListOfBanks() {
-        // Given
         List<Bank> banks = Collections.singletonList(bank);
-        when(bankRepository.findAll()).thenReturn(banks);
+        when(bankRepository.findAllWithRelations()).thenReturn(banks);
         when(bankMapper.toResponseList(banks)).thenReturn(Collections.singletonList(responseDTO));
 
-        // When
         List<BankResponseDTO> result = bankService.getAllBanks();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankRepository, times(1)).findAll();
+        verify(bankRepository, times(1)).findAllWithRelations();
     }
 
     @Test
     void getBankById_WhenExists_ShouldReturnBank() {
-        // Given
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bank));
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         BankResponseDTO result = bankService.getBankById(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals("PrivatBank", result.getName());
-        verify(bankRepository, times(1)).findById(1L);
+        verify(bankRepository, times(1)).findByIdWithRelations(1L);
     }
 
     @Test
     void getBankById_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(BankNotFoundException.class,
                 () -> bankService.getBankById(1L));
     }
 
     @Test
     void getBanksByCountry_ShouldReturnFilteredList() {
-        // Given
         List<Bank> banks = Collections.singletonList(bank);
-        when(bankRepository.findByCountryId(1L)).thenReturn(banks);
+        when(bankRepository.findByCountryIdWithRelations(1L)).thenReturn(banks);
         when(bankMapper.toResponseList(banks)).thenReturn(Collections.singletonList(responseDTO));
 
-        // When
         List<BankResponseDTO> result = bankService.getBanksByCountry(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankRepository, times(1)).findByCountryId(1L);
+        verify(bankRepository, times(1)).findByCountryIdWithRelations(1L);
     }
 
     @Test
     void getActiveBanks_ShouldReturnActiveOnly() {
-        // Given
         List<Bank> banks = Collections.singletonList(bank);
-        when(bankRepository.findByIsActiveTrue()).thenReturn(banks);
+        when(bankRepository.findActiveWithRelations()).thenReturn(banks);
         when(bankMapper.toResponseList(banks)).thenReturn(Collections.singletonList(responseDTO));
 
-        // When
         List<BankResponseDTO> result = bankService.getActiveBanks();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankRepository, times(1)).findByIsActiveTrue();
+        verify(bankRepository, times(1)).findActiveWithRelations();
     }
 
     @Test
     void getBankBySwiftCode_WhenExists_ShouldReturnBank() {
-        // Given
-        when(bankRepository.findBySwiftCode("PBANUA2X")).thenReturn(Optional.of(bank));
+        when(bankRepository.findBySwiftCodeWithRelations("PBANUA2X")).thenReturn(Optional.of(bank));
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         BankResponseDTO result = bankService.getBankBySwiftCode("PBANUA2X");
 
-        // Then
         assertNotNull(result);
         assertEquals("PBANUA2X", result.getSwiftCode());
-        verify(bankRepository, times(1)).findBySwiftCode("PBANUA2X");
+        verify(bankRepository, times(1)).findBySwiftCodeWithRelations("PBANUA2X");
     }
 
     @Test
     void getBankBySwiftCode_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(bankRepository.findBySwiftCode("INVALID")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCodeWithRelations("INVALID")).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(BankNotFoundException.class,
                 () -> bankService.getBankBySwiftCode("INVALID"));
     }
 
     @Test
     void createBank_WhenValid_ShouldReturnCreatedBank() {
-        // Given
-        when(bankRepository.findBySwiftCode("PBANUA2X")).thenReturn(Optional.empty());
+        when(bankRepository.findBySwiftCodeWithRelations("PBANUA2X")).thenReturn(Optional.empty());
         when(bankMapper.toEntity(requestDTO)).thenReturn(bank);
         when(bankRepository.save(bank)).thenReturn(bank);
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         BankResponseDTO result = bankService.createBank(requestDTO);
 
-        // Then
         assertNotNull(result);
         verify(bankRepository, times(1)).save(any(Bank.class));
     }
 
     @Test
     void createBank_WhenDuplicateSwiftCode_ShouldThrowException() {
-        // Given
-        when(bankRepository.findBySwiftCode("PBANUA2X")).thenReturn(Optional.of(bank));
+        when(bankRepository.findBySwiftCodeWithRelations("PBANUA2X")).thenReturn(Optional.of(bank));
 
-        // When & Then
         assertThrows(DuplicateBankException.class,
                 () -> bankService.createBank(requestDTO));
         verify(bankRepository, never()).save(any(Bank.class));
@@ -198,16 +173,13 @@ class BankServiceTest {
 
     @Test
     void updateBank_WhenValid_ShouldReturnUpdatedBank() {
-        // Given
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        when(bankRepository.findBySwiftCode("PBANUA2X")).thenReturn(Optional.of(bank));
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bank));
+        when(bankRepository.findBySwiftCodeWithRelations("PBANUA2X")).thenReturn(Optional.of(bank));
         when(bankRepository.save(bank)).thenReturn(bank);
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         BankResponseDTO result = bankService.updateBank(1L, requestDTO);
 
-        // Then
         assertNotNull(result);
         verify(bankRepository, times(1)).save(bank);
         verify(bankMapper, times(1)).updateEntity(requestDTO, bank);
@@ -215,10 +187,8 @@ class BankServiceTest {
 
     @Test
     void updateBank_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(bankRepository.findById(1L)).thenReturn(Optional.empty());
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(BankNotFoundException.class,
                 () -> bankService.updateBank(1L, requestDTO));
         verify(bankRepository, never()).save(any(Bank.class));
@@ -226,15 +196,13 @@ class BankServiceTest {
 
     @Test
     void updateBank_WhenDuplicateSwiftCode_ShouldThrowException() {
-        // Given
         Bank anotherBank = new Bank();
         anotherBank.setId(2L);
         anotherBank.setSwiftCode("PBANUA2X");
 
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
-        when(bankRepository.findBySwiftCode("PBANUA2X")).thenReturn(Optional.of(anotherBank));
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bank));
+        when(bankRepository.findBySwiftCodeWithRelations("PBANUA2X")).thenReturn(Optional.of(anotherBank));
 
-        // When & Then
         assertThrows(DuplicateBankException.class,
                 () -> bankService.updateBank(1L, requestDTO));
         verify(bankRepository, never()).save(any(Bank.class));
@@ -242,53 +210,42 @@ class BankServiceTest {
 
     @Test
     void activateBank_WhenExists_ShouldActivateSuccessfully() {
-        // Given
         bank.setIsActive(false);
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bank));
         when(bankRepository.save(bank)).thenReturn(bank);
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         bankService.activateBank(1L);
 
-        // Then
         assertTrue(bank.getIsActive());
         verify(bankRepository, times(1)).save(bank);
     }
 
     @Test
     void deactivateBank_WhenExists_ShouldDeactivateSuccessfully() {
-        // Given
-        when(bankRepository.findById(1L)).thenReturn(Optional.of(bank));
+        when(bankRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bank));
         when(bankRepository.save(bank)).thenReturn(bank);
         when(bankMapper.toResponse(bank)).thenReturn(responseDTO);
 
-        // When
         bankService.deactivateBank(1L);
 
-        // Then
         assertFalse(bank.getIsActive());
         verify(bankRepository, times(1)).save(bank);
     }
 
     @Test
     void deleteBank_WhenExists_ShouldDeleteSuccessfully() {
-        // Given
         when(bankRepository.existsById(1L)).thenReturn(true);
 
-        // When
         bankService.deleteBank(1L);
 
-        // Then
         verify(bankRepository, times(1)).deleteById(1L);
     }
 
     @Test
     void deleteBank_WhenNotExists_ShouldThrowException() {
-        // Given
         when(bankRepository.existsById(1L)).thenReturn(false);
 
-        // When & Then
         assertThrows(BankNotFoundException.class,
                 () -> bankService.deleteBank(1L));
         verify(bankRepository, never()).deleteById(anyLong());

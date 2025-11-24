@@ -75,21 +75,16 @@ class CounterpartyServiceImplTest {
         responseDto.setIsActive(true);
     }
 
-    // ========== CREATE TESTS ==========
-
     @Test
     void create_WhenValid_ShouldReturnCreatedCounterparty() {
-        // Given
         when(counterpartyRepository.existsByCode("CP001")).thenReturn(false);
         when(counterpartyMapper.toEntity(requestDto)).thenReturn(counterparty);
         when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
         when(counterpartyRepository.save(any(Counterparty.class))).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.create(requestDto);
 
-        // Then
         assertNotNull(result);
         assertEquals("CP001", result.getCode());
         verify(counterpartyRepository).save(any(Counterparty.class));
@@ -98,10 +93,8 @@ class CounterpartyServiceImplTest {
 
     @Test
     void create_WhenCodeExists_ShouldThrowException() {
-        // Given
         when(counterpartyRepository.existsByCode("CP001")).thenReturn(true);
 
-        // When & Then
         assertThrows(DuplicateCounterpartyException.class,
                 () -> counterpartyService.create(requestDto));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -109,12 +102,10 @@ class CounterpartyServiceImplTest {
 
     @Test
     void create_WhenCountryNotFound_ShouldThrowException() {
-        // Given
         when(counterpartyRepository.existsByCode("CP001")).thenReturn(false);
         when(counterpartyMapper.toEntity(requestDto)).thenReturn(counterparty);
         when(countryRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CountryNotFoundException.class,
                 () -> counterpartyService.create(requestDto));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -122,55 +113,42 @@ class CounterpartyServiceImplTest {
 
     @Test
     void create_WhenCountryIdIsNull_ShouldCreateWithoutCountry() {
-        // Given
         requestDto.setCountryId(null);
         when(counterpartyRepository.existsByCode("CP001")).thenReturn(false);
         when(counterpartyMapper.toEntity(requestDto)).thenReturn(counterparty);
         when(counterpartyRepository.save(any(Counterparty.class))).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.create(requestDto);
 
-        // Then
         assertNotNull(result);
         verify(countryRepository, never()).findById(anyLong());
         verify(counterpartyRepository).save(any(Counterparty.class));
     }
 
-    // ========== GET BY ID TESTS ==========
-
     @Test
     void getById_WhenExists_ShouldReturnCounterparty() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.getById(1L);
 
-        // Then
         assertNotNull(result);
         assertEquals(1L, result.getId());
         assertEquals("CP001", result.getCode());
-        verify(counterpartyRepository).findById(1L);
+        verify(counterpartyRepository).findByIdWithCountry(1L);
     }
 
     @Test
     void getById_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.empty());
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CounterpartyNotFoundException.class,
                 () -> counterpartyService.getById(1L));
     }
 
-    // ========== GET ALL TESTS ==========
-
     @Test
     void getAll_ShouldReturnPagedCounterparties() {
-        // Given
         int page = 0;
         int size = 100;
 
@@ -179,13 +157,11 @@ class CounterpartyServiceImplTest {
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
                 1);
 
-        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyRepository.findAllWithCountry(any(Pageable.class))).thenReturn(counterpartyPage);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getContent());
         assertEquals(1, result.getContent().size());
@@ -198,27 +174,24 @@ class CounterpartyServiceImplTest {
         assertFalse(metadata.isHasNext());
         assertFalse(metadata.isHasPrevious());
 
-        verify(counterpartyRepository).findAll(any(Pageable.class));
+        verify(counterpartyRepository).findAllWithCountry(any(Pageable.class));
     }
 
     @Test
     void getAll_WithMultiplePages_ShouldReturnCorrectMetadata() {
-        // Given
         int page = 1;
         int size = 100;
 
         List<Counterparty> counterparties = List.of(counterparty);
         Page<Counterparty> counterpartyPage = new PageImpl<>(counterparties,
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
-                250); // Total 250 elements = 3 pages
+                250);
 
-        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyRepository.findAllWithCountry(any(Pageable.class))).thenReturn(counterpartyPage);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
-        // Then
         assertNotNull(result);
 
         PageMetadata metadata = result.getMetadata();
@@ -232,7 +205,6 @@ class CounterpartyServiceImplTest {
 
     @Test
     void getAll_WhenEmpty_ShouldReturnEmptyPage() {
-        // Given
         int page = 0;
         int size = 100;
 
@@ -240,22 +212,19 @@ class CounterpartyServiceImplTest {
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
                 0);
 
-        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyRepository.findAllWithCountry(any(Pageable.class))).thenReturn(counterpartyPage);
 
-        // When
         PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getContent());
         assertTrue(result.getContent().isEmpty());
         assertEquals(0, result.getMetadata().getTotalElements());
-        verify(counterpartyRepository).findAll(any(Pageable.class));
+        verify(counterpartyRepository).findAllWithCountry(any(Pageable.class));
     }
 
     @Test
     void getAll_ShouldSortByNameAscAndIdAsc() {
-        // Given
         int page = 0;
         int size = 100;
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
@@ -263,13 +232,11 @@ class CounterpartyServiceImplTest {
         Page<Counterparty> counterpartyPage = new PageImpl<>(List.of(),
                 PageRequest.of(page, size), 0);
 
-        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyRepository.findAllWithCountry(any(Pageable.class))).thenReturn(counterpartyPage);
 
-        // When
         counterpartyService.getAll(page, size);
 
-        // Then
-        verify(counterpartyRepository).findAll(pageableCaptor.capture());
+        verify(counterpartyRepository).findAllWithCountry(pageableCaptor.capture());
         Pageable capturedPageable = pageableCaptor.getValue();
 
         assertEquals(page, capturedPageable.getPageNumber());
@@ -290,7 +257,6 @@ class CounterpartyServiceImplTest {
 
     @Test
     void getAll_WithCustomPageSize_ShouldUseProvidedSize() {
-        // Given
         int page = 0;
         int size = 50;
 
@@ -298,29 +264,22 @@ class CounterpartyServiceImplTest {
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name", "id")),
                 0);
 
-        when(counterpartyRepository.findAll(any(Pageable.class))).thenReturn(counterpartyPage);
+        when(counterpartyRepository.findAllWithCountry(any(Pageable.class))).thenReturn(counterpartyPage);
 
-        // When
         PageResponse<CounterpartyResponseDto> result = counterpartyService.getAll(page, size);
 
-        // Then
         assertEquals(50, result.getMetadata().getPageSize());
     }
 
-    // ========== UPDATE TESTS ==========
-
     @Test
     void update_WhenValid_ShouldReturnUpdatedCounterparty() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.update(1L, requestDto);
 
-        // Then
         assertNotNull(result);
         verify(counterpartyMapper).updateEntity(requestDto, counterparty);
         verify(counterpartyRepository).save(counterparty);
@@ -328,10 +287,8 @@ class CounterpartyServiceImplTest {
 
     @Test
     void update_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.empty());
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CounterpartyNotFoundException.class,
                 () -> counterpartyService.update(1L, requestDto));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -339,12 +296,10 @@ class CounterpartyServiceImplTest {
 
     @Test
     void update_WhenChangingToExistingCode_ShouldThrowException() {
-        // Given
         requestDto.setCode("CP002");
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.existsByCode("CP002")).thenReturn(true);
 
-        // When & Then
         assertThrows(DuplicateCounterpartyException.class,
                 () -> counterpartyService.update(1L, requestDto));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -352,113 +307,88 @@ class CounterpartyServiceImplTest {
 
     @Test
     void update_WhenNotChangingCode_ShouldNotCheckExistence() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.update(1L, requestDto);
 
-        // Then
         assertNotNull(result);
         verify(counterpartyRepository, never()).existsByCode(anyString());
     }
 
     @Test
     void update_WhenCodeIsNull_ShouldNotCheckExistence() {
-        // Given
         requestDto.setCode(null);
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(countryRepository.findById(1L)).thenReturn(Optional.of(country));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.update(1L, requestDto);
 
-        // Then
         assertNotNull(result);
         verify(counterpartyRepository, never()).existsByCode(anyString());
     }
 
     @Test
     void update_WhenCountryIdIsNull_ShouldNotUpdateCountry() {
-        // Given
         requestDto.setCountryId(null);
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
         when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        // When
         CounterpartyResponseDto result = counterpartyService.update(1L, requestDto);
 
-        // Then
         assertNotNull(result);
         verify(countryRepository, never()).findById(anyLong());
     }
 
     @Test
     void update_WhenCountryNotFound_ShouldThrowException() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(countryRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CountryNotFoundException.class,
                 () -> counterpartyService.update(1L, requestDto));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
     }
 
-    // ========== DELETE TESTS ==========
-
     @Test
     void delete_WhenExists_ShouldDeleteSuccessfully() {
-        // Given
         when(counterpartyRepository.existsById(1L)).thenReturn(true);
 
-        // When
         counterpartyService.delete(1L);
 
-        // Then
         verify(counterpartyRepository).deleteById(1L);
     }
 
     @Test
     void delete_WhenNotExists_ShouldThrowException() {
-        // Given
         when(counterpartyRepository.existsById(1L)).thenReturn(false);
 
-        // When & Then
         assertThrows(CounterpartyNotFoundException.class,
                 () -> counterpartyService.delete(1L));
         verify(counterpartyRepository, never()).deleteById(anyLong());
     }
 
-    // ========== ACTIVATE TESTS ==========
-
     @Test
     void activate_WhenExists_ShouldActivateSuccessfully() {
-        // Given
         counterparty.setIsActive(false);
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
 
-        // When
         counterpartyService.activate(1L);
 
-        // Then
         assertTrue(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
 
     @Test
     void activate_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.empty());
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CounterpartyNotFoundException.class,
                 () -> counterpartyService.activate(1L));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -466,41 +396,31 @@ class CounterpartyServiceImplTest {
 
     @Test
     void activate_WhenAlreadyActive_ShouldStillSave() {
-        // Given
         counterparty.setIsActive(true);
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
 
-        // When
         counterpartyService.activate(1L);
 
-        // Then
         assertTrue(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
 
-    // ========== DEACTIVATE TESTS ==========
-
     @Test
     void deactivate_WhenExists_ShouldDeactivateSuccessfully() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
 
-        // When
         counterpartyService.deactivate(1L);
 
-        // Then
         assertFalse(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
 
     @Test
     void deactivate_WhenNotExists_ShouldThrowException() {
-        // Given
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.empty());
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(CounterpartyNotFoundException.class,
                 () -> counterpartyService.deactivate(1L));
         verify(counterpartyRepository, never()).save(any(Counterparty.class));
@@ -508,15 +428,12 @@ class CounterpartyServiceImplTest {
 
     @Test
     void deactivate_WhenAlreadyInactive_ShouldStillSave() {
-        // Given
         counterparty.setIsActive(false);
-        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
 
-        // When
         counterpartyService.deactivate(1L);
 
-        // Then
         assertFalse(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }

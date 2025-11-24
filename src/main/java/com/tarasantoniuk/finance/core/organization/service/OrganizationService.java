@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class OrganizationService {
 
     private final OrganizationRepository organizationRepository;
@@ -29,28 +30,37 @@ public class OrganizationService {
         this.organizationMapper = organizationMapper;
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get all organizations with optimized query (solves N+1 problem).
+     * Uses JOIN FETCH to load country in a single query.
+     */
     public List<OrganizationResponseDTO> getAllOrganizations() {
-        List<Organization> organizations = organizationRepository.findAll();
+        List<Organization> organizations = organizationRepository.findAllWithCountry();
         return organizationMapper.toResponseDTOList(organizations);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get organization by ID with optimized query.
+     */
     public OrganizationResponseDTO getOrganizationById(Long id) {
-        Organization organization = organizationRepository.findById(id)
+        Organization organization = organizationRepository.findByIdWithCountry(id)
                 .orElseThrow(() -> OrganizationNotFoundException.byId(id));
         return organizationMapper.toResponseDTO(organization);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get organizations by country with optimized query.
+     */
     public List<OrganizationResponseDTO> getOrganizationsByCountry(Long countryId) {
-        List<Organization> organizations = organizationRepository.findByCountryId(countryId);
+        List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId);
         return organizationMapper.toResponseDTOList(organizations);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Search organizations by name with optimized query.
+     */
     public List<OrganizationResponseDTO> searchOrganizationsByName(String name) {
-        List<Organization> organizations = organizationRepository.findByNameContainingIgnoreCase(name);
+        List<Organization> organizations = organizationRepository.findByNameContainingIgnoreCaseWithCountry(name);
         return organizationMapper.toResponseDTOList(organizations);
     }
 
@@ -72,7 +82,7 @@ public class OrganizationService {
 
     @Transactional
     public OrganizationResponseDTO updateOrganization(Long id, OrganizationRequestDTO requestDTO) {
-        Organization organization = organizationRepository.findById(id)
+        Organization organization = organizationRepository.findByIdWithCountry(id)
                 .orElseThrow(() -> OrganizationNotFoundException.byId(id));
 
         if (!countryRepository.existsById(requestDTO.getCountryId())) {

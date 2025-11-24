@@ -13,9 +13,9 @@ import com.tarasantoniuk.finance.core.counterparty.service.CounterpartyService;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,26 +52,23 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     @Override
     @Transactional(readOnly = true)
     public CounterpartyResponseDto getById(Long id) {
-        Counterparty counterparty = findCounterpartyById(id);
+        Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         return counterpartyMapper.toResponse(counterparty);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<CounterpartyResponseDto> getAll(int page, int size) {
-        // Sort by name alphabetically (A-Z)
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.ASC, "name", "id"));
 
-        Page<Counterparty> counterpartyPage = counterpartyRepository.findAll(pageable);
+        Page<Counterparty> counterpartyPage = counterpartyRepository.findAllWithCountry(pageable);
 
-        // Map entities to DTOs
         List<CounterpartyResponseDto> dtos = counterpartyPage.getContent()
                 .stream()
                 .map(counterpartyMapper::toResponse)
                 .toList();
 
-        // Build metadata
         PageMetadata metadata = PageMetadata.builder()
                 .currentPage(counterpartyPage.getNumber())
                 .totalPages(counterpartyPage.getTotalPages())
@@ -89,7 +86,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
 
     @Override
     public CounterpartyResponseDto update(Long id, CounterpartyRequestDto request) {
-        Counterparty counterparty = findCounterpartyById(id);
+        Counterparty counterparty = findCounterpartyByIdWithCountry(id);
 
         if (request.getCode() != null && !request.getCode().equals(counterparty.getCode())) {
             validateUniqueCode(request.getCode());
@@ -112,20 +109,20 @@ public class CounterpartyServiceImpl implements CounterpartyService {
 
     @Override
     public void activate(Long id) {
-        Counterparty counterparty = findCounterpartyById(id);
+        Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         counterparty.setIsActive(true);
         counterpartyRepository.save(counterparty);
     }
 
     @Override
     public void deactivate(Long id) {
-        Counterparty counterparty = findCounterpartyById(id);
+        Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         counterparty.setIsActive(false);
         counterpartyRepository.save(counterparty);
     }
 
-    private Counterparty findCounterpartyById(Long id) {
-        return counterpartyRepository.findById(id)
+    private Counterparty findCounterpartyByIdWithCountry(Long id) {
+        return counterpartyRepository.findByIdWithCountry(id)
                 .orElseThrow(() -> CounterpartyNotFoundException.byId(id));
     }
 

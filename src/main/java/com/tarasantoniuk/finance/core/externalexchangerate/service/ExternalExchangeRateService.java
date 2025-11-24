@@ -15,7 +15,6 @@ import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalEx
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,13 +38,16 @@ public class ExternalExchangeRateService {
         this.exchangeRateMapper = exchangeRateMapper;
     }
 
+    /**
+     * Get all exchange rates with optimized query (solves N+1 problem).
+     * Uses JOIN FETCH to load currencies in a single query.
+     */
     @Transactional(readOnly = true)
     public PageResponse<ExternalExchangeRateResponseDTO> getAllExchangeRates(int page, int size) {
-        // Сортування по даті (найновіші першими) та по ID для стабільності
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
+        Pageable pageable = PageRequest.of(page, size);
 
-        Page<ExternalExchangeRate> ratePage = exchangeRateRepository.findAll(pageable);
+        // Using optimized method with JOIN FETCH
+        Page<ExternalExchangeRate> ratePage = exchangeRateRepository.findAllWithCurrencies(pageable);
 
         List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
                 .stream()
@@ -67,40 +69,46 @@ public class ExternalExchangeRateService {
                 .build();
     }
 
+    /**
+     * Get exchange rate by ID with optimized query.
+     */
     @Transactional(readOnly = true)
     public ExternalExchangeRateResponseDTO getExchangeRateById(Long id) {
-        ExternalExchangeRate rate = exchangeRateRepository.findById(id)
+        ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         return exchangeRateMapper.toResponseDTO(rate);
     }
 
+    /**
+     * Get exchange rates by date with optimized query.
+     */
     @Transactional(readOnly = true)
     public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDate(LocalDate date) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository.findByExchangeDate(date);
+        List<ExternalExchangeRate> rates = exchangeRateRepository.findByExchangeDateWithCurrencies(date);
         return exchangeRateMapper.toResponseDTOList(rates);
     }
 
+    /**
+     * Get exchange rates by date and source with optimized query.
+     */
     @Transactional(readOnly = true)
     public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDateAndSource(LocalDate date, String source) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository.findByExchangeDateAndSource(date, source);
+        List<ExternalExchangeRate> rates = exchangeRateRepository
+                .findByExchangeDateAndSourceWithCurrencies(date, source);
         return exchangeRateMapper.toResponseDTOList(rates);
     }
 
-//    @Transactional(readOnly = true)
-//    public List<ExternalExchangeRateResponseDTO> getExchangeRatesBySource(String source) {
-//        List<ExternalExchangeRate> rates = exchangeRateRepository.findBySource(source);
-//        return exchangeRateMapper.toResponseDTOList(rates);
-//    }
-
+    /**
+     * Get exchange rates by date range with optimized query.
+     */
     @Transactional(readOnly = true)
     public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByDateRange(
             LocalDate startDate, LocalDate endDate, int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
+        Pageable pageable = PageRequest.of(page, size);
 
         Page<ExternalExchangeRate> ratePage = exchangeRateRepository
-                .findByExchangeDateBetween(startDate, endDate, pageable);
+                .findByExchangeDateBetweenWithCurrencies(startDate, endDate, pageable);
 
         List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
                 .stream()
@@ -122,15 +130,17 @@ public class ExternalExchangeRateService {
                 .build();
     }
 
+    /**
+     * Get exchange rates by currency pair with optimized query.
+     */
     @Transactional(readOnly = true)
     public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByCurrencyPair(
             Long currencyFromId, Long currencyToId, int page, int size) {
 
-        Pageable pageable = PageRequest.of(page, size,
-                Sort.by(Sort.Direction.DESC, "exchangeDate", "id"));
+        Pageable pageable = PageRequest.of(page, size);
 
         Page<ExternalExchangeRate> ratePage = exchangeRateRepository
-                .findByCurrencyFromIdAndCurrencyToId(currencyFromId, currencyToId, pageable);
+                .findByCurrencyPairWithCurrencies(currencyFromId, currencyToId, pageable);
 
         List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
                 .stream()
@@ -152,6 +162,9 @@ public class ExternalExchangeRateService {
                 .build();
     }
 
+    /**
+     * Get latest rates by date and currency from with optimized query.
+     */
     @Transactional(readOnly = true)
     public List<ExternalExchangeRateResponseDTO> getLatestRatesByDateAndCurrencyFrom(
             LocalDate date, Long currencyFromId) {
@@ -160,11 +173,37 @@ public class ExternalExchangeRateService {
             throw CurrencyNotFoundException.byId(currencyFromId);
         }
 
-        // Шукаємо останню доступну дату ДО вказаної дати (включно)
         List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId);
+                .findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId);
 
         return exchangeRateMapper.toResponseDTOList(rates);
+    }
+
+    /**
+     * Calculate cross rate with optimized queries.
+     * Example: if we have USD/EUR and EUR/UAH, calculate USD/UAH
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal calculateCrossRate(Long currencyFromId, Long currencyToId,
+                                         Long intermediateCurrencyId, LocalDate date) {
+        List<ExternalExchangeRate> rates1 = exchangeRateRepository
+                .findLatestRateBeforeDateWithCurrencies(date, currencyFromId, intermediateCurrencyId);
+
+        if (rates1.isEmpty()) {
+            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, intermediateCurrencyId);
+        }
+
+        List<ExternalExchangeRate> rates2 = exchangeRateRepository
+                .findLatestRateBeforeDateWithCurrencies(date, intermediateCurrencyId, currencyToId);
+
+        if (rates2.isEmpty()) {
+            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, intermediateCurrencyId, currencyToId);
+        }
+
+        ExternalExchangeRate rate1 = rates1.getFirst();
+        ExternalExchangeRate rate2 = rates2.getFirst();
+
+        return rate1.getRate().multiply(rate2.getRate()).setScale(6, RoundingMode.HALF_UP);
     }
 
     @Transactional
@@ -196,7 +235,7 @@ public class ExternalExchangeRateService {
 
     @Transactional
     public ExternalExchangeRateResponseDTO updateExchangeRate(Long id, ExternalExchangeRateRequestDTO requestDTO) {
-        ExternalExchangeRate rate = exchangeRateRepository.findById(id)
+        ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyFromId())) {
@@ -211,7 +250,6 @@ public class ExternalExchangeRateService {
             throw InvalidExchangeRateException.sameCurrency();
         }
 
-        // Check if changing to existing combination
         if ((!rate.getExchangeDate().equals(requestDTO.getExchangeDate())
                 || !rate.getCurrencyFrom().getId().equals(requestDTO.getCurrencyFromId())
                 || !rate.getCurrencyTo().getId().equals(requestDTO.getCurrencyToId())
@@ -239,7 +277,7 @@ public class ExternalExchangeRateService {
 
     @Transactional
     public ExternalExchangeRateResponseDTO deactivateExchangeRate(Long id) {
-        ExternalExchangeRate rate = exchangeRateRepository.findById(id)
+        ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(false);
         ExternalExchangeRate updatedRate = exchangeRateRepository.save(rate);
@@ -248,36 +286,10 @@ public class ExternalExchangeRateService {
 
     @Transactional
     public ExternalExchangeRateResponseDTO activateExchangeRate(Long id) {
-        ExternalExchangeRate rate = exchangeRateRepository.findById(id)
+        ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(true);
         ExternalExchangeRate updatedRate = exchangeRateRepository.save(rate);
         return exchangeRateMapper.toResponseDTO(updatedRate);
-    }
-
-    /**
-     * Calculate cross rate: if we have USD/EUR and EUR/UAH, calculate USD/UAH
-     */
-    @Transactional(readOnly = true)
-    public BigDecimal calculateCrossRate(Long currencyFromId, Long currencyToId,
-                                         Long intermediateCurrencyId, LocalDate date) {
-        List<ExternalExchangeRate> rates1 = exchangeRateRepository
-                .findLatestRateBeforeDate(date, currencyFromId, intermediateCurrencyId);
-
-        if (rates1.isEmpty()) {
-            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, intermediateCurrencyId);
-        }
-
-        List<ExternalExchangeRate> rates2 = exchangeRateRepository
-                .findLatestRateBeforeDate(date, intermediateCurrencyId, currencyToId);
-
-        if (rates2.isEmpty()) {
-            throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, intermediateCurrencyId, currencyToId);
-        }
-
-        ExternalExchangeRate rate1 = rates1.getFirst();
-        ExternalExchangeRate rate2 = rates2.getFirst();
-
-        return rate1.getRate().multiply(rate2.getRate()).setScale(6, RoundingMode.HALF_UP);
     }
 }

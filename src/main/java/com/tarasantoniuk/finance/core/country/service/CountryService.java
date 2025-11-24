@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class CountryService {
 
     private final CountryRepository countryRepository;
@@ -23,22 +24,29 @@ public class CountryService {
         this.countryMapper = countryMapper;
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get all countries with optimized query (solves N+1 problem).
+     * Uses JOIN FETCH to load currency in a single query.
+     */
     public List<CountryResponseDTO> getAllCountries() {
-        List<Country> countries = countryRepository.findAll();
+        List<Country> countries = countryRepository.findAllWithCurrency();
         return countryMapper.toResponseDTOList(countries);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get country by ID with optimized query.
+     */
     public CountryResponseDTO getCountryById(Long id) {
-        Country country = countryRepository.findById(id)
+        Country country = countryRepository.findByIdWithCurrency(id)
                 .orElseThrow(() -> CountryNotFoundException.byId(id));
         return countryMapper.toResponseDTO(country);
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Get country by ISO code with optimized query.
+     */
     public CountryResponseDTO getCountryByIsoCode(String isoCode) {
-        Country country = countryRepository.findByIsoCode(isoCode)
+        Country country = countryRepository.findByIsoCodeWithCurrency(isoCode)
                 .orElseThrow(() -> CountryNotFoundException.byIsoCode(isoCode));
         return countryMapper.toResponseDTO(country);
     }
@@ -56,7 +64,7 @@ public class CountryService {
 
     @Transactional
     public CountryResponseDTO updateCountry(Long id, CountryRequestDTO requestDTO) {
-        Country country = countryRepository.findById(id)
+        Country country = countryRepository.findByIdWithCurrency(id)
                 .orElseThrow(() -> CountryNotFoundException.byId(id));
 
         if (!country.getIsoCode().equals(requestDTO.getIsoCode())
