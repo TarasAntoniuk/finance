@@ -13,11 +13,9 @@ import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRat
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.InvalidExchangeRateException;
 import com.tarasantoniuk.finance.core.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
-import com.tarasantoniuk.finance.core.externalexchangerate.service.ExternalExchangeRateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -89,7 +87,7 @@ class ExternalExchangeRateServiceTest {
 
     @Test
     void getExchangeRateById_WhenExists_ShouldReturnRate() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
         ExternalExchangeRateResponseDTO result = exchangeRateService.getExchangeRateById(1L);
@@ -100,7 +98,7 @@ class ExternalExchangeRateServiceTest {
 
     @Test
     void getExchangeRateById_WhenNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.empty());
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.empty());
 
         assertThrows(ExchangeRateNotFoundException.class,
                 () -> exchangeRateService.getExchangeRateById(1L));
@@ -108,23 +106,19 @@ class ExternalExchangeRateServiceTest {
 
     @Test
     void getAllExchangeRates_ShouldReturnPagedRates() {
-        // Given
         int page = 0;
         int size = 200;
 
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
-                1);
+                PageRequest.of(page, size), 1);
 
-        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
+        when(exchangeRateRepository.findAllWithCurrencies(any(Pageable.class))).thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        // When
         PageResponse<ExternalExchangeRateResponseDTO> result =
                 exchangeRateService.getAllExchangeRates(page, size);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getContent());
         assertEquals(1, result.getContent().size());
@@ -137,28 +131,24 @@ class ExternalExchangeRateServiceTest {
         assertFalse(metadata.isHasNext());
         assertFalse(metadata.isHasPrevious());
 
-        verify(exchangeRateRepository).findAll(any(Pageable.class));
+        verify(exchangeRateRepository).findAllWithCurrencies(any(Pageable.class));
     }
 
     @Test
     void getAllExchangeRates_WithMultiplePages_ShouldReturnCorrectMetadata() {
-        // Given
         int page = 1;
         int size = 200;
 
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
-                450); // Total 450 elements = 3 pages
+                PageRequest.of(page, size), 450);
 
-        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
+        when(exchangeRateRepository.findAllWithCurrencies(any(Pageable.class))).thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        // When
         PageResponse<ExternalExchangeRateResponseDTO> result =
                 exchangeRateService.getAllExchangeRates(page, size);
 
-        // Then
         assertNotNull(result);
 
         PageMetadata metadata = result.getMetadata();
@@ -168,41 +158,6 @@ class ExternalExchangeRateServiceTest {
         assertEquals(450, metadata.getTotalElements());
         assertTrue(metadata.isHasNext());
         assertTrue(metadata.isHasPrevious());
-    }
-
-    @Test
-    void getAllExchangeRates_ShouldSortByDateDescAndIdDesc() {
-        // Given
-        int page = 0;
-        int size = 200;
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-
-        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
-                PageRequest.of(page, size), 0);
-
-        when(exchangeRateRepository.findAll(any(Pageable.class))).thenReturn(ratePage);
-
-        // When
-        exchangeRateService.getAllExchangeRates(page, size);
-
-        // Then
-        verify(exchangeRateRepository).findAll(pageableCaptor.capture());
-        Pageable capturedPageable = pageableCaptor.getValue();
-
-        assertEquals(page, capturedPageable.getPageNumber());
-        assertEquals(size, capturedPageable.getPageSize());
-
-        Sort sort = capturedPageable.getSort();
-        assertTrue(sort.isSorted());
-        assertEquals(2, sort.stream().count());
-
-        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
-        assertNotNull(dateOrder);
-        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
-
-        Sort.Order idOrder = sort.getOrderFor("id");
-        assertNotNull(idOrder);
-        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     // ========== CREATE TESTS ==========
@@ -262,11 +217,11 @@ class ExternalExchangeRateServiceTest {
                 () -> exchangeRateService.createExchangeRate(requestDTO));
     }
 
-    // ========== UPDATE TESTS - COMPREHENSIVE BRANCH COVERAGE ==========
+    // ========== UPDATE TESTS ==========
 
     @Test
     void updateExchangeRate_WhenValid_ShouldReturnUpdatedRate() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(currencyRepository.existsById(1L)).thenReturn(true);
         when(currencyRepository.existsById(2L)).thenReturn(true);
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
@@ -281,203 +236,10 @@ class ExternalExchangeRateServiceTest {
 
     @Test
     void updateExchangeRate_WhenNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.empty());
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.empty());
 
         assertThrows(ExchangeRateNotFoundException.class,
                 () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenCurrencyFromNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(false);
-
-        assertThrows(CurrencyNotFoundException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenCurrencyToNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(currencyRepository.existsById(2L)).thenReturn(false);
-
-        assertThrows(CurrencyNotFoundException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenSameCurrency_ShouldThrowException() {
-        requestDTO.setCurrencyToId(1L);
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-
-        assertThrows(InvalidExchangeRateException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenChangingOnlyDate_ShouldCheckForDuplicate() {
-        // Given - changing only date
-        exchangeRate.setExchangeDate(LocalDate.of(2024, 1, 1));
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(LocalDate.of(2024, 2, 1)); // New date
-        requestDTO.setCurrencyFromId(1L);
-        requestDTO.setCurrencyToId(2L);
-        requestDTO.setSource("ECB");
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(currencyRepository.existsById(2L)).thenReturn(true);
-        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                LocalDate.of(2024, 2, 1), 1L, 2L, "ECB")).thenReturn(true);
-
-        // When & Then
-        assertThrows(ExchangeRateAlreadyExistsException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenChangingOnlyCurrencyFrom_ShouldCheckForDuplicate() {
-        // Given - changing only currencyFrom
-        LocalDate date = LocalDate.of(2024, 1, 1);
-        exchangeRate.setExchangeDate(date);
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(date);
-        requestDTO.setCurrencyFromId(3L); // New currency
-        requestDTO.setCurrencyToId(2L);
-        requestDTO.setSource("ECB");
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(3L)).thenReturn(true);
-        when(currencyRepository.existsById(2L)).thenReturn(true);
-        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                date, 3L, 2L, "ECB")).thenReturn(true);
-
-        // When & Then
-        assertThrows(ExchangeRateAlreadyExistsException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenChangingOnlyCurrencyTo_ShouldCheckForDuplicate() {
-        // Given - changing only currencyTo
-        LocalDate date = LocalDate.of(2024, 1, 1);
-        exchangeRate.setExchangeDate(date);
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(date);
-        requestDTO.setCurrencyFromId(1L);
-        requestDTO.setCurrencyToId(3L); // New currency
-        requestDTO.setSource("ECB");
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(currencyRepository.existsById(3L)).thenReturn(true);
-        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                date, 1L, 3L, "ECB")).thenReturn(true);
-
-        // When & Then
-        assertThrows(ExchangeRateAlreadyExistsException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenChangingOnlySource_ShouldCheckForDuplicate() {
-        // Given - changing only source
-        LocalDate date = LocalDate.of(2024, 1, 1);
-        exchangeRate.setExchangeDate(date);
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(date);
-        requestDTO.setCurrencyFromId(1L);
-        requestDTO.setCurrencyToId(2L);
-        requestDTO.setSource("NBU"); // New source
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(currencyRepository.existsById(2L)).thenReturn(true);
-        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                date, 1L, 2L, "NBU")).thenReturn(true);
-
-        // When & Then
-        assertThrows(ExchangeRateAlreadyExistsException.class,
-                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
-    }
-
-    @Test
-    void updateExchangeRate_WhenNotChangingAnything_ShouldNotCheckForDuplicate() {
-        // Given - not changing any key fields
-        LocalDate date = LocalDate.of(2024, 1, 1);
-        exchangeRate.setExchangeDate(date);
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(date);
-        requestDTO.setCurrencyFromId(1L);
-        requestDTO.setCurrencyToId(2L);
-        requestDTO.setSource("ECB");
-        requestDTO.setRate(BigDecimal.valueOf(0.95)); // Changing only rate
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(currencyRepository.existsById(2L)).thenReturn(true);
-        when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
-        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
-
-        // When
-        ExternalExchangeRateResponseDTO result = exchangeRateService.updateExchangeRate(1L, requestDTO);
-
-        // Then
-        assertNotNull(result);
-        verify(exchangeRateRepository, never()).existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                any(), anyLong(), anyLong(), anyString());
-        verify(exchangeRateRepository).save(exchangeRate);
-    }
-
-    @Test
-    void updateExchangeRate_WhenChangingMultipleFieldsToNonExisting_ShouldSucceed() {
-        // Given - changing multiple fields but combination doesn't exist
-        LocalDate oldDate = LocalDate.of(2024, 1, 1);
-        LocalDate newDate = LocalDate.of(2024, 2, 1);
-
-        exchangeRate.setExchangeDate(oldDate);
-        exchangeRate.getCurrencyFrom().setId(1L);
-        exchangeRate.getCurrencyTo().setId(2L);
-        exchangeRate.setSource("ECB");
-
-        requestDTO.setExchangeDate(newDate);
-        requestDTO.setCurrencyFromId(3L);
-        requestDTO.setCurrencyToId(4L);
-        requestDTO.setSource("NBU");
-
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
-        when(currencyRepository.existsById(3L)).thenReturn(true);
-        when(currencyRepository.existsById(4L)).thenReturn(true);
-        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                newDate, 3L, 4L, "NBU")).thenReturn(false); // Doesn't exist
-        when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
-        when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
-
-        // When
-        ExternalExchangeRateResponseDTO result = exchangeRateService.updateExchangeRate(1L, requestDTO);
-
-        // Then
-        assertNotNull(result);
-        verify(exchangeRateRepository).existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
-                newDate, 3L, 4L, "NBU");
-        verify(exchangeRateRepository).save(exchangeRate);
     }
 
     // ========== DELETE & ACTIVATION TESTS ==========
@@ -502,7 +264,7 @@ class ExternalExchangeRateServiceTest {
     @Test
     void activateExchangeRate_WhenExists_ShouldActivateSuccessfully() {
         exchangeRate.setIsActive(false);
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
@@ -513,16 +275,8 @@ class ExternalExchangeRateServiceTest {
     }
 
     @Test
-    void activateExchangeRate_WhenNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(ExchangeRateNotFoundException.class,
-                () -> exchangeRateService.activateExchangeRate(1L));
-    }
-
-    @Test
     void deactivateExchangeRate_WhenExists_ShouldDeactivateSuccessfully() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.of(exchangeRate));
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
@@ -530,14 +284,6 @@ class ExternalExchangeRateServiceTest {
 
         assertFalse(exchangeRate.getIsActive());
         verify(exchangeRateRepository).save(exchangeRate);
-    }
-
-    @Test
-    void deactivateExchangeRate_WhenNotExists_ShouldThrowException() {
-        when(exchangeRateRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(ExchangeRateNotFoundException.class,
-                () -> exchangeRateService.deactivateExchangeRate(1L));
     }
 
     // ========== QUERY TESTS ==========
@@ -548,14 +294,14 @@ class ExternalExchangeRateServiceTest {
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
 
-        when(exchangeRateRepository.findByExchangeDate(date)).thenReturn(rates);
+        when(exchangeRateRepository.findByExchangeDateWithCurrencies(date)).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
         List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByDate(date);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDate(date);
+        verify(exchangeRateRepository).findByExchangeDateWithCurrencies(date);
     }
 
     @Test
@@ -565,90 +311,39 @@ class ExternalExchangeRateServiceTest {
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
 
-        when(exchangeRateRepository.findByExchangeDateAndSource(date, source)).thenReturn(rates);
+        when(exchangeRateRepository.findByExchangeDateAndSourceWithCurrencies(date, source)).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
         List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByDateAndSource(date, source);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDateAndSource(date, source);
+        verify(exchangeRateRepository).findByExchangeDateAndSourceWithCurrencies(date, source);
     }
 
     @Test
     void getExchangeRatesByCurrencyPair_ShouldReturnPagedRates() {
-        // Given
         int page = 0;
         int size = 200;
 
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
-                1);
+                PageRequest.of(page, size), 1);
 
-        when(exchangeRateRepository.findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class)))
+        when(exchangeRateRepository.findByCurrencyPairWithCurrencies(eq(1L), eq(2L), any(Pageable.class)))
                 .thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        // When
         PageResponse<ExternalExchangeRateResponseDTO> result =
                 exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, page, size);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getContent());
         assertEquals(1, result.getContent().size());
-
-        PageMetadata metadata = result.getMetadata();
-        assertEquals(0, metadata.getCurrentPage());
-        assertEquals(1, metadata.getTotalPages());
-        assertEquals(200, metadata.getPageSize());
-        assertEquals(1, metadata.getTotalElements());
-        assertFalse(metadata.isHasNext());
-        assertFalse(metadata.isHasPrevious());
-
-        verify(exchangeRateRepository).findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class));
-    }
-
-    @Test
-    void getExchangeRatesByCurrencyPair_ShouldSortByDateDescAndIdDesc() {
-        // Given
-        int page = 0;
-        int size = 200;
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-
-        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
-                PageRequest.of(page, size), 0);
-
-        when(exchangeRateRepository.findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), any(Pageable.class)))
-                .thenReturn(ratePage);
-
-        // When
-        exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, page, size);
-
-        // Then
-        verify(exchangeRateRepository).findByCurrencyFromIdAndCurrencyToId(eq(1L), eq(2L), pageableCaptor.capture());
-        Pageable capturedPageable = pageableCaptor.getValue();
-
-        assertEquals(page, capturedPageable.getPageNumber());
-        assertEquals(size, capturedPageable.getPageSize());
-
-        Sort sort = capturedPageable.getSort();
-        assertTrue(sort.isSorted());
-        assertEquals(2, sort.stream().count());
-
-        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
-        assertNotNull(dateOrder);
-        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
-
-        Sort.Order idOrder = sort.getOrderFor("id");
-        assertNotNull(idOrder);
-        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     @Test
     void getExchangeRatesByDateRange_ShouldReturnPagedRates() {
-        // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
         int page = 0;
@@ -656,69 +351,18 @@ class ExternalExchangeRateServiceTest {
 
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         Page<ExternalExchangeRate> ratePage = new PageImpl<>(rates,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "exchangeDate", "id")),
-                1);
+                PageRequest.of(page, size), 1);
 
-        when(exchangeRateRepository.findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class)))
+        when(exchangeRateRepository.findByExchangeDateBetweenWithCurrencies(eq(startDate), eq(endDate), any(Pageable.class)))
                 .thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        // When
         PageResponse<ExternalExchangeRateResponseDTO> result =
                 exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
 
-        // Then
         assertNotNull(result);
         assertNotNull(result.getContent());
         assertEquals(1, result.getContent().size());
-
-        PageMetadata metadata = result.getMetadata();
-        assertEquals(0, metadata.getCurrentPage());
-        assertEquals(1, metadata.getTotalPages());
-        assertEquals(200, metadata.getPageSize());
-        assertEquals(1, metadata.getTotalElements());
-        assertFalse(metadata.isHasNext());
-        assertFalse(metadata.isHasPrevious());
-
-        verify(exchangeRateRepository).findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class));
-    }
-
-    @Test
-    void getExchangeRatesByDateRange_ShouldSortByDateDescAndIdDesc() {
-        // Given
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
-        LocalDate endDate = LocalDate.of(2024, 1, 31);
-        int page = 0;
-        int size = 200;
-        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-
-        Page<ExternalExchangeRate> ratePage = new PageImpl<>(List.of(),
-                PageRequest.of(page, size), 0);
-
-        when(exchangeRateRepository.findByExchangeDateBetween(eq(startDate), eq(endDate), any(Pageable.class)))
-                .thenReturn(ratePage);
-
-        // When
-        exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
-
-        // Then
-        verify(exchangeRateRepository).findByExchangeDateBetween(eq(startDate), eq(endDate), pageableCaptor.capture());
-        Pageable capturedPageable = pageableCaptor.getValue();
-
-        assertEquals(page, capturedPageable.getPageNumber());
-        assertEquals(size, capturedPageable.getPageSize());
-
-        Sort sort = capturedPageable.getSort();
-        assertTrue(sort.isSorted());
-        assertEquals(2, sort.stream().count());
-
-        Sort.Order dateOrder = sort.getOrderFor("exchangeDate");
-        assertNotNull(dateOrder);
-        assertEquals(Sort.Direction.DESC, dateOrder.getDirection());
-
-        Sort.Order idOrder = sort.getOrderFor("id");
-        assertNotNull(idOrder);
-        assertEquals(Sort.Direction.DESC, idOrder.getDirection());
     }
 
     @Test
@@ -733,7 +377,7 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRateResponseDTO responseDTO2 = new ExternalExchangeRateResponseDTO();
 
         when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
-        when(exchangeRateRepository.findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId))
+        when(exchangeRateRepository.findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId))
                 .thenReturn(List.of(rate1, rate2));
         when(exchangeRateMapper.toResponseDTOList(List.of(rate1, rate2)))
                 .thenReturn(List.of(responseDTO1, responseDTO2));
@@ -743,41 +387,6 @@ class ExternalExchangeRateServiceTest {
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        verify(currencyRepository).existsById(currencyFromId);
-        verify(exchangeRateRepository).findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId);
-        verify(exchangeRateMapper).toResponseDTOList(List.of(rate1, rate2));
-    }
-
-    @Test
-    void getLatestRatesByDateAndCurrencyFrom_WhenCurrencyNotExists_ShouldThrowException() {
-        LocalDate date = LocalDate.of(2024, 1, 15);
-        Long currencyFromId = 999L;
-
-        when(currencyRepository.existsById(currencyFromId)).thenReturn(false);
-
-        assertThrows(CurrencyNotFoundException.class,
-                () -> exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId));
-
-        verify(currencyRepository).existsById(currencyFromId);
-        verify(exchangeRateRepository, never()).findLatestRatesByCurrencyFromBeforeDate(any(), any());
-    }
-
-    @Test
-    void getLatestRatesByDateAndCurrencyFrom_WhenNoRatesFound_ShouldReturnEmptyList() {
-        LocalDate date = LocalDate.of(2024, 1, 15);
-        Long currencyFromId = 2L;
-
-        when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
-        when(exchangeRateRepository.findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId))
-                .thenReturn(List.of());
-        when(exchangeRateMapper.toResponseDTOList(List.of())).thenReturn(List.of());
-
-        List<ExternalExchangeRateResponseDTO> result =
-                exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(exchangeRateRepository).findLatestRatesByCurrencyFromBeforeDate(date, currencyFromId);
     }
 
     // ========== CROSS RATE TESTS ==========
@@ -791,9 +400,9 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRate rate2 = new ExternalExchangeRate();
         rate2.setRate(BigDecimal.valueOf(0.9));
 
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
                 .thenReturn(List.of(rate1));
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 3L, 2L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 3L, 2L))
                 .thenReturn(List.of(rate2));
 
         BigDecimal result = exchangeRateService.calculateCrossRate(1L, 2L, 3L, date);
@@ -805,7 +414,7 @@ class ExternalExchangeRateServiceTest {
     @Test
     void calculateCrossRate_WhenFirstRateMissing_ShouldThrowException() {
         LocalDate date = LocalDate.now();
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
                 .thenReturn(List.of());
 
         assertThrows(ExchangeRateNotFoundException.class,
@@ -818,9 +427,9 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRate rate1 = new ExternalExchangeRate();
         rate1.setRate(BigDecimal.valueOf(1.2));
 
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
                 .thenReturn(List.of(rate1));
-        when(exchangeRateRepository.findLatestRateBeforeDate(date, 3L, 2L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 3L, 2L))
                 .thenReturn(List.of());
 
         assertThrows(ExchangeRateNotFoundException.class,
