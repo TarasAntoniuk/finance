@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.banking.bank.repository;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
-import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
@@ -32,11 +31,9 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Clean up existing data to prevent duplicate key errors
         bankRepository.deleteAll();
         countryRepository.deleteAll();
 
-        // Create countries
         ukraine = new Country();
         ukraine.setName("Ukraine");
         ukraine.setIsoCode("UKR");
@@ -47,7 +44,6 @@ class BankRepositoryTest extends BaseIntegrationTest {
         usa.setIsoCode("USA");
         usa = countryRepository.save(usa);
 
-        // Create banks
         privatBank = new Bank();
         privatBank.setName("PrivatBank");
         privatBank.setSwiftCode("PBANUA2X");
@@ -77,11 +73,9 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findByCountryId_ShouldReturnBanksFromSpecificCountry() {
-        // When
-        List<Bank> ukrainianBanks = bankRepository.findByCountryId(ukraine.getId());
-        List<Bank> usaBanks = bankRepository.findByCountryId(usa.getId());
+        List<Bank> ukrainianBanks = bankRepository.findByCountryIdWithRelations(ukraine.getId());
+        List<Bank> usaBanks = bankRepository.findByCountryIdWithRelations(usa.getId());
 
-        // Then
         assertThat(ukrainianBanks).hasSize(2);
         assertThat(ukrainianBanks).extracting(Bank::getName)
                 .containsExactlyInAnyOrder("PrivatBank", "Monobank");
@@ -92,25 +86,20 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findByCountryId_WhenNoBanks_ShouldReturnEmptyList() {
-        // Given
         Country germany = new Country();
         germany.setName("Germany");
         germany.setIsoCode("DEU");
         germany = countryRepository.save(germany);
 
-        // When
-        List<Bank> germanBanks = bankRepository.findByCountryId(germany.getId());
+        List<Bank> germanBanks = bankRepository.findByCountryIdWithRelations(germany.getId());
 
-        // Then
         assertThat(germanBanks).isEmpty();
     }
 
     @Test
-    void findByIsActiveTrue_ShouldReturnOnlyActiveBanks() {
-        // When
-        List<Bank> activeBanks = bankRepository.findByIsActiveTrue();
+    void findActiveWithRelations_ShouldReturnOnlyActiveBanks() {
+        List<Bank> activeBanks = bankRepository.findActiveWithRelations();
 
-        // Then
         assertThat(activeBanks).hasSize(2);
         assertThat(activeBanks).extracting(Bank::getName)
                 .containsExactlyInAnyOrder("PrivatBank", "Monobank");
@@ -119,10 +108,8 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findBySwiftCode_WhenExists_ShouldReturnBank() {
-        // When
-        Optional<Bank> found = bankRepository.findBySwiftCode("PBANUA2X");
+        Optional<Bank> found = bankRepository.findBySwiftCodeWithRelations("PBANUA2X");
 
-        // Then
         assertThat(found).isPresent();
         assertThat(found.get().getName()).isEqualTo("PrivatBank");
         assertThat(found.get().getSwiftCode()).isEqualTo("PBANUA2X");
@@ -130,27 +117,20 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findBySwiftCode_WhenNotExists_ShouldReturnEmpty() {
-        // When
-        Optional<Bank> found = bankRepository.findBySwiftCode("NOTEXIST");
+        Optional<Bank> found = bankRepository.findBySwiftCodeWithRelations("NOTEXIST");
 
-        // Then
         assertThat(found).isEmpty();
     }
 
     @Test
     void findBySwiftCode_ShouldBeCaseInsensitive() {
-        // When
-        Optional<Bank> found = bankRepository.findBySwiftCode("pbanua2x");
+        Optional<Bank> found = bankRepository.findBySwiftCodeWithRelations("pbanua2x");
 
-        // Then
-        // Note: This will fail if DB collation is case-sensitive
-        // For case-insensitive search, you might need custom query
         assertThat(found).isEmpty(); // Expected behavior with case-sensitive DB
     }
 
     @Test
     void save_ShouldPersistBankWithAllFields() {
-        // Given
         Bank newBank = new Bank();
         newBank.setName("Test Bank");
         newBank.setSwiftCode("TESTUA2X");
@@ -160,10 +140,8 @@ class BankRepositoryTest extends BaseIntegrationTest {
         newBank.setWebsite("www.testbank.ua");
         newBank.setIsActive(true);
 
-        // When
         Bank saved = bankRepository.save(newBank);
 
-        // Then
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getName()).isEqualTo("Test Bank");
         assertThat(saved.getSwiftCode()).isEqualTo("TESTUA2X");
@@ -178,14 +156,11 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void update_ShouldModifyExistingBank() {
-        // Given
         privatBank.setName("PrivatBank Updated");
         privatBank.setIsActive(false);
 
-        // When
         Bank updated = bankRepository.save(privatBank);
 
-        // Then
         assertThat(updated.getId()).isEqualTo(privatBank.getId());
         assertThat(updated.getName()).isEqualTo("PrivatBank Updated");
         assertThat(updated.getIsActive()).isFalse();
@@ -193,23 +168,18 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void delete_ShouldRemoveBank() {
-        // Given
         Long bankId = privatBank.getId();
 
-        // When
         bankRepository.deleteById(bankId);
 
-        // Then
         Optional<Bank> deleted = bankRepository.findById(bankId);
         assertThat(deleted).isEmpty();
     }
 
     @Test
-    void findAll_ShouldReturnAllBanks() {
-        // When
-        List<Bank> allBanks = bankRepository.findAll();
+    void findAllWithRelations_ShouldReturnAllBanks() {
+        List<Bank> allBanks = bankRepository.findAllWithRelations();
 
-        // Then
         assertThat(allBanks).hasSize(3);
         assertThat(allBanks).extracting(Bank::getName)
                 .containsExactlyInAnyOrder("PrivatBank", "Monobank", "JPMorgan Chase");
@@ -217,14 +187,8 @@ class BankRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void swiftCodeIndex_ShouldImproveQueryPerformance() {
-        // This test verifies that the index exists
-        // In real scenario, you would use EXPLAIN ANALYZE to verify index usage
+        Optional<Bank> found = bankRepository.findBySwiftCodeWithRelations("PBANUA2X");
 
-        // When
-        Optional<Bank> found = bankRepository.findBySwiftCode("PBANUA2X");
-
-        // Then
         assertThat(found).isPresent();
-        // Index should make this query fast even with many records
     }
 }

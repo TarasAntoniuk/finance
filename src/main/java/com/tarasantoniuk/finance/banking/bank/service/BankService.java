@@ -24,37 +24,52 @@ public class BankService {
         this.bankMapper = bankMapper;
     }
 
+    /**
+     * Get all banks with optimized query (solves N+1 problem).
+     * Uses JOIN FETCH to load country and counterparty in a single query.
+     */
     public List<BankResponseDTO> getAllBanks() {
-        List<Bank> banks = bankRepository.findAll();
+        List<Bank> banks = bankRepository.findAllWithRelations();
         return bankMapper.toResponseList(banks);
     }
 
+    /**
+     * Get bank by ID with optimized query.
+     */
     public BankResponseDTO getBankById(Long id) {
-        Bank bank = bankRepository.findById(id)
+        Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         return bankMapper.toResponse(bank);
     }
 
+    /**
+     * Get banks by country with optimized query.
+     */
     public List<BankResponseDTO> getBanksByCountry(Long countryId) {
-        List<Bank> banks = bankRepository.findByCountryId(countryId);
+        List<Bank> banks = bankRepository.findByCountryIdWithRelations(countryId);
         return bankMapper.toResponseList(banks);
     }
 
+    /**
+     * Get active banks with optimized query.
+     */
     public List<BankResponseDTO> getActiveBanks() {
-        List<Bank> banks = bankRepository.findByIsActiveTrue();
+        List<Bank> banks = bankRepository.findActiveWithRelations();
         return bankMapper.toResponseList(banks);
     }
 
+    /**
+     * Get bank by SWIFT code with optimized query.
+     */
     public BankResponseDTO getBankBySwiftCode(String swiftCode) {
-        Bank bank = bankRepository.findBySwiftCode(swiftCode)
+        Bank bank = bankRepository.findBySwiftCodeWithRelations(swiftCode)
                 .orElseThrow(() -> BankNotFoundException.bySwiftCode(swiftCode));
         return bankMapper.toResponse(bank);
     }
 
     @Transactional
     public BankResponseDTO createBank(BankRequestDTO requestDTO) {
-        // Check if bank with this SWIFT code already exists
-        if (bankRepository.findBySwiftCode(requestDTO.getSwiftCode()).isPresent()) {
+        if (bankRepository.findBySwiftCodeWithRelations(requestDTO.getSwiftCode()).isPresent()) {
             throw DuplicateBankException.bySwiftCode(requestDTO.getSwiftCode());
         }
 
@@ -65,11 +80,10 @@ public class BankService {
 
     @Transactional
     public BankResponseDTO updateBank(Long id, BankRequestDTO requestDTO) {
-        Bank bank = bankRepository.findById(id)
+        Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
 
-        // Check if another bank with this SWIFT code already exists
-        bankRepository.findBySwiftCode(requestDTO.getSwiftCode())
+        bankRepository.findBySwiftCodeWithRelations(requestDTO.getSwiftCode())
                 .ifPresent(existingBank -> {
                     if (!existingBank.getId().equals(id)) {
                         throw DuplicateBankException.bySwiftCode(requestDTO.getSwiftCode());
@@ -83,7 +97,7 @@ public class BankService {
 
     @Transactional
     public BankResponseDTO deactivateBank(Long id) {
-        Bank bank = bankRepository.findById(id)
+        Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         bank.setIsActive(false);
         Bank updatedBank = bankRepository.save(bank);
@@ -92,7 +106,7 @@ public class BankService {
 
     @Transactional
     public BankResponseDTO activateBank(Long id) {
-        Bank bank = bankRepository.findById(id)
+        Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         bank.setIsActive(true);
         Bank updatedBank = bankRepository.save(bank);
