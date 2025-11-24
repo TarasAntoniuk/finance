@@ -26,46 +26,67 @@ public class BankAccountService {
         this.bankAccountMapper = bankAccountMapper;
     }
 
+    /**
+     * Get all bank accounts with optimized query (solves N+1 problem).
+     * Uses JOIN FETCH to load bank and currency in a single query.
+     */
     public List<BankAccountResponseDTO> getAllBankAccounts() {
-        List<BankAccount> bankAccounts = bankAccountRepository.findAll();
+        List<BankAccount> bankAccounts = bankAccountRepository.findAllWithRelations();
         return bankAccountMapper.toResponseList(bankAccounts);
     }
 
+    /**
+     * Get bank account by ID with optimized query.
+     */
     public BankAccountResponseDTO getBankAccountById(Long id) {
-        BankAccount bankAccount = bankAccountRepository.findById(id)
+        BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankAccountNotFoundException.byId(id));
         return bankAccountMapper.toResponse(bankAccount);
     }
 
+    /**
+     * Get bank account by account number with optimized query.
+     */
     public BankAccountResponseDTO getBankAccountByAccountNumber(String accountNumber) {
-        BankAccount bankAccount = bankAccountRepository.findByAccountNumber(accountNumber)
+        BankAccount bankAccount = bankAccountRepository.findByAccountNumberWithRelations(accountNumber)
                 .orElseThrow(() -> BankAccountNotFoundException.byAccountNumber(accountNumber));
         return bankAccountMapper.toResponse(bankAccount);
     }
 
+    /**
+     * Get bank accounts by holder with optimized query.
+     */
     public List<BankAccountResponseDTO> getBankAccountsByHolder(AccountHolderType holderType, Long holderId) {
-        List<BankAccount> bankAccounts = bankAccountRepository.findByHolderTypeAndHolderId(holderType, holderId);
+        List<BankAccount> bankAccounts = bankAccountRepository.findByHolderWithRelations(holderType, holderId);
         return bankAccountMapper.toResponseList(bankAccounts);
     }
 
+    /**
+     * Get bank accounts by bank with optimized query.
+     */
     public List<BankAccountResponseDTO> getBankAccountsByBank(Long bankId) {
-        List<BankAccount> bankAccounts = bankAccountRepository.findByBankId(bankId);
+        List<BankAccount> bankAccounts = bankAccountRepository.findByBankIdWithRelations(bankId);
         return bankAccountMapper.toResponseList(bankAccounts);
     }
 
+    /**
+     * Get bank accounts by status with optimized query.
+     */
     public List<BankAccountResponseDTO> getBankAccountsByStatus(AccountStatus status) {
-        List<BankAccount> bankAccounts = bankAccountRepository.findByStatus(status);
+        List<BankAccount> bankAccounts = bankAccountRepository.findByStatusWithRelations(status);
         return bankAccountMapper.toResponseList(bankAccounts);
     }
 
+    /**
+     * Get default bank accounts by holder with optimized query.
+     */
     public List<BankAccountResponseDTO> getDefaultBankAccountsByHolder(AccountHolderType holderType, Long holderId) {
-        List<BankAccount> bankAccounts = bankAccountRepository.findByHolderTypeAndHolderIdAndIsDefaultTrue(holderType, holderId);
+        List<BankAccount> bankAccounts = bankAccountRepository.findDefaultByHolderWithRelations(holderType, holderId);
         return bankAccountMapper.toResponseList(bankAccounts);
     }
 
     @Transactional
     public BankAccountResponseDTO createBankAccount(BankAccountRequestDTO requestDTO) {
-        // Check if bank account with this account number already exists
         if (bankAccountRepository.findByAccountNumber(requestDTO.getAccountNumber()).isPresent()) {
             throw DuplicateBankAccountException.byAccountNumber(requestDTO.getAccountNumber());
         }
@@ -77,10 +98,9 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountResponseDTO updateBankAccount(Long id, BankAccountRequestDTO requestDTO) {
-        BankAccount bankAccount = bankAccountRepository.findById(id)
+        BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankAccountNotFoundException.byId(id));
 
-        // Check if another bank account with this account number already exists
         bankAccountRepository.findByAccountNumber(requestDTO.getAccountNumber())
                 .ifPresent(existingBankAccount -> {
                     if (!existingBankAccount.getId().equals(id)) {
@@ -95,7 +115,7 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountResponseDTO changeStatus(Long id, AccountStatus status) {
-        BankAccount bankAccount = bankAccountRepository.findById(id)
+        BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankAccountNotFoundException.byId(id));
         bankAccount.setStatus(status);
         BankAccount updatedBankAccount = bankAccountRepository.save(bankAccount);
@@ -104,7 +124,7 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountResponseDTO setAsDefault(Long id) {
-        BankAccount bankAccount = bankAccountRepository.findById(id)
+        BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankAccountNotFoundException.byId(id));
         bankAccount.setIsDefault(true);
         BankAccount updatedBankAccount = bankAccountRepository.save(bankAccount);
@@ -113,7 +133,7 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountResponseDTO unsetAsDefault(Long id) {
-        BankAccount bankAccount = bankAccountRepository.findById(id)
+        BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankAccountNotFoundException.byId(id));
         bankAccount.setIsDefault(false);
         BankAccount updatedBankAccount = bankAccountRepository.save(bankAccount);

@@ -45,19 +45,16 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // Clean up existing data
         bankAccountRepository.deleteAll();
         bankRepository.deleteAll();
         currencyRepository.deleteAll();
         countryRepository.deleteAll();
 
-        // Create country
         Country ukraine = new Country();
         ukraine.setName("Ukraine");
         ukraine.setIsoCode("UKR");
         ukraine = countryRepository.save(ukraine);
 
-        // Find or Create currencies
         uah = currencyRepository.findByCode("UAH")
                 .orElseGet(() -> {
                     Currency c = new Currency();
@@ -82,7 +79,6 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
                     return currencyRepository.save(c);
                 });
 
-        // Create banks
         privatBank = new Bank();
         privatBank.setName("PrivatBank");
         privatBank.setSwiftCode("PBANUA2X");
@@ -97,7 +93,6 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
         monobank.setIsActive(true);
         monobank = bankRepository.save(monobank);
 
-        // Create organization accounts
         orgAccount1 = new BankAccount();
         orgAccount1.setAccountNumber("UA213223130000026007233566001");
         orgAccount1.setHolderType(AccountHolderType.ORGANIZATION);
@@ -120,7 +115,6 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
         orgAccount2.setIsDefault(false);
         orgAccount2 = bankAccountRepository.save(orgAccount2);
 
-        // Create counterparty account
         counterpartyAccount1 = new BankAccount();
         counterpartyAccount1.setAccountNumber("UA213223130000026007233566003");
         counterpartyAccount1.setHolderType(AccountHolderType.COUNTERPARTY);
@@ -135,10 +129,8 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findByAccountNumber_WhenExists_ShouldReturnBankAccount() {
-        // When
         Optional<BankAccount> found = bankAccountRepository.findByAccountNumber("UA213223130000026007233566001");
 
-        // Then
         assertThat(found).isPresent();
         assertThat(found.get().getAccountName()).isEqualTo("Main UAH Account");
         assertThat(found.get().getHolderType()).isEqualTo(AccountHolderType.ORGANIZATION);
@@ -146,22 +138,28 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findByAccountNumber_WhenNotExists_ShouldReturnEmpty() {
-        // When
         Optional<BankAccount> found = bankAccountRepository.findByAccountNumber("UA999999999999999999999999999");
 
-        // Then
         assertThat(found).isEmpty();
     }
 
     @Test
-    void findByHolderTypeAndHolderId_ShouldReturnAccountsForSpecificHolder() {
-        // When
-        List<BankAccount> orgAccounts = bankAccountRepository.findByHolderTypeAndHolderId(
+    void findByAccountNumberWithRelations_WhenExists_ShouldReturnBankAccountWithRelations() {
+        Optional<BankAccount> found = bankAccountRepository.findByAccountNumberWithRelations("UA213223130000026007233566001");
+
+        assertThat(found).isPresent();
+        assertThat(found.get().getAccountName()).isEqualTo("Main UAH Account");
+        assertThat(found.get().getBank()).isNotNull();
+        assertThat(found.get().getCurrency()).isNotNull();
+    }
+
+    @Test
+    void findByHolderWithRelations_ShouldReturnAccountsForSpecificHolder() {
+        List<BankAccount> orgAccounts = bankAccountRepository.findByHolderWithRelations(
                 AccountHolderType.ORGANIZATION, 1L);
-        List<BankAccount> counterpartyAccounts = bankAccountRepository.findByHolderTypeAndHolderId(
+        List<BankAccount> counterpartyAccounts = bankAccountRepository.findByHolderWithRelations(
                 AccountHolderType.COUNTERPARTY, 5L);
 
-        // Then
         assertThat(orgAccounts).hasSize(2);
         assertThat(orgAccounts).extracting(BankAccount::getAccountName)
                 .containsExactlyInAnyOrder("Main UAH Account", "USD Account");
@@ -171,22 +169,18 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     }
 
     @Test
-    void findByHolderTypeAndHolderId_WhenNoAccounts_ShouldReturnEmptyList() {
-        // When
-        List<BankAccount> accounts = bankAccountRepository.findByHolderTypeAndHolderId(
+    void findByHolderWithRelations_WhenNoAccounts_ShouldReturnEmptyList() {
+        List<BankAccount> accounts = bankAccountRepository.findByHolderWithRelations(
                 AccountHolderType.ORGANIZATION, 999L);
 
-        // Then
         assertThat(accounts).isEmpty();
     }
 
     @Test
-    void findByBankId_ShouldReturnAccountsForSpecificBank() {
-        // When
-        List<BankAccount> privatBankAccounts = bankAccountRepository.findByBankId(privatBank.getId());
-        List<BankAccount> monobankAccounts = bankAccountRepository.findByBankId(monobank.getId());
+    void findByBankIdWithRelations_ShouldReturnAccountsForSpecificBank() {
+        List<BankAccount> privatBankAccounts = bankAccountRepository.findByBankIdWithRelations(privatBank.getId());
+        List<BankAccount> monobankAccounts = bankAccountRepository.findByBankIdWithRelations(monobank.getId());
 
-        // Then
         assertThat(privatBankAccounts).hasSize(2);
         assertThat(privatBankAccounts).extracting(BankAccount::getAccountName)
                 .containsExactlyInAnyOrder("Main UAH Account", "Counterparty Account");
@@ -196,13 +190,11 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     }
 
     @Test
-    void findByStatus_ShouldReturnAccountsWithSpecificStatus() {
-        // When
-        List<BankAccount> activeAccounts = bankAccountRepository.findByStatus(AccountStatus.ACTIVE);
-        List<BankAccount> inactiveAccounts = bankAccountRepository.findByStatus(AccountStatus.INACTIVE);
-        List<BankAccount> closedAccounts = bankAccountRepository.findByStatus(AccountStatus.CLOSED);
+    void findByStatusWithRelations_ShouldReturnAccountsWithSpecificStatus() {
+        List<BankAccount> activeAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE);
+        List<BankAccount> inactiveAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.INACTIVE);
+        List<BankAccount> closedAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.CLOSED);
 
-        // Then
         assertThat(activeAccounts).hasSize(2);
         assertThat(activeAccounts).extracting(BankAccount::getAccountName)
                 .containsExactlyInAnyOrder("Main UAH Account", "USD Account");
@@ -214,30 +206,25 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     }
 
     @Test
-    void findByHolderTypeAndHolderIdAndIsDefaultTrue_ShouldReturnDefaultAccounts() {
-        // When
+    void findDefaultByHolderWithRelations_ShouldReturnDefaultAccounts() {
         List<BankAccount> defaultAccounts = bankAccountRepository
-                .findByHolderTypeAndHolderIdAndIsDefaultTrue(AccountHolderType.ORGANIZATION, 1L);
+                .findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 1L);
 
-        // Then
         assertThat(defaultAccounts).hasSize(1);
         assertThat(defaultAccounts.get(0).getAccountName()).isEqualTo("Main UAH Account");
         assertThat(defaultAccounts.get(0).getIsDefault()).isTrue();
     }
 
     @Test
-    void findByHolderTypeAndHolderIdAndIsDefaultTrue_WhenNoDefault_ShouldReturnEmptyList() {
-        // When
+    void findDefaultByHolderWithRelations_WhenNoDefault_ShouldReturnEmptyList() {
         List<BankAccount> defaultAccounts = bankAccountRepository
-                .findByHolderTypeAndHolderIdAndIsDefaultTrue(AccountHolderType.COUNTERPARTY, 5L);
+                .findDefaultByHolderWithRelations(AccountHolderType.COUNTERPARTY, 5L);
 
-        // Then
         assertThat(defaultAccounts).isEmpty();
     }
 
     @Test
     void save_ShouldPersistBankAccountWithAllFields() {
-        // Given
         BankAccount newAccount = new BankAccount();
         newAccount.setAccountNumber("UA111111111111111111111111111");
         newAccount.setHolderType(AccountHolderType.ORGANIZATION);
@@ -248,10 +235,8 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
         newAccount.setStatus(AccountStatus.ACTIVE);
         newAccount.setIsDefault(false);
 
-        // When
         BankAccount saved = bankAccountRepository.save(newAccount);
 
-        // Then
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getAccountNumber()).isEqualTo("UA111111111111111111111111111");
         assertThat(saved.getHolderType()).isEqualTo(AccountHolderType.ORGANIZATION);
@@ -267,14 +252,11 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void update_ShouldModifyExistingBankAccount() {
-        // Given
         orgAccount1.setAccountName("Updated Account Name");
         orgAccount1.setStatus(AccountStatus.INACTIVE);
 
-        // When
         BankAccount updated = bankAccountRepository.save(orgAccount1);
 
-        // Then
         assertThat(updated.getId()).isEqualTo(orgAccount1.getId());
         assertThat(updated.getAccountName()).isEqualTo("Updated Account Name");
         assertThat(updated.getStatus()).isEqualTo(AccountStatus.INACTIVE);
@@ -282,65 +264,46 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void delete_ShouldRemoveBankAccount() {
-        // Given
         Long accountId = orgAccount1.getId();
 
-        // When
         bankAccountRepository.deleteById(accountId);
 
-        // Then
         Optional<BankAccount> deleted = bankAccountRepository.findById(accountId);
         assertThat(deleted).isEmpty();
     }
 
     @Test
-    void findAll_ShouldReturnAllBankAccounts() {
-        // When
-        List<BankAccount> allAccounts = bankAccountRepository.findAll();
+    void findAllWithRelations_ShouldReturnAllBankAccounts() {
+        List<BankAccount> allAccounts = bankAccountRepository.findAllWithRelations();
 
-        // Then
         assertThat(allAccounts).hasSize(3);
     }
 
     @Test
     void accountNumberIndex_ShouldImproveQueryPerformance() {
-        // This test verifies that the index exists
-        // In real scenario, you would use EXPLAIN ANALYZE to verify index usage
-
-        // When
         Optional<BankAccount> found = bankAccountRepository.findByAccountNumber("UA213223130000026007233566001");
 
-        // Then
         assertThat(found).isPresent();
-        // Index should make this query fast even with many records
     }
 
     @Test
     void holderIndex_ShouldImproveQueryPerformance() {
-        // This test verifies that the composite index on holderType+holderId exists
-
-        // When
-        List<BankAccount> accounts = bankAccountRepository.findByHolderTypeAndHolderId(
+        List<BankAccount> accounts = bankAccountRepository.findByHolderWithRelations(
                 AccountHolderType.ORGANIZATION, 1L);
 
-        // Then
         assertThat(accounts).hasSize(2);
-        // Index should make this query fast even with many records
     }
 
     @Test
     void uniqueAccountNumber_ShouldPreventDuplicates() {
-        // Given
         BankAccount duplicateAccount = new BankAccount();
-        duplicateAccount.setAccountNumber("UA213223130000026007233566001"); // duplicate!
+        duplicateAccount.setAccountNumber("UA213223130000026007233566001");
         duplicateAccount.setHolderType(AccountHolderType.ORGANIZATION);
         duplicateAccount.setHolderId(2L);
         duplicateAccount.setBank(privatBank);
         duplicateAccount.setCurrency(uah);
         duplicateAccount.setStatus(AccountStatus.ACTIVE);
 
-        // When & Then
-        // This should throw DataIntegrityViolationException due to unique constraint
         org.junit.jupiter.api.Assertions.assertThrows(
                 org.springframework.dao.DataIntegrityViolationException.class,
                 () -> bankAccountRepository.saveAndFlush(duplicateAccount)
