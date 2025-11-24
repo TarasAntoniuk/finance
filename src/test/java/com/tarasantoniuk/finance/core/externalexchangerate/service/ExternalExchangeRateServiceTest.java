@@ -242,6 +242,63 @@ class ExternalExchangeRateServiceTest {
                 () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
     }
 
+    @Test
+    void updateExchangeRate_WhenCurrencyFromNotExists_ShouldThrowException() {
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
+        when(currencyRepository.existsById(1L)).thenReturn(false);
+
+        assertThrows(CurrencyNotFoundException.class,
+                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
+    }
+
+    @Test
+    void updateExchangeRate_WhenCurrencyToNotExists_ShouldThrowException() {
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+        when(currencyRepository.existsById(2L)).thenReturn(false);
+
+        assertThrows(CurrencyNotFoundException.class,
+                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
+    }
+
+    @Test
+    void updateExchangeRate_WhenSameCurrency_ShouldThrowException() {
+        requestDTO.setCurrencyFromId(1L);
+        requestDTO.setCurrencyToId(1L);
+
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
+        when(currencyRepository.existsById(1L)).thenReturn(true);
+
+        assertThrows(InvalidExchangeRateException.class,
+                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
+    }
+
+    @Test
+    void updateExchangeRate_WhenChangingToExistingCombination_ShouldThrowException() {
+        exchangeRate.setExchangeDate(LocalDate.of(2024, 1, 1));
+        exchangeRate.getCurrencyFrom().setId(1L);
+        exchangeRate.getCurrencyTo().setId(2L);
+        exchangeRate.setSource("ECB");
+
+        requestDTO.setExchangeDate(LocalDate.of(2024, 1, 2));
+        requestDTO.setCurrencyFromId(3L);
+        requestDTO.setCurrencyToId(4L);
+        requestDTO.setSource("NBU");
+
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
+        when(currencyRepository.existsById(3L)).thenReturn(true);
+        when(currencyRepository.existsById(4L)).thenReturn(true);
+        when(exchangeRateRepository.existsByExchangeDateAndCurrencyFromIdAndCurrencyToIdAndSource(
+                LocalDate.of(2024, 1, 2), 3L, 4L, "NBU")).thenReturn(true);
+
+        assertThrows(ExchangeRateAlreadyExistsException.class,
+                () -> exchangeRateService.updateExchangeRate(1L, requestDTO));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
+    }
+
     // ========== DELETE & ACTIVATION TESTS ==========
 
     @Test
@@ -275,6 +332,15 @@ class ExternalExchangeRateServiceTest {
     }
 
     @Test
+    void activateExchangeRate_WhenNotExists_ShouldThrowException() {
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ExchangeRateNotFoundException.class,
+                () -> exchangeRateService.activateExchangeRate(1L));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
+    }
+
+    @Test
     void deactivateExchangeRate_WhenExists_ShouldDeactivateSuccessfully() {
         when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
@@ -284,6 +350,15 @@ class ExternalExchangeRateServiceTest {
 
         assertFalse(exchangeRate.getIsActive());
         verify(exchangeRateRepository).save(exchangeRate);
+    }
+
+    @Test
+    void deactivateExchangeRate_WhenNotExists_ShouldThrowException() {
+        when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ExchangeRateNotFoundException.class,
+                () -> exchangeRateService.deactivateExchangeRate(1L));
+        verify(exchangeRateRepository, never()).save(any(ExternalExchangeRate.class));
     }
 
     // ========== QUERY TESTS ==========
@@ -387,6 +462,18 @@ class ExternalExchangeRateServiceTest {
 
         assertNotNull(result);
         assertEquals(2, result.size());
+    }
+
+    @Test
+    void getLatestRatesByDateAndCurrencyFrom_WhenCurrencyNotExists_ShouldThrowException() {
+        LocalDate date = LocalDate.of(2024, 1, 15);
+        Long currencyFromId = 999L;
+
+        when(currencyRepository.existsById(currencyFromId)).thenReturn(false);
+
+        assertThrows(CurrencyNotFoundException.class,
+                () -> exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId));
+        verify(exchangeRateRepository, never()).findLatestRatesByCurrencyFromWithCurrencies(any(), anyLong());
     }
 
     // ========== CROSS RATE TESTS ==========
