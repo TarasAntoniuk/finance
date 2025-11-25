@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.banking.bankaccount.service;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDTO;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDTO;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
@@ -38,8 +38,8 @@ class BankAccountServiceTest {
     private BankAccountService bankAccountService;
 
     private BankAccount bankAccount;
-    private BankAccountRequestDTO requestDTO;
-    private BankAccountResponseDTO responseDTO;
+    private BankAccountRequestDto requestDTO;
+    private BankAccountResponseDto responseDTO;
     private Bank bank;
     private Currency currency;
 
@@ -64,7 +64,7 @@ class BankAccountServiceTest {
         bankAccount.setStatus(AccountStatus.ACTIVE);
         bankAccount.setIsDefault(true);
 
-        requestDTO = new BankAccountRequestDTO();
+        requestDTO = new BankAccountRequestDto();
         requestDTO.setAccountNumber("UA213223130000026007233566001");
         requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
         requestDTO.setHolderId(10L);
@@ -74,7 +74,7 @@ class BankAccountServiceTest {
         requestDTO.setStatus(AccountStatus.ACTIVE);
         requestDTO.setIsDefault(true);
 
-        responseDTO = new BankAccountResponseDTO();
+        responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setAccountNumber("UA213223130000026007233566001");
         responseDTO.setHolderType(AccountHolderType.ORGANIZATION);
@@ -87,7 +87,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.findAllWithRelations()).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDTO> result = bankAccountService.getAllBankAccounts();
+        List<BankAccountResponseDto> result = bankAccountService.getAllBankAccounts();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -99,7 +99,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bankAccount));
         when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
 
-        BankAccountResponseDTO result = bankAccountService.getBankAccountById(1L);
+        BankAccountResponseDto result = bankAccountService.getBankAccountById(1L);
 
         assertNotNull(result);
         assertEquals("UA213223130000026007233566001", result.getAccountNumber());
@@ -120,7 +120,7 @@ class BankAccountServiceTest {
                 .thenReturn(Optional.of(bankAccount));
         when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
 
-        BankAccountResponseDTO result = bankAccountService.getBankAccountByAccountNumber("UA213223130000026007233566001");
+        BankAccountResponseDto result = bankAccountService.getBankAccountByAccountNumber("UA213223130000026007233566001");
 
         assertNotNull(result);
         assertEquals("UA213223130000026007233566001", result.getAccountNumber());
@@ -142,7 +142,7 @@ class BankAccountServiceTest {
                 .thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDTO> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -155,7 +155,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.findByBankIdWithRelations(1L)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDTO> result = bankAccountService.getBankAccountsByBank(1L);
+        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByBank(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -168,7 +168,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDTO> result = bankAccountService.getBankAccountsByStatus(AccountStatus.ACTIVE);
+        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByStatus(AccountStatus.ACTIVE);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -182,7 +182,7 @@ class BankAccountServiceTest {
                 .thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDTO> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -197,7 +197,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.save(bankAccount)).thenReturn(bankAccount);
         when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
 
-        BankAccountResponseDTO result = bankAccountService.createBankAccount(requestDTO);
+        BankAccountResponseDto result = bankAccountService.createBankAccount(requestDTO);
 
         assertNotNull(result);
         verify(bankAccountRepository, times(1)).save(any(BankAccount.class));
@@ -220,7 +220,7 @@ class BankAccountServiceTest {
         when(bankAccountRepository.save(bankAccount)).thenReturn(bankAccount);
         when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
 
-        BankAccountResponseDTO result = bankAccountService.updateBankAccount(1L, requestDTO);
+        BankAccountResponseDto result = bankAccountService.updateBankAccount(1L, requestDTO);
 
         assertNotNull(result);
         verify(bankAccountRepository, times(1)).save(bankAccount);

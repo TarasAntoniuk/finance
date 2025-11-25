@@ -8,7 +8,7 @@ import java.time.LocalDate;
 /**
  * DTO for external exchange rate creation and update requests
  */
-public class ExternalExchangeRateRequestDTO extends BaseExternalExchangeRateDto {
+public class ExternalExchangeRateRequestDto extends BaseExternalExchangeRateDto {
 
     @NotNull(message = "Currency From ID is required")
     private Long currencyFromId;
@@ -16,11 +16,11 @@ public class ExternalExchangeRateRequestDTO extends BaseExternalExchangeRateDto 
     @NotNull(message = "Currency To ID is required")
     private Long currencyToId;
 
-    public ExternalExchangeRateRequestDTO() {
+    public ExternalExchangeRateRequestDto() {
         super();
     }
 
-    public ExternalExchangeRateRequestDTO(LocalDate exchangeDate, Long currencyFromId,
+    public ExternalExchangeRateRequestDto(LocalDate exchangeDate, Long currencyFromId,
                                           Long currencyToId, BigDecimal rate, String source,
                                           String sourceUrl, Boolean isActive) {
         super();

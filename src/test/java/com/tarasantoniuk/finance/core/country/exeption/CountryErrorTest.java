@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.core.country.exeption;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.country.controller.CountryController;
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
 import com.tarasantoniuk.finance.core.country.exception.CountryAlreadyExistsException;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.service.CountryService;
@@ -63,11 +63,11 @@ class CountryErrorTest {
     @Test
     void createCountry_WhenIsoCodeExists_ShouldReturn409() throws Exception {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("United States");
         requestDTO.setIsoCode("USA");
 
-        when(countryService.createCountry(any(CountryRequestDTO.class)))
+        when(countryService.createCountry(any(CountryRequestDto.class)))
                 .thenThrow(CountryAlreadyExistsException.byIsoCode("USA"));
 
         // When & Then
@@ -82,7 +82,7 @@ class CountryErrorTest {
     @Test
     void createCountry_WhenInvalidIsoCode_ShouldReturn400() throws Exception {
         // Given - ISO code must be 2-3 characters
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Test Country");
         requestDTO.setIsoCode("TOOLONG");
 
@@ -98,7 +98,7 @@ class CountryErrorTest {
     @Test
     void createCountry_WhenMissingRequiredFields_ShouldReturn400() throws Exception {
         // Given - missing name and isoCode
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/countries")
@@ -111,11 +111,11 @@ class CountryErrorTest {
     @Test
     void updateCountry_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Test");
         requestDTO.setIsoCode("TST");
 
-        when(countryService.updateCountry(anyLong(), any(CountryRequestDTO.class)))
+        when(countryService.updateCountry(anyLong(), any(CountryRequestDto.class)))
                 .thenThrow(CountryNotFoundException.byId(999L));
 
         // When & Then

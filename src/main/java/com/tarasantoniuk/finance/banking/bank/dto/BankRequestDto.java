@@ -2,14 +2,14 @@ package com.tarasantoniuk.finance.banking.bank.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public class BankRequestDTO extends BaseBankDTO {
+public class BankRequestDto extends BaseBankDto {
 
     @NotNull(message = "Country ID is required")
     private Long countryId;
 
     private Long counterpartyId;
 
-    public BankRequestDTO() {
+    public BankRequestDto() {
     }
 
     public Long getCountryId() {

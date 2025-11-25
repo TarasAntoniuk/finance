@@ -1,22 +1,22 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.dto;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 
 import java.time.LocalDateTime;
 
 /**
  * DTO for accounting policy responses
  */
-public class AccountingPolicyResponseDTO extends BaseAccountingPolicyDto {
+public class AccountingPolicyResponseDto extends BaseAccountingPolicyDto {
 
     private Long id;
-    private OrganizationResponseDTO organization;
-    private CurrencyResponseDTO currency;
+    private OrganizationResponseDto organization;
+    private CurrencyResponseDto currency;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public AccountingPolicyResponseDTO() {
+    public AccountingPolicyResponseDto() {
         super();
     }
 
@@ -28,19 +28,19 @@ public class AccountingPolicyResponseDTO extends BaseAccountingPolicyDto {
         this.id = id;
     }
 
-    public OrganizationResponseDTO getOrganization() {
+    public OrganizationResponseDto getOrganization() {
         return organization;
     }
 
-    public void setOrganization(OrganizationResponseDTO organization) {
+    public void setOrganization(OrganizationResponseDto organization) {
         this.organization = organization;
     }
 
-    public CurrencyResponseDTO getCurrency() {
+    public CurrencyResponseDto getCurrency() {
         return currency;
     }
 
-    public void setCurrency(CurrencyResponseDTO currency) {
+    public void setCurrency(CurrencyResponseDto currency) {
         this.currency = currency;
     }
 

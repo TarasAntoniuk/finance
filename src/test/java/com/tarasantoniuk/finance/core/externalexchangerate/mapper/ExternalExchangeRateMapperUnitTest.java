@@ -1,8 +1,7 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.mapper;
 
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
-import com.tarasantoniuk.finance.core.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -25,7 +24,7 @@ class ExternalExchangeRateMapperUnitTest {
     @Test
     void toEntity_shouldHandleNullCurrencyFromId() {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(null); // null!
         requestDTO.setCurrencyToId(2L);
@@ -44,7 +43,7 @@ class ExternalExchangeRateMapperUnitTest {
     @Test
     void toEntity_shouldHandleNullCurrencyToId() {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(null); // null!
@@ -66,7 +65,7 @@ class ExternalExchangeRateMapperUnitTest {
         ExternalExchangeRate existingEntity = new ExternalExchangeRate();
         existingEntity.setId(1L);
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.now());
         updateDTO.setCurrencyFromId(null);
         updateDTO.setCurrencyToId(null);

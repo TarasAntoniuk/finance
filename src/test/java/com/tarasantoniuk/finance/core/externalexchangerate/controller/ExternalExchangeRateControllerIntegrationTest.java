@@ -3,9 +3,8 @@ package com.tarasantoniuk.finance.core.externalexchangerate.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.dto.PageMetadata;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
-import com.tarasantoniuk.finance.core.externalexchangerate.controller.ExternalExchangeRateController;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.service.ExternalExchangeRateService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,12 +38,12 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getAllExchangeRates_WithDefaultParameters_ShouldReturnPagedRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate1 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate1 = new ExternalExchangeRateResponseDto();
         rate1.setId(1L);
         rate1.setExchangeDate(LocalDate.now());
         rate1.setRate(BigDecimal.valueOf(0.92));
 
-        ExternalExchangeRateResponseDTO rate2 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate2 = new ExternalExchangeRateResponseDto();
         rate2.setId(2L);
         rate2.setExchangeDate(LocalDate.now().minusDays(1));
         rate2.setRate(BigDecimal.valueOf(38.50));
@@ -58,8 +57,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate1, rate2))
                         .metadata(metadata)
                         .build();
@@ -84,7 +83,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getAllExchangeRates_WithCustomPageAndSize_ShouldReturnPagedRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setRate(BigDecimal.valueOf(0.92));
 
@@ -97,8 +96,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(true)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -131,8 +130,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of())
                         .metadata(metadata)
                         .build();
@@ -159,8 +158,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of())
                         .metadata(metadata)
                         .build();
@@ -178,7 +177,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getExchangeRateById_WhenExists_ShouldReturnRate() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setExchangeDate(LocalDate.now());
         rate.setRate(BigDecimal.valueOf(0.92));
@@ -196,7 +195,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     void getExchangeRatesByDate_ShouldReturnFilteredList() throws Exception {
         // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setExchangeDate(date);
 
@@ -213,7 +212,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     void getExchangeRatesByDateAndSource_ShouldReturnFilteredList() throws Exception {
         // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setExchangeDate(date);
 
@@ -229,7 +228,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getExchangeRatesByCurrencyPair_WithDefaultParameters_ShouldReturnPagedRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setRate(BigDecimal.valueOf(0.92));
 
@@ -242,8 +241,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -267,7 +266,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getExchangeRatesByCurrencyPair_WithCustomPageAndSize_ShouldReturnPagedRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setRate(BigDecimal.valueOf(0.92));
 
@@ -280,8 +279,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(true)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -306,7 +305,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getExchangeRatesByCurrencyPair_WhenSizeExceedsMaxSize_ShouldLimitToMaxSize() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
         rate.setRate(BigDecimal.valueOf(0.92));
 
@@ -319,8 +318,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -343,7 +342,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
 
         PageMetadata metadata = PageMetadata.builder()
@@ -355,8 +354,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -382,7 +381,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 12, 31);
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
 
         PageMetadata metadata = PageMetadata.builder()
@@ -394,8 +393,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(true)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -422,7 +421,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         // Given
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 12, 31);
-        ExternalExchangeRateResponseDTO rate = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate = new ExternalExchangeRateResponseDto();
         rate.setId(1L);
 
         PageMetadata metadata = PageMetadata.builder()
@@ -434,8 +433,8 @@ class ExternalExchangeRateControllerIntegrationTest {
                 .hasPrevious(false)
                 .build();
 
-        PageResponse<ExternalExchangeRateResponseDTO> pageResponse =
-                PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        PageResponse<ExternalExchangeRateResponseDto> pageResponse =
+                PageResponse.<ExternalExchangeRateResponseDto>builder()
                         .content(List.of(rate))
                         .metadata(metadata)
                         .build();
@@ -456,11 +455,11 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void getLatestRatesByDate_ShouldReturnRates() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO rate1 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate1 = new ExternalExchangeRateResponseDto();
         rate1.setId(1L);
         rate1.setRate(BigDecimal.valueOf(0.92));
 
-        ExternalExchangeRateResponseDTO rate2 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto rate2 = new ExternalExchangeRateResponseDto();
         rate2.setId(2L);
         rate2.setRate(BigDecimal.valueOf(1.15));
 
@@ -498,18 +497,18 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void createExchangeRate_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
         requestDTO.setRate(BigDecimal.valueOf(0.92));
         requestDTO.setSource("ECB");
 
-        ExternalExchangeRateResponseDTO responseDTO = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto responseDTO = new ExternalExchangeRateResponseDto();
         responseDTO.setId(1L);
         responseDTO.setRate(BigDecimal.valueOf(0.92));
 
-        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -524,7 +523,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void createExchangeRate_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/exchange-rates")
@@ -536,18 +535,18 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void updateExchangeRate_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
         requestDTO.setRate(BigDecimal.valueOf(0.93));
         requestDTO.setSource("ECB");
 
-        ExternalExchangeRateResponseDTO responseDTO = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto responseDTO = new ExternalExchangeRateResponseDto();
         responseDTO.setId(1L);
         responseDTO.setRate(BigDecimal.valueOf(0.93));
 
-        when(exchangeRateService.updateExchangeRate(anyLong(), any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.updateExchangeRate(anyLong(), any(ExternalExchangeRateRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -561,7 +560,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void activateExchangeRate_WhenExists_ShouldReturnActivated() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO responseDTO = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto responseDTO = new ExternalExchangeRateResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(true);
 
@@ -576,7 +575,7 @@ class ExternalExchangeRateControllerIntegrationTest {
     @Test
     void deactivateExchangeRate_WhenExists_ShouldReturnDeactivated() throws Exception {
         // Given
-        ExternalExchangeRateResponseDTO responseDTO = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto responseDTO = new ExternalExchangeRateResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(false);
 

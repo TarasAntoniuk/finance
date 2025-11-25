@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.service;
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyNotFoundException;
@@ -46,8 +46,8 @@ class AccountingPolicyServiceTest {
     private AccountingPolicyService accountingPolicyService;
 
     private AccountingPolicy accountingPolicy;
-    private AccountingPolicyRequestDTO requestDTO;
-    private AccountingPolicyResponseDTO responseDTO;
+    private AccountingPolicyRequestDto requestDTO;
+    private AccountingPolicyResponseDto responseDTO;
     private Organization organization;
     private Currency currency;
 
@@ -73,7 +73,7 @@ class AccountingPolicyServiceTest {
         accountingPolicy.setVatAccountingMethod("INVOICE");
         accountingPolicy.setIsActive(true);
 
-        requestDTO = new AccountingPolicyRequestDTO();
+        requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
@@ -83,7 +83,7 @@ class AccountingPolicyServiceTest {
         requestDTO.setRevenueRecognitionMethod("ACCRUAL");
         requestDTO.setVatAccountingMethod("INVOICE");
 
-        responseDTO = new AccountingPolicyResponseDTO();
+        responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setYear(2024);
     }
@@ -94,7 +94,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findAllWithRelations()).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService.getAllAccountingPolicies();
+        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -106,7 +106,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(accountingPolicy));
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
-        AccountingPolicyResponseDTO result = accountingPolicyService.getAccountingPolicyById(1L);
+        AccountingPolicyResponseDto result = accountingPolicyService.getAccountingPolicyById(1L);
 
         assertNotNull(result);
         assertEquals(2024, result.getYear());
@@ -127,7 +127,7 @@ class AccountingPolicyServiceTest {
                 .thenReturn(Optional.of(accountingPolicy));
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
-        AccountingPolicyResponseDTO result = accountingPolicyService
+        AccountingPolicyResponseDto result = accountingPolicyService
                 .getAccountingPolicyByOrganizationAndYear(1L, 2024);
 
         assertNotNull(result);
@@ -149,7 +149,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findByOrganizationIdWithRelations(1L)).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getAccountingPoliciesByOrganization(1L);
 
         assertNotNull(result);
@@ -162,7 +162,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findByYearWithRelations(2024)).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService.getAccountingPoliciesByYear(2024);
+        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAccountingPoliciesByYear(2024);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -174,7 +174,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.findByYearBetweenWithRelations(2020, 2024)).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getAccountingPoliciesByYearRange(2020, 2024);
 
         assertNotNull(result);
@@ -190,7 +190,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
-        AccountingPolicyResponseDTO result = accountingPolicyService.createAccountingPolicy(requestDTO);
+        AccountingPolicyResponseDto result = accountingPolicyService.createAccountingPolicy(requestDTO);
 
         assertNotNull(result);
         verify(accountingPolicyRepository, times(1)).save(any(AccountingPolicy.class));
@@ -234,7 +234,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
-        AccountingPolicyResponseDTO result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
+        AccountingPolicyResponseDto result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
 
         assertNotNull(result);
         verify(accountingPolicyRepository, times(1)).save(accountingPolicy);
@@ -339,7 +339,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
         when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
 
-        AccountingPolicyResponseDTO result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
+        AccountingPolicyResponseDto result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
 
         assertNotNull(result);
         verify(accountingPolicyRepository, times(1)).save(accountingPolicy);
@@ -396,7 +396,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTOList(activePolicies))
                 .thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getActiveAccountingPoliciesByOrganization(1L);
 
         assertNotNull(result);
@@ -411,7 +411,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
                 .thenReturn(Collections.emptyList());
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getActiveAccountingPoliciesByOrganization(1L);
 
         assertNotNull(result);
@@ -426,7 +426,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTOList(policies))
                 .thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getAccountingPoliciesByCurrency(1L);
 
         assertNotNull(result);
@@ -441,7 +441,7 @@ class AccountingPolicyServiceTest {
         when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
                 .thenReturn(Collections.emptyList());
 
-        List<AccountingPolicyResponseDTO> result = accountingPolicyService
+        List<AccountingPolicyResponseDto> result = accountingPolicyService
                 .getAccountingPoliciesByCurrency(1L);
 
         assertNotNull(result);

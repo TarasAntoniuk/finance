@@ -1,19 +1,17 @@
-package com.tarasantoniuk.finance.core.counterparty.dto;
-
-
-
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
+package com.tarasantoniuk.finance.core.currency.dto;
 
 import java.time.LocalDateTime;
 
-public class CounterpartyResponseDto extends BaseCounterpartyDto {
+/**
+ * DTO for currency responses
+ */
+public class CurrencyResponseDto extends BaseCurrencyDto {
 
     private Long id;
-    private CountryResponseDto country;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public CounterpartyResponseDto() {
+    public CurrencyResponseDto() {
         super();
     }
 
@@ -23,14 +21,6 @@ public class CounterpartyResponseDto extends BaseCounterpartyDto {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public CountryResponseDto getCountry() {
-        return country;
-    }
-
-    public void setCountry(CountryResponseDto country) {
-        this.country = country;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.banking.bankaccount.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public class BankAccountRequestDTO extends BaseBankAccountDTO {
+public class BankAccountRequestDto extends BaseBankAccountDto {
 
     @NotNull(message = "Bank ID is required")
     private Long bankId;
@@ -10,7 +10,7 @@ public class BankAccountRequestDTO extends BaseBankAccountDTO {
     @NotNull(message = "Currency ID is required")
     private Long currencyId;
 
-    public BankAccountRequestDTO() {
+    public BankAccountRequestDto() {
     }
 
     public Long getBankId() {

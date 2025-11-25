@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.country.mapper;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
@@ -18,18 +18,18 @@ public interface CountryMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
-    Country toEntity(CountryRequestDTO requestDTO);
+    Country toEntity(CountryRequestDto requestDTO);
 
     // MapStruct автоматично використає CurrencyMapper.toResponseDTO() для currency
-    CountryResponseDTO toResponseDTO(Country country);
+    CountryResponseDto toResponseDTO(Country country);
 
-    List<CountryResponseDTO> toResponseDTOList(List<Country> countries);
+    List<CountryResponseDto> toResponseDTOList(List<Country> countries);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
-    void updateEntityFromDTO(CountryRequestDTO requestDTO, @MappingTarget Country country);
+    void updateEntityFromDTO(CountryRequestDto requestDTO, @MappingTarget Country country);
 
     // Helper method для конвертації currencyId в Currency
     @Named("currencyIdToCurrency")

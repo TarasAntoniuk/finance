@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.core.currency.service;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +41,11 @@ public class CurrencyDataLoader implements CommandLineRunner {
 
         log.info("Loading initial currency data...");
 
-        List<CurrencyRequestDTO> currencies = getInitialCurrencies();
+        List<CurrencyRequestDto> currencies = getInitialCurrencies();
         int loaded = 0;
         int failed = 0;
 
-        for (CurrencyRequestDTO dto : currencies) {
+        for (CurrencyRequestDto dto : currencies) {
             try {
                 currencyService.createCurrency(dto);
                 loaded++;
@@ -58,9 +58,9 @@ public class CurrencyDataLoader implements CommandLineRunner {
         log.info("Currency loading completed. Loaded: {}, Failed: {}", loaded, failed);
     }
 
-    private CurrencyRequestDTO createCurrency(String code, String numericCode, String name,
+    private CurrencyRequestDto createCurrency(String code, String numericCode, String name,
                                               String symbol, Integer minorUnit, Boolean isActive) {
-        CurrencyRequestDTO dto = new CurrencyRequestDTO();
+        CurrencyRequestDto dto = new CurrencyRequestDto();
         dto.setCode(code);
         dto.setNumericCode(numericCode);
         dto.setName(name);
@@ -70,8 +70,8 @@ public class CurrencyDataLoader implements CommandLineRunner {
         return dto;
     }
 
-    private List<CurrencyRequestDTO> getInitialCurrencies() {
-        List<CurrencyRequestDTO> currencies = new ArrayList<>();
+    private List<CurrencyRequestDto> getInitialCurrencies() {
+        List<CurrencyRequestDto> currencies = new ArrayList<>();
 
         // Major world currencies
         currencies.add(createCurrency("USD", "840", "US Dollar", "$", 2, true));

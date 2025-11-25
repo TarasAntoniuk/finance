@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.country.controller;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.service.CountryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,8 +29,8 @@ public class CountryController {
     @GetMapping
     @Operation(summary = "Get all countries", description = "Retrieve a list of all countries")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<CountryResponseDTO>> getAllCountries() {
-        List<CountryResponseDTO> countries = countryService.getAllCountries();
+    public ResponseEntity<List<CountryResponseDto>> getAllCountries() {
+        List<CountryResponseDto> countries = countryService.getAllCountries();
         return ResponseEntity.ok(countries);
     }
 
@@ -40,9 +40,9 @@ public class CountryController {
             @ApiResponse(responseCode = "200", description = "Country found"),
             @ApiResponse(responseCode = "404", description = "Country not found")
     })
-    public ResponseEntity<CountryResponseDTO> getCountryById(
+    public ResponseEntity<CountryResponseDto> getCountryById(
             @Parameter(description = "Country ID", required = true) @PathVariable Long id) {
-        CountryResponseDTO country = countryService.getCountryById(id);
+        CountryResponseDto country = countryService.getCountryById(id);
         return ResponseEntity.ok(country);
     }
 
@@ -52,10 +52,10 @@ public class CountryController {
             @ApiResponse(responseCode = "200", description = "Country found"),
             @ApiResponse(responseCode = "404", description = "Country not found")
     })
-    public ResponseEntity<CountryResponseDTO> getCountryByIsoCode(
+    public ResponseEntity<CountryResponseDto> getCountryByIsoCode(
             @Parameter(description = "ISO country code", required = true, example = "USA")
             @PathVariable String isoCode) {
-        CountryResponseDTO country = countryService.getCountryByIsoCode(isoCode);
+        CountryResponseDto country = countryService.getCountryByIsoCode(isoCode);
         return ResponseEntity.ok(country);
     }
 
@@ -65,10 +65,10 @@ public class CountryController {
             @ApiResponse(responseCode = "201", description = "Country created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<CountryResponseDTO> createCountry(
+    public ResponseEntity<CountryResponseDto> createCountry(
             @Parameter(description = "Country data", required = true)
-            @Valid @RequestBody CountryRequestDTO requestDTO) {
-        CountryResponseDTO country = countryService.createCountry(requestDTO);
+            @Valid @RequestBody CountryRequestDto requestDTO) {
+        CountryResponseDto country = countryService.createCountry(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(country);
     }
 
@@ -79,11 +79,11 @@ public class CountryController {
             @ApiResponse(responseCode = "404", description = "Country not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<CountryResponseDTO> updateCountry(
+    public ResponseEntity<CountryResponseDto> updateCountry(
             @Parameter(description = "Country ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated country data", required = true)
-            @Valid @RequestBody CountryRequestDTO requestDTO) {
-        CountryResponseDTO country = countryService.updateCountry(id, requestDTO);
+            @Valid @RequestBody CountryRequestDto requestDTO) {
+        CountryResponseDto country = countryService.updateCountry(id, requestDTO);
         return ResponseEntity.ok(country);
     }
 

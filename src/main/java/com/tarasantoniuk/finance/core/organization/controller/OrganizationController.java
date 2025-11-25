@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.organization.controller;
 
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,8 +29,8 @@ public class OrganizationController {
     @GetMapping
     @Operation(summary = "Get all organizations", description = "Retrieve a list of all organizations")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<OrganizationResponseDTO>> getAllOrganizations() {
-        List<OrganizationResponseDTO> organizations = organizationService.getAllOrganizations();
+    public ResponseEntity<List<OrganizationResponseDto>> getAllOrganizations() {
+        List<OrganizationResponseDto> organizations = organizationService.getAllOrganizations();
         return ResponseEntity.ok(organizations);
     }
 
@@ -40,28 +40,28 @@ public class OrganizationController {
             @ApiResponse(responseCode = "200", description = "Organization found"),
             @ApiResponse(responseCode = "404", description = "Organization not found")
     })
-    public ResponseEntity<OrganizationResponseDTO> getOrganizationById(
+    public ResponseEntity<OrganizationResponseDto> getOrganizationById(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long id) {
-        OrganizationResponseDTO organization = organizationService.getOrganizationById(id);
+        OrganizationResponseDto organization = organizationService.getOrganizationById(id);
         return ResponseEntity.ok(organization);
     }
 
     @GetMapping("/country/{countryId}")
     @Operation(summary = "Get organizations by country", description = "Retrieve all organizations in a specific country")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<OrganizationResponseDTO>> getOrganizationsByCountry(
+    public ResponseEntity<List<OrganizationResponseDto>> getOrganizationsByCountry(
             @Parameter(description = "Country ID", required = true) @PathVariable Long countryId) {
-        List<OrganizationResponseDTO> organizations = organizationService.getOrganizationsByCountry(countryId);
+        List<OrganizationResponseDto> organizations = organizationService.getOrganizationsByCountry(countryId);
         return ResponseEntity.ok(organizations);
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search organizations by name", description = "Search for organizations by name (case-insensitive)")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<OrganizationResponseDTO>> searchOrganizationsByName(
+    public ResponseEntity<List<OrganizationResponseDto>> searchOrganizationsByName(
             @Parameter(description = "Name to search", required = true, example = "Acme")
             @RequestParam String name) {
-        List<OrganizationResponseDTO> organizations = organizationService.searchOrganizationsByName(name);
+        List<OrganizationResponseDto> organizations = organizationService.searchOrganizationsByName(name);
         return ResponseEntity.ok(organizations);
     }
 
@@ -71,10 +71,10 @@ public class OrganizationController {
             @ApiResponse(responseCode = "201", description = "Organization created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<OrganizationResponseDTO> createOrganization(
+    public ResponseEntity<OrganizationResponseDto> createOrganization(
             @Parameter(description = "Organization data", required = true)
-            @Valid @RequestBody OrganizationRequestDTO requestDTO) {
-        OrganizationResponseDTO organization = organizationService.createOrganization(requestDTO);
+            @Valid @RequestBody OrganizationRequestDto requestDTO) {
+        OrganizationResponseDto organization = organizationService.createOrganization(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(organization);
     }
 
@@ -85,11 +85,11 @@ public class OrganizationController {
             @ApiResponse(responseCode = "404", description = "Organization not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<OrganizationResponseDTO> updateOrganization(
+    public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated organization data", required = true)
-            @Valid @RequestBody OrganizationRequestDTO requestDTO) {
-        OrganizationResponseDTO organization = organizationService.updateOrganization(id, requestDTO);
+            @Valid @RequestBody OrganizationRequestDto requestDTO) {
+        OrganizationResponseDto organization = organizationService.updateOrganization(id, requestDTO);
         return ResponseEntity.ok(organization);
     }
 

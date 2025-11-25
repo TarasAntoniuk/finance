@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.core.country.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.core.country.controller.CountryController;
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.service.CountryService;
 import org.junit.jupiter.api.Test;
@@ -40,17 +39,17 @@ class CountryControllerIntegrationTest {
     @Test
     void getAllCountries_ShouldReturnListOfCountries() throws Exception {
         // Given
-        CountryResponseDTO country1 = new CountryResponseDTO();
+        CountryResponseDto country1 = new CountryResponseDto();
         country1.setId(1L);
         country1.setName("United States");
         country1.setIsoCode("USA");
 
-        CountryResponseDTO country2 = new CountryResponseDTO();
+        CountryResponseDto country2 = new CountryResponseDto();
         country2.setId(2L);
         country2.setName("United Kingdom");
         country2.setIsoCode("GBR");
 
-        List<CountryResponseDTO> countries = Arrays.asList(country1, country2);
+        List<CountryResponseDto> countries = Arrays.asList(country1, country2);
         when(countryService.getAllCountries()).thenReturn(countries);
 
         // When & Then
@@ -65,7 +64,7 @@ class CountryControllerIntegrationTest {
     @Test
     void getCountryById_WhenExists_ShouldReturnCountry() throws Exception {
         // Given
-        CountryResponseDTO country = new CountryResponseDTO();
+        CountryResponseDto country = new CountryResponseDto();
         country.setId(1L);
         country.setName("United States");
         country.setIsoCode("USA");
@@ -82,7 +81,7 @@ class CountryControllerIntegrationTest {
     @Test
     void getCountryByIsoCode_WhenExists_ShouldReturnCountry() throws Exception {
         // Given
-        CountryResponseDTO country = new CountryResponseDTO();
+        CountryResponseDto country = new CountryResponseDto();
         country.setId(1L);
         country.setName("United States");
         country.setIsoCode("USA");
@@ -111,17 +110,17 @@ class CountryControllerIntegrationTest {
     @Test
     void createCountry_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("France");
         requestDTO.setIsoCode("FRA");
         requestDTO.setPhoneCode("+33");
 
-        CountryResponseDTO responseDTO = new CountryResponseDTO();
+        CountryResponseDto responseDTO = new CountryResponseDto();
         responseDTO.setId(3L);
         responseDTO.setName("France");
         responseDTO.setIsoCode("FRA");
 
-        when(countryService.createCountry(any(CountryRequestDTO.class))).thenReturn(responseDTO);
+        when(countryService.createCountry(any(CountryRequestDto.class))).thenReturn(responseDTO);
 
         // When & Then
         mockMvc.perform(post("/api/countries")
@@ -135,7 +134,7 @@ class CountryControllerIntegrationTest {
     @Test
     void createCountry_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - invalid request (missing required fields)
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         // name and isoCode are missing (validation will fail)
 
         // When & Then
@@ -148,17 +147,17 @@ class CountryControllerIntegrationTest {
     @Test
     void updateCountry_WhenValid_ShouldReturnUpdatedCountry() throws Exception {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("United States of America");
         requestDTO.setIsoCode("USA");
         requestDTO.setPhoneCode("+1");
 
-        CountryResponseDTO responseDTO = new CountryResponseDTO();
+        CountryResponseDto responseDTO = new CountryResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("United States of America");
         responseDTO.setIsoCode("USA");
 
-        when(countryService.updateCountry(any(Long.class), any(CountryRequestDTO.class)))
+        when(countryService.updateCountry(any(Long.class), any(CountryRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -174,12 +173,12 @@ class CountryControllerIntegrationTest {
     @Test
     void updateCountry_WhenNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("United States");
         requestDTO.setIsoCode("USA");
         requestDTO.setPhoneCode("+1");
 
-        when(countryService.updateCountry(any(Long.class), any(CountryRequestDTO.class)))
+        when(countryService.updateCountry(any(Long.class), any(CountryRequestDto.class)))
                 .thenThrow(CountryNotFoundException.byId(999L));
 
         // When & Then
@@ -192,7 +191,7 @@ class CountryControllerIntegrationTest {
     @Test
     void updateCountry_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - invalid request (missing required fields)
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
 
         // When & Then
         mockMvc.perform(put("/api/countries/1")

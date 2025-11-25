@@ -3,15 +3,15 @@ package com.tarasantoniuk.finance.core.country.dto;
 /**
  * DTO for country creation and update requests
  */
-public class CountryRequestDTO extends BaseCountryDto {
+public class CountryRequestDto extends BaseCountryDto {
 
     private Long currencyId;
 
-    public CountryRequestDTO() {
+    public CountryRequestDto() {
         super();
     }
 
-    public CountryRequestDTO(String name, String isoCode, String phoneCode, Long currencyId) {
+    public CountryRequestDto(String name, String isoCode, String phoneCode, Long currencyId) {
         super();
         setName(name);
         setIsoCode(isoCode);

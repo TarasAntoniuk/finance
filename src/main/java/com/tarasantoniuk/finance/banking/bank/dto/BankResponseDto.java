@@ -1,19 +1,19 @@
 package com.tarasantoniuk.finance.banking.bank.dto;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 
 import java.time.LocalDateTime;
 
-public class BankResponseDTO extends BaseBankDTO {
+public class BankResponseDto extends BaseBankDto {
 
     private Long id;
-    private CountryResponseDTO country;
+    private CountryResponseDto country;
     private CounterpartyResponseDto counterparty;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public BankResponseDTO() {
+    public BankResponseDto() {
     }
 
     public Long getId() {
@@ -24,11 +24,11 @@ public class BankResponseDTO extends BaseBankDTO {
         this.id = id;
     }
 
-    public CountryResponseDTO getCountry() {
+    public CountryResponseDto getCountry() {
         return country;
     }
 
-    public void setCountry(CountryResponseDTO country) {
+    public void setCountry(CountryResponseDto country) {
         this.country = country;
     }
 

@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.core.accountingpolicy.controller.AccountingPolicyController;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,15 +35,15 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAllAccountingPolicies_ShouldReturnListOfPolicies() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy1 = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy1 = new AccountingPolicyResponseDto();
         policy1.setId(1L);
         policy1.setYear(2024);
 
-        AccountingPolicyResponseDTO policy2 = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy2 = new AccountingPolicyResponseDto();
         policy2.setId(2L);
         policy2.setYear(2023);
 
-        List<AccountingPolicyResponseDTO> policies = Arrays.asList(policy1, policy2);
+        List<AccountingPolicyResponseDto> policies = Arrays.asList(policy1, policy2);
         when(accountingPolicyService.getAllAccountingPolicies()).thenReturn(policies);
 
         // When & Then
@@ -59,7 +58,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPolicyById_WhenExists_ShouldReturnPolicy() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -75,7 +74,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPolicyByOrganizationAndYear_WhenExists_ShouldReturnPolicy() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -91,7 +90,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPoliciesByOrganization_ShouldReturnFilteredList() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -108,7 +107,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getActiveAccountingPoliciesByOrganization_ShouldReturnActivePolicies() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
         policy.setIsActive(true);
@@ -126,7 +125,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPoliciesByYear_ShouldReturnFilteredList() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -143,7 +142,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPoliciesByYearRange_ShouldReturnFilteredList() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -161,7 +160,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void getAccountingPoliciesByCurrency_ShouldReturnFilteredList() throws Exception {
         // Given
-        AccountingPolicyResponseDTO policy = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto policy = new AccountingPolicyResponseDto();
         policy.setId(1L);
         policy.setYear(2024);
 
@@ -177,17 +176,17 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void createAccountingPolicy_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
         requestDTO.setFiscalYearStartMonth(1);
 
-        AccountingPolicyResponseDTO responseDTO = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setYear(2024);
 
-        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -202,7 +201,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void createAccountingPolicy_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/accounting-policies")
@@ -214,16 +213,16 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void updateAccountingPolicy_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
 
-        AccountingPolicyResponseDTO responseDTO = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setYear(2024);
 
-        when(accountingPolicyService.updateAccountingPolicy(anyLong(), any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.updateAccountingPolicy(anyLong(), any(AccountingPolicyRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -237,7 +236,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void activateAccountingPolicy_WhenExists_ShouldReturnActivated() throws Exception {
         // Given
-        AccountingPolicyResponseDTO responseDTO = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(true);
 
@@ -252,7 +251,7 @@ class AccountingPolicyControllerIntegrationTest {
     @Test
     void deactivateAccountingPolicy_WhenExists_ShouldReturnDeactivated() throws Exception {
         // Given
-        AccountingPolicyResponseDTO responseDTO = new AccountingPolicyResponseDTO();
+        AccountingPolicyResponseDto responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(false);
 

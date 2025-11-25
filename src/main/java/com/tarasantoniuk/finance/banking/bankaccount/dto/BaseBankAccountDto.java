@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 /**
  * Base DTO class with common fields for BankAccount request and response DTOs
  */
-public abstract class BaseBankAccountDTO {
+public abstract class BaseBankAccountDto {
 
     @NotBlank(message = "Account number is required")
     @Size(max = 34, message = "Account number must not exceed 34 characters")
@@ -28,7 +28,7 @@ public abstract class BaseBankAccountDTO {
 
     private Boolean isDefault;
 
-    public BaseBankAccountDTO() {
+    public BaseBankAccountDto() {
     }
 
     public String getAccountNumber() {

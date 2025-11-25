@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * DTO for accounting policy creation and update requests
  */
-public class AccountingPolicyRequestDTO extends BaseAccountingPolicyDto {
+public class AccountingPolicyRequestDto extends BaseAccountingPolicyDto {
 
     @NotNull(message = "Organization ID is required")
     private Long organizationId;
@@ -13,11 +13,11 @@ public class AccountingPolicyRequestDTO extends BaseAccountingPolicyDto {
     @NotNull(message = "Currency ID is required")
     private Long currencyId;
 
-    public AccountingPolicyRequestDTO() {
+    public AccountingPolicyRequestDto() {
         super();
     }
 
-    public AccountingPolicyRequestDTO(Long organizationId, Integer year, Long currencyId,
+    public AccountingPolicyRequestDto(Long organizationId, Integer year, Long currencyId,
                                       Integer fiscalYearStartMonth, String depreciationMethod,
                                       String inventoryValuationMethod, String revenueRecognitionMethod,
                                       String vatAccountingMethod, Boolean isActive, String notes) {

@@ -2,8 +2,8 @@ package com.tarasantoniuk.finance.core.organization.mapper;
 
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.mapper.CountryMapper;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import org.mapstruct.*;
 
@@ -18,17 +18,17 @@ public interface OrganizationMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "country", source = "countryId", qualifiedByName = "idToCountry")
-    Organization toEntity(OrganizationRequestDTO requestDTO);
+    Organization toEntity(OrganizationRequestDto requestDTO);
 
-    OrganizationResponseDTO toResponseDTO(Organization organization);
+    OrganizationResponseDto toResponseDTO(Organization organization);
 
-    List<OrganizationResponseDTO> toResponseDTOList(List<Organization> organizations);
+    List<OrganizationResponseDto> toResponseDTOList(List<Organization> organizations);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "country", source = "countryId", qualifiedByName = "idToCountry")
-    void updateEntityFromDTO(OrganizationRequestDTO requestDTO, @MappingTarget Organization organization);
+    void updateEntityFromDTO(OrganizationRequestDto requestDTO, @MappingTarget Organization organization);
 
     @Named("idToCountry")
     default Country idToCountry(Long countryId) {

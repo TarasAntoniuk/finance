@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.core.currency.controller;
 
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,16 +30,16 @@ public class CurrencyController {
     @GetMapping
     @Operation(summary = "Get all currencies", description = "Retrieve a list of all currencies")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<CurrencyResponseDTO>> getAllCurrencies() {
-        List<CurrencyResponseDTO> currencies = currencyService.getAllCurrencies();
+    public ResponseEntity<List<CurrencyResponseDto>> getAllCurrencies() {
+        List<CurrencyResponseDto> currencies = currencyService.getAllCurrencies();
         return ResponseEntity.ok(currencies);
     }
 
     @GetMapping("/active")
     @Operation(summary = "Get active currencies", description = "Retrieve only active currencies")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<CurrencyResponseDTO>> getActiveCurrencies() {
-        List<CurrencyResponseDTO> currencies = currencyService.getActiveCurrencies();
+    public ResponseEntity<List<CurrencyResponseDto>> getActiveCurrencies() {
+        List<CurrencyResponseDto> currencies = currencyService.getActiveCurrencies();
         return ResponseEntity.ok(currencies);
     }
 
@@ -49,9 +49,9 @@ public class CurrencyController {
             @ApiResponse(responseCode = "200", description = "Currency found"),
             @ApiResponse(responseCode = "404", description = "Currency not found")
     })
-    public ResponseEntity<CurrencyResponseDTO> getCurrencyById(
+    public ResponseEntity<CurrencyResponseDto> getCurrencyById(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long id) {
-        CurrencyResponseDTO currency = currencyService.getCurrencyById(id);
+        CurrencyResponseDto currency = currencyService.getCurrencyById(id);
         return ResponseEntity.ok(currency);
     }
 
@@ -61,10 +61,10 @@ public class CurrencyController {
             @ApiResponse(responseCode = "200", description = "Currency found"),
             @ApiResponse(responseCode = "404", description = "Currency not found")
     })
-    public ResponseEntity<CurrencyResponseDTO> getCurrencyByCode(
+    public ResponseEntity<CurrencyResponseDto> getCurrencyByCode(
             @Parameter(description = "Currency code", required = true, example = "USD")
             @PathVariable String code) {
-        CurrencyResponseDTO currency = currencyService.getCurrencyByCode(code);
+        CurrencyResponseDto currency = currencyService.getCurrencyByCode(code);
         return ResponseEntity.ok(currency);
     }
 
@@ -74,20 +74,20 @@ public class CurrencyController {
             @ApiResponse(responseCode = "200", description = "Currency found"),
             @ApiResponse(responseCode = "404", description = "Currency not found")
     })
-    public ResponseEntity<CurrencyResponseDTO> getCurrencyByNumericCode(
+    public ResponseEntity<CurrencyResponseDto> getCurrencyByNumericCode(
             @Parameter(description = "Numeric currency code", required = true, example = "840")
             @PathVariable String numericCode) {
-        CurrencyResponseDTO currency = currencyService.getCurrencyByNumericCode(numericCode);
+        CurrencyResponseDto currency = currencyService.getCurrencyByNumericCode(numericCode);
         return ResponseEntity.ok(currency);
     }
 
     @GetMapping("/search")
     @Operation(summary = "Search currencies by name", description = "Search for currencies by name (case-insensitive)")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<CurrencyResponseDTO>> searchCurrenciesByName(
+    public ResponseEntity<List<CurrencyResponseDto>> searchCurrenciesByName(
             @Parameter(description = "Currency name", required = true, example = "Dollar")
             @RequestParam String name) {
-        List<CurrencyResponseDTO> currencies = currencyService.searchCurrenciesByName(name);
+        List<CurrencyResponseDto> currencies = currencyService.searchCurrenciesByName(name);
         return ResponseEntity.ok(currencies);
     }
 
@@ -97,10 +97,10 @@ public class CurrencyController {
             @ApiResponse(responseCode = "201", description = "Currency created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<CurrencyResponseDTO> createCurrency(
+    public ResponseEntity<CurrencyResponseDto> createCurrency(
             @Parameter(description = "Currency data", required = true)
-            @Valid @RequestBody CurrencyRequestDTO requestDTO) {
-        CurrencyResponseDTO currency = currencyService.createCurrency(requestDTO);
+            @Valid @RequestBody CurrencyRequestDto requestDTO) {
+        CurrencyResponseDto currency = currencyService.createCurrency(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(currency);
     }
 
@@ -111,11 +111,11 @@ public class CurrencyController {
             @ApiResponse(responseCode = "404", description = "Currency not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<CurrencyResponseDTO> updateCurrency(
+    public ResponseEntity<CurrencyResponseDto> updateCurrency(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated currency data", required = true)
-            @Valid @RequestBody CurrencyRequestDTO requestDTO) {
-        CurrencyResponseDTO currency = currencyService.updateCurrency(id, requestDTO);
+            @Valid @RequestBody CurrencyRequestDto requestDTO) {
+        CurrencyResponseDto currency = currencyService.updateCurrency(id, requestDTO);
         return ResponseEntity.ok(currency);
     }
 
@@ -125,9 +125,9 @@ public class CurrencyController {
             @ApiResponse(responseCode = "200", description = "Currency deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Currency not found")
     })
-    public ResponseEntity<CurrencyResponseDTO> deactivateCurrency(
+    public ResponseEntity<CurrencyResponseDto> deactivateCurrency(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long id) {
-        CurrencyResponseDTO currency = currencyService.deactivateCurrency(id);
+        CurrencyResponseDto currency = currencyService.deactivateCurrency(id);
         return ResponseEntity.ok(currency);
     }
 
@@ -137,9 +137,9 @@ public class CurrencyController {
             @ApiResponse(responseCode = "200", description = "Currency activated successfully"),
             @ApiResponse(responseCode = "404", description = "Currency not found")
     })
-    public ResponseEntity<CurrencyResponseDTO> activateCurrency(
+    public ResponseEntity<CurrencyResponseDto> activateCurrency(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long id) {
-        CurrencyResponseDTO currency = currencyService.activateCurrency(id);
+        CurrencyResponseDto currency = currencyService.activateCurrency(id);
         return ResponseEntity.ok(currency);
     }
 

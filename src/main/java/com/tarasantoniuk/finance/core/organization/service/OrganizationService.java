@@ -2,8 +2,8 @@ package com.tarasantoniuk.finance.core.organization.service;
 
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlreadyExistsException;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
@@ -34,7 +34,7 @@ public class OrganizationService {
      * Get all organizations with optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load country in a single query.
      */
-    public List<OrganizationResponseDTO> getAllOrganizations() {
+    public List<OrganizationResponseDto> getAllOrganizations() {
         List<Organization> organizations = organizationRepository.findAllWithCountry();
         return organizationMapper.toResponseDTOList(organizations);
     }
@@ -42,7 +42,7 @@ public class OrganizationService {
     /**
      * Get organization by ID with optimized query.
      */
-    public OrganizationResponseDTO getOrganizationById(Long id) {
+    public OrganizationResponseDto getOrganizationById(Long id) {
         Organization organization = organizationRepository.findByIdWithCountry(id)
                 .orElseThrow(() -> OrganizationNotFoundException.byId(id));
         return organizationMapper.toResponseDTO(organization);
@@ -51,7 +51,7 @@ public class OrganizationService {
     /**
      * Get organizations by country with optimized query.
      */
-    public List<OrganizationResponseDTO> getOrganizationsByCountry(Long countryId) {
+    public List<OrganizationResponseDto> getOrganizationsByCountry(Long countryId) {
         List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId);
         return organizationMapper.toResponseDTOList(organizations);
     }
@@ -59,13 +59,13 @@ public class OrganizationService {
     /**
      * Search organizations by name with optimized query.
      */
-    public List<OrganizationResponseDTO> searchOrganizationsByName(String name) {
+    public List<OrganizationResponseDto> searchOrganizationsByName(String name) {
         List<Organization> organizations = organizationRepository.findByNameContainingIgnoreCaseWithCountry(name);
         return organizationMapper.toResponseDTOList(organizations);
     }
 
     @Transactional
-    public OrganizationResponseDTO createOrganization(OrganizationRequestDTO requestDTO) {
+    public OrganizationResponseDto createOrganization(OrganizationRequestDto requestDTO) {
         if (!countryRepository.existsById(requestDTO.getCountryId())) {
             throw CountryNotFoundException.byId(requestDTO.getCountryId());
         }
@@ -81,7 +81,7 @@ public class OrganizationService {
     }
 
     @Transactional
-    public OrganizationResponseDTO updateOrganization(Long id, OrganizationRequestDTO requestDTO) {
+    public OrganizationResponseDto updateOrganization(Long id, OrganizationRequestDto requestDTO) {
         Organization organization = organizationRepository.findByIdWithCountry(id)
                 .orElseThrow(() -> OrganizationNotFoundException.byId(id));
 

@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.core.organization.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.core.organization.controller.OrganizationController;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +35,17 @@ class OrganizationControllerIntegrationTest {
     @Test
     void getAllOrganizations_ShouldReturnListOfOrganizations() throws Exception {
         // Given
-        OrganizationResponseDTO org1 = new OrganizationResponseDTO();
+        OrganizationResponseDto org1 = new OrganizationResponseDto();
         org1.setId(1L);
         org1.setName("Acme Corp");
         org1.setRegistrationNumber("12345678");
 
-        OrganizationResponseDTO org2 = new OrganizationResponseDTO();
+        OrganizationResponseDto org2 = new OrganizationResponseDto();
         org2.setId(2L);
         org2.setName("Tech Solutions");
         org2.setRegistrationNumber("87654321");
 
-        List<OrganizationResponseDTO> organizations = Arrays.asList(org1, org2);
+        List<OrganizationResponseDto> organizations = Arrays.asList(org1, org2);
         when(organizationService.getAllOrganizations()).thenReturn(organizations);
 
         // When & Then
@@ -61,7 +60,7 @@ class OrganizationControllerIntegrationTest {
     @Test
     void getOrganizationById_WhenExists_ShouldReturnOrganization() throws Exception {
         // Given
-        OrganizationResponseDTO organization = new OrganizationResponseDTO();
+        OrganizationResponseDto organization = new OrganizationResponseDto();
         organization.setId(1L);
         organization.setName("Acme Corp");
         organization.setRegistrationNumber("12345678");
@@ -78,7 +77,7 @@ class OrganizationControllerIntegrationTest {
     @Test
     void getOrganizationsByCountry_ShouldReturnFilteredList() throws Exception {
         // Given
-        OrganizationResponseDTO organization = new OrganizationResponseDTO();
+        OrganizationResponseDto organization = new OrganizationResponseDto();
         organization.setId(1L);
         organization.setName("Ukrainian Company");
 
@@ -95,7 +94,7 @@ class OrganizationControllerIntegrationTest {
     @Test
     void searchOrganizationsByName_ShouldReturnMatchingOrganizations() throws Exception {
         // Given
-        OrganizationResponseDTO organization = new OrganizationResponseDTO();
+        OrganizationResponseDto organization = new OrganizationResponseDto();
         organization.setId(1L);
         organization.setName("Acme Corp");
 
@@ -113,18 +112,18 @@ class OrganizationControllerIntegrationTest {
     @Test
     void createOrganization_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("New Company");
         requestDTO.setRegistrationNumber("99999999");
         requestDTO.setCountryId(1L);
         requestDTO.setEmail("info@newcompany.com");
 
-        OrganizationResponseDTO responseDTO = new OrganizationResponseDTO();
+        OrganizationResponseDto responseDTO = new OrganizationResponseDto();
         responseDTO.setId(3L);
         responseDTO.setName("New Company");
         responseDTO.setRegistrationNumber("99999999");
 
-        when(organizationService.createOrganization(any(OrganizationRequestDTO.class)))
+        when(organizationService.createOrganization(any(OrganizationRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -139,7 +138,7 @@ class OrganizationControllerIntegrationTest {
     @Test
     void createOrganization_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/organizations")
@@ -151,16 +150,16 @@ class OrganizationControllerIntegrationTest {
     @Test
     void updateOrganization_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Updated Company");
         requestDTO.setRegistrationNumber("12345678");
         requestDTO.setCountryId(1L);
 
-        OrganizationResponseDTO responseDTO = new OrganizationResponseDTO();
+        OrganizationResponseDto responseDTO = new OrganizationResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("Updated Company");
 
-        when(organizationService.updateOrganization(anyLong(), any(OrganizationRequestDTO.class)))
+        when(organizationService.updateOrganization(anyLong(), any(OrganizationRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then

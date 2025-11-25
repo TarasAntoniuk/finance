@@ -1,21 +1,19 @@
-package com.tarasantoniuk.finance.core.country.dto;
+package com.tarasantoniuk.finance.banking.bankaccount.dto;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 
 import java.time.LocalDateTime;
 
-/**
- * DTO for country responses
- */
-public class CountryResponseDTO extends BaseCountryDto {
+public class BankAccountResponseDto extends BaseBankAccountDto {
 
     private Long id;
-    private CurrencyResponseDTO currency;
+    private BankResponseDto bank;
+    private CurrencyResponseDto currency;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public CountryResponseDTO() {
-        super();
+    public BankAccountResponseDto() {
     }
 
     public Long getId() {
@@ -26,11 +24,19 @@ public class CountryResponseDTO extends BaseCountryDto {
         this.id = id;
     }
 
-    public CurrencyResponseDTO getCurrency() {
+    public BankResponseDto getBank() {
+        return bank;
+    }
+
+    public void setBank(BankResponseDto bank) {
+        this.bank = bank;
+    }
+
+    public CurrencyResponseDto getCurrency() {
         return currency;
     }
 
-    public void setCurrency(CurrencyResponseDTO currency) {
+    public void setCurrency(CurrencyResponseDto currency) {
         this.currency = currency;
     }
 

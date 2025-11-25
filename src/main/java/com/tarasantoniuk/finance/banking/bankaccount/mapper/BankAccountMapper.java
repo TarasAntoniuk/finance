@@ -2,8 +2,8 @@ package com.tarasantoniuk.finance.banking.bankaccount.mapper;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bank.mapper.BankMapper;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDTO;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDTO;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
@@ -21,18 +21,18 @@ public interface BankAccountMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "bank", source = "bankId", qualifiedByName = "idToBank")
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "idToCurrency")
-    BankAccount toEntity(BankAccountRequestDTO request);
+    BankAccount toEntity(BankAccountRequestDto request);
 
-    BankAccountResponseDTO toResponse(BankAccount entity);
+    BankAccountResponseDto toResponse(BankAccount entity);
 
-    List<BankAccountResponseDTO> toResponseList(List<BankAccount> entities);
+    List<BankAccountResponseDto> toResponseList(List<BankAccount> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "bank", source = "bankId", qualifiedByName = "idToBank")
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "idToCurrency")
-    void updateEntity(BankAccountRequestDTO request, @MappingTarget BankAccount entity);
+    void updateEntity(BankAccountRequestDto request, @MappingTarget BankAccount entity);
 
     @Named("idToBank")
     default Bank idToBank(Long bankId) {

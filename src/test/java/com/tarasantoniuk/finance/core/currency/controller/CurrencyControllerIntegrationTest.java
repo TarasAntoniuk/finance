@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.core.currency.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.core.currency.controller.CurrencyController;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +35,17 @@ class CurrencyControllerIntegrationTest {
     @Test
     void getAllCurrencies_ShouldReturnListOfCurrencies() throws Exception {
         // Given
-        CurrencyResponseDTO usd = new CurrencyResponseDTO();
+        CurrencyResponseDto usd = new CurrencyResponseDto();
         usd.setId(1L);
         usd.setCode("USD");
         usd.setName("US Dollar");
 
-        CurrencyResponseDTO eur = new CurrencyResponseDTO();
+        CurrencyResponseDto eur = new CurrencyResponseDto();
         eur.setId(2L);
         eur.setCode("EUR");
         eur.setName("Euro");
 
-        List<CurrencyResponseDTO> currencies = Arrays.asList(usd, eur);
+        List<CurrencyResponseDto> currencies = Arrays.asList(usd, eur);
         when(currencyService.getAllCurrencies()).thenReturn(currencies);
 
         // When & Then
@@ -61,7 +60,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void getActiveCurrencies_ShouldReturnOnlyActiveCurrencies() throws Exception {
         // Given
-        CurrencyResponseDTO usd = new CurrencyResponseDTO();
+        CurrencyResponseDto usd = new CurrencyResponseDto();
         usd.setId(1L);
         usd.setCode("USD");
         usd.setIsActive(true);
@@ -78,7 +77,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void getCurrencyById_WhenExists_ShouldReturnCurrency() throws Exception {
         // Given
-        CurrencyResponseDTO currency = new CurrencyResponseDTO();
+        CurrencyResponseDto currency = new CurrencyResponseDto();
         currency.setId(1L);
         currency.setCode("USD");
         currency.setNumericCode("840");
@@ -95,7 +94,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void getCurrencyByCode_WhenExists_ShouldReturnCurrency() throws Exception {
         // Given
-        CurrencyResponseDTO currency = new CurrencyResponseDTO();
+        CurrencyResponseDto currency = new CurrencyResponseDto();
         currency.setId(1L);
         currency.setCode("USD");
 
@@ -110,7 +109,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void getCurrencyByNumericCode_WhenExists_ShouldReturnCurrency() throws Exception {
         // Given
-        CurrencyResponseDTO currency = new CurrencyResponseDTO();
+        CurrencyResponseDto currency = new CurrencyResponseDto();
         currency.setId(1L);
         currency.setCode("USD");
         currency.setNumericCode("840");
@@ -126,7 +125,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void searchCurrenciesByName_ShouldReturnMatchingCurrencies() throws Exception {
         // Given
-        CurrencyResponseDTO currency = new CurrencyResponseDTO();
+        CurrencyResponseDto currency = new CurrencyResponseDto();
         currency.setId(1L);
         currency.setCode("USD");
         currency.setName("US Dollar");
@@ -145,19 +144,19 @@ class CurrencyControllerIntegrationTest {
     @Test
     void createCurrency_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("UAH");
         requestDTO.setNumericCode("980");
         requestDTO.setName("Ukrainian Hryvnia");
         requestDTO.setSymbol("₴");
         requestDTO.setMinorUnit(2);
 
-        CurrencyResponseDTO responseDTO = new CurrencyResponseDTO();
+        CurrencyResponseDto responseDTO = new CurrencyResponseDto();
         responseDTO.setId(3L);
         responseDTO.setCode("UAH");
         responseDTO.setNumericCode("980");
 
-        when(currencyService.createCurrency(any(CurrencyRequestDTO.class)))
+        when(currencyService.createCurrency(any(CurrencyRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -172,7 +171,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void createCurrency_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/currencies")
@@ -184,18 +183,18 @@ class CurrencyControllerIntegrationTest {
     @Test
     void updateCurrency_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("840");
         requestDTO.setName("United States Dollar");
         requestDTO.setSymbol("$");
         requestDTO.setMinorUnit(2);
 
-        CurrencyResponseDTO responseDTO = new CurrencyResponseDTO();
+        CurrencyResponseDto responseDTO = new CurrencyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("United States Dollar");
 
-        when(currencyService.updateCurrency(anyLong(), any(CurrencyRequestDTO.class)))
+        when(currencyService.updateCurrency(anyLong(), any(CurrencyRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -209,7 +208,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void activateCurrency_WhenExists_ShouldReturnActivated() throws Exception {
         // Given
-        CurrencyResponseDTO responseDTO = new CurrencyResponseDTO();
+        CurrencyResponseDto responseDTO = new CurrencyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setCode("USD");
         responseDTO.setIsActive(true);
@@ -225,7 +224,7 @@ class CurrencyControllerIntegrationTest {
     @Test
     void deactivateCurrency_WhenExists_ShouldReturnDeactivated() throws Exception {
         // Given
-        CurrencyResponseDTO responseDTO = new CurrencyResponseDTO();
+        CurrencyResponseDto responseDTO = new CurrencyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setCode("USD");
         responseDTO.setIsActive(false);

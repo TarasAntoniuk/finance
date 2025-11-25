@@ -1,21 +1,21 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.dto;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 
 import java.time.LocalDateTime;
 
 /**
  * DTO for external exchange rate responses
  */
-public class ExternalExchangeRateResponseDTO extends BaseExternalExchangeRateDto {
+public class ExternalExchangeRateResponseDto extends BaseExternalExchangeRateDto {
 
     private Long id;
-    private CurrencyResponseDTO currencyFrom;
-    private CurrencyResponseDTO currencyTo;
+    private CurrencyResponseDto currencyFrom;
+    private CurrencyResponseDto currencyTo;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public ExternalExchangeRateResponseDTO() {
+    public ExternalExchangeRateResponseDto() {
         super();
     }
 
@@ -27,19 +27,19 @@ public class ExternalExchangeRateResponseDTO extends BaseExternalExchangeRateDto
         this.id = id;
     }
 
-    public CurrencyResponseDTO getCurrencyFrom() {
+    public CurrencyResponseDto getCurrencyFrom() {
         return currencyFrom;
     }
 
-    public void setCurrencyFrom(CurrencyResponseDTO currencyFrom) {
+    public void setCurrencyFrom(CurrencyResponseDto currencyFrom) {
         this.currencyFrom = currencyFrom;
     }
 
-    public CurrencyResponseDTO getCurrencyTo() {
+    public CurrencyResponseDto getCurrencyTo() {
         return currencyTo;
     }
 
-    public void setCurrencyTo(CurrencyResponseDTO currencyTo) {
+    public void setCurrencyTo(CurrencyResponseDto currencyTo) {
         this.currencyTo = currencyTo;
     }
 

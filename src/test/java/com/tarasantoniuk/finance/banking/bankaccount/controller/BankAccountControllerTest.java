@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.banking.bankaccount.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDTO;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDTO;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.service.BankAccountService;
@@ -37,17 +37,17 @@ class BankAccountControllerTest {
     @Test
     void getAllBankAccounts_ShouldReturnListOfBankAccounts() throws Exception {
         // Given
-        BankAccountResponseDTO account1 = new BankAccountResponseDTO();
+        BankAccountResponseDto account1 = new BankAccountResponseDto();
         account1.setId(1L);
         account1.setAccountNumber("UA213223130000026007233566001");
         account1.setHolderType(AccountHolderType.ORGANIZATION);
 
-        BankAccountResponseDTO account2 = new BankAccountResponseDTO();
+        BankAccountResponseDto account2 = new BankAccountResponseDto();
         account2.setId(2L);
         account2.setAccountNumber("UA213223130000026007233566002");
         account2.setHolderType(AccountHolderType.COUNTERPARTY);
 
-        List<BankAccountResponseDTO> accounts = Arrays.asList(account1, account2);
+        List<BankAccountResponseDto> accounts = Arrays.asList(account1, account2);
         when(bankAccountService.getAllBankAccounts()).thenReturn(accounts);
 
         // When & Then
@@ -62,7 +62,7 @@ class BankAccountControllerTest {
     @Test
     void getBankAccountById_WhenExists_ShouldReturnBankAccount() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setAccountNumber("UA213223130000026007233566001");
         account.setHolderType(AccountHolderType.ORGANIZATION);
@@ -81,7 +81,7 @@ class BankAccountControllerTest {
     @Test
     void getBankAccountByAccountNumber_WhenExists_ShouldReturnBankAccount() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setAccountNumber("UA213223130000026007233566001");
 
@@ -97,7 +97,7 @@ class BankAccountControllerTest {
     @Test
     void getBankAccountsByHolder_ShouldReturnFilteredList() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setHolderType(AccountHolderType.ORGANIZATION);
         account.setHolderId(10L);
@@ -116,7 +116,7 @@ class BankAccountControllerTest {
     @Test
     void getBankAccountsByBank_ShouldReturnFilteredList() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setAccountNumber("UA213223130000026007233566001");
 
@@ -132,7 +132,7 @@ class BankAccountControllerTest {
     @Test
     void getBankAccountsByStatus_ShouldReturnFilteredList() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setStatus(AccountStatus.ACTIVE);
 
@@ -149,7 +149,7 @@ class BankAccountControllerTest {
     @Test
     void getDefaultBankAccountsByHolder_ShouldReturnDefaultAccounts() throws Exception {
         // Given
-        BankAccountResponseDTO account = new BankAccountResponseDTO();
+        BankAccountResponseDto account = new BankAccountResponseDto();
         account.setId(1L);
         account.setHolderType(AccountHolderType.ORGANIZATION);
         account.setHolderId(10L);
@@ -168,7 +168,7 @@ class BankAccountControllerTest {
     @Test
     void createBankAccount_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto requestDTO = new BankAccountRequestDto();
         requestDTO.setAccountNumber("UA213223130000026007233566001");
         requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
         requestDTO.setHolderId(10L);
@@ -177,12 +177,12 @@ class BankAccountControllerTest {
         requestDTO.setStatus(AccountStatus.ACTIVE);
         requestDTO.setIsDefault(true);
 
-        BankAccountResponseDTO responseDTO = new BankAccountResponseDTO();
+        BankAccountResponseDto responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setAccountNumber("UA213223130000026007233566001");
         responseDTO.setHolderType(AccountHolderType.ORGANIZATION);
 
-        when(bankAccountService.createBankAccount(any(BankAccountRequestDTO.class)))
+        when(bankAccountService.createBankAccount(any(BankAccountRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -197,7 +197,7 @@ class BankAccountControllerTest {
     @Test
     void createBankAccount_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto requestDTO = new BankAccountRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/bank-accounts")
@@ -209,18 +209,18 @@ class BankAccountControllerTest {
     @Test
     void updateBankAccount_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto requestDTO = new BankAccountRequestDto();
         requestDTO.setAccountNumber("UA213223130000026007233566001");
         requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
         requestDTO.setHolderId(10L);
         requestDTO.setBankId(1L);
         requestDTO.setCurrencyId(1L);
 
-        BankAccountResponseDTO responseDTO = new BankAccountResponseDTO();
+        BankAccountResponseDto responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setAccountNumber("UA213223130000026007233566001");
 
-        when(bankAccountService.updateBankAccount(anyLong(), any(BankAccountRequestDTO.class)))
+        when(bankAccountService.updateBankAccount(anyLong(), any(BankAccountRequestDto.class)))
                 .thenReturn(responseDTO);
 
         // When & Then
@@ -234,7 +234,7 @@ class BankAccountControllerTest {
     @Test
     void changeStatus_WhenExists_ShouldReturnUpdated() throws Exception {
         // Given
-        BankAccountResponseDTO responseDTO = new BankAccountResponseDTO();
+        BankAccountResponseDto responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setStatus(AccountStatus.INACTIVE);
 
@@ -249,7 +249,7 @@ class BankAccountControllerTest {
     @Test
     void setAsDefault_WhenExists_ShouldReturnUpdated() throws Exception {
         // Given
-        BankAccountResponseDTO responseDTO = new BankAccountResponseDTO();
+        BankAccountResponseDto responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsDefault(true);
 
@@ -264,7 +264,7 @@ class BankAccountControllerTest {
     @Test
     void unsetAsDefault_WhenExists_ShouldReturnUpdated() throws Exception {
         // Given
-        BankAccountResponseDTO responseDTO = new BankAccountResponseDTO();
+        BankAccountResponseDto responseDTO = new BankAccountResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsDefault(false);
 

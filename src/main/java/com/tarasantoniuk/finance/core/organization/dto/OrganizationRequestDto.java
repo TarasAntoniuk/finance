@@ -5,16 +5,16 @@ import jakarta.validation.constraints.NotNull;
 /**
  * DTO for organization creation and update requests
  */
-public class OrganizationRequestDTO extends BaseOrganizationDto {
+public class OrganizationRequestDto extends BaseOrganizationDto {
 
     @NotNull(message = "Country ID is required")
     private Long countryId;
 
-    public OrganizationRequestDTO() {
+    public OrganizationRequestDto() {
         super();
     }
 
-    public OrganizationRequestDTO(String name, String registrationNumber, String vatNumber,
+    public OrganizationRequestDto(String name, String registrationNumber, String vatNumber,
                                   String address, String email, String phone, Long countryId) {
         super();
         setName(name);

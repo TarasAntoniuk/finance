@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 /**
  * Base DTO class with common fields for Bank request and response DTOs
  */
-public abstract class BaseBankDTO {
+public abstract class BaseBankDto {
 
     @NotBlank(message = "Bank name is required")
     @Size(max = 100, message = "Bank name must not exceed 100 characters")
@@ -27,7 +27,7 @@ public abstract class BaseBankDTO {
 
     private Boolean isActive;
 
-    public BaseBankDTO() {
+    public BaseBankDto() {
     }
 
     public String getName() {
