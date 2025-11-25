@@ -1,4 +1,6 @@
 package com.tarasantoniuk.finance.banking.common.entity;
 
-public class MonetaryDocument {
+import com.tarasantoniuk.finance.common.document.entity.BaseDocument;
+
+public class MonetaryDocument extends BaseDocument {
 }
