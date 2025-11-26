@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.banking.bankaccountbalance;
+package com.tarasantoniuk.finance.banking.bankaccountbalance.entity;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;

@@ -33,7 +33,11 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_bank_account_transaction_created", columnList = "created_at")
         }
 )
-public class BankAccountTransactionEvent extends BaseDocument {
+public class BankAccountTransactionEvent {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     /**
      * Bank account where transaction occurred
@@ -136,6 +140,14 @@ public class BankAccountTransactionEvent extends BaseDocument {
     }
 
     // Getters and Setters
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public BankAccount getBankAccount() {
         return bankAccount;
