@@ -249,4 +249,24 @@ public class BankReceiptController {
         bankReceiptService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Post bank receipt - проведення документа
+     * POST /api/v1/bank-receipts/{id}/post
+     */
+    @PostMapping("/{id}/post")
+    public ResponseEntity<BankReceiptResponseDto> post(@PathVariable Long id) {
+        BankReceiptResponseDto responseDto = bankReceiptService.post(id);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    /**
+     * Unpost bank receipt - відміна проведення
+     * POST /api/v1/bank-receipts/{id}/unpost
+     */
+    @PostMapping("/{id}/unpost")
+    public ResponseEntity<BankReceiptResponseDto> unpost(@PathVariable Long id) {
+        BankReceiptResponseDto responseDto = bankReceiptService.unpost(id);
+        return ResponseEntity.ok(responseDto);
+    }
 }

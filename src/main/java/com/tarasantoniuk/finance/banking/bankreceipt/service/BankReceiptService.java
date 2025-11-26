@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.bankreceipt.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
@@ -37,6 +38,7 @@ public class BankReceiptService {
     private final CounterpartyRepository counterpartyRepository;
     private final CurrencyRepository currencyRepository;
     private final OrganizationRepository organizationRepository;
+    private final BankAccountTransactionService transactionService;
 
     public BankReceiptService(
             BankReceiptRepository bankReceiptRepository,
@@ -44,13 +46,15 @@ public class BankReceiptService {
             BankAccountRepository bankAccountRepository,
             CounterpartyRepository counterpartyRepository,
             CurrencyRepository currencyRepository,
-            OrganizationRepository organizationRepository) {
+            OrganizationRepository organizationRepository,
+            BankAccountTransactionService transactionService) {
         this.bankReceiptRepository = bankReceiptRepository;
         this.bankReceiptMapper = bankReceiptMapper;
         this.bankAccountRepository = bankAccountRepository;
         this.counterpartyRepository = counterpartyRepository;
         this.currencyRepository = currencyRepository;
         this.organizationRepository = organizationRepository;
+        this.transactionService = transactionService;
     }
 
     /**
@@ -185,6 +189,83 @@ public class BankReceiptService {
         }
 
         bankReceiptRepository.delete(receipt);
+    }
+
+    /**
+     * Post bank receipt - create transaction event in Event Sourcing
+     */
+    public BankReceiptResponseDto post(Long id) {
+        BankReceipt receipt = findEntityByIdOrThrow(id);
+
+        // Only DRAFT documents can be posted
+        if (receipt.getStatus() != DocumentStatus.DRAFT) {
+            throw new InvalidDocumentStatusException(
+                    "Cannot post receipt in status " + receipt.getStatus()
+            );
+        }
+
+        // Check if transaction event already exists
+        if (transactionService.existsByDocument("BankReceipt", id)) {
+            throw new ResourceAlreadyExistsException(
+                    "Transaction event already exists for BankReceipt id: " + id
+            );
+        }
+
+        // Create transaction event (DEBIT - money in)
+        transactionService.createReceiptEvent(
+                receipt.getAccount().getId(),
+                receipt.getOrganization().getId(),
+                receipt.getCurrency().getId(),
+                receipt.getDocumentDate(),
+                receipt.getAmount(),
+                "BankReceipt",
+                receipt.getId(),
+                receipt.getDescription()
+        );
+
+        // Update document status
+        receipt.setStatus(DocumentStatus.POSTED);
+        BankReceipt postedReceipt = bankReceiptRepository.save(receipt);
+
+        return bankReceiptMapper.toResponseDto(postedReceipt);
+    }
+
+    /**
+     * Unpost bank receipt - reverse transaction event
+     */
+    public BankReceiptResponseDto unpost(Long id) {
+        BankReceipt receipt = findEntityByIdOrThrow(id);
+
+        // Only POSTED documents can be unposted
+        if (receipt.getStatus() != DocumentStatus.POSTED) {
+            throw new InvalidDocumentStatusException(
+                    "Cannot unpost receipt in status " + receipt.getStatus()
+            );
+        }
+
+        // Find and reverse the transaction event
+        var event = transactionService.findByDocument("BankReceipt", id);
+
+        // Create reversal event (CREDIT - reverse the DEBIT)
+        var reversalEvent = transactionService.createPaymentEvent(
+                receipt.getAccount().getId(),
+                receipt.getOrganization().getId(),
+                receipt.getCurrency().getId(),
+                receipt.getDocumentDate(),
+                receipt.getAmount(),
+                "BankReceiptReversal",
+                receipt.getId(),
+                "Reversal of: " + receipt.getDescription()
+        );
+
+        // Mark original event as reversed
+        transactionService.reverseTransaction(event.getId(), reversalEvent.getId());
+
+        // Update document status
+        receipt.setStatus(DocumentStatus.DRAFT);
+        BankReceipt unpostedReceipt = bankReceiptRepository.save(receipt);
+
+        return bankReceiptMapper.toResponseDto(unpostedReceipt);
     }
 
     // ========== PRIVATE HELPER METHODS ==========
