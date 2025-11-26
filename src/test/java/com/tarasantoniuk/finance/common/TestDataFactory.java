@@ -5,6 +5,10 @@ import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
+import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
+import com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType;
+import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty.CounterpartyType;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
@@ -16,6 +20,10 @@ import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 public class TestDataFactory {
@@ -186,5 +194,68 @@ public class TestDataFactory {
 
     public BankAccount createDefaultBankAccount(Bank bank, Currency currency, Organization organization) {
         return createBankAccountOrganization(bank, currency, organization, "UA123456789012345678901234567");
+    }
+
+    /**
+     * Create test BankReceiptResponseDto
+     */
+    public static BankReceiptResponseDto createBankReceiptResponseDto() {
+        BankReceiptResponseDto dto = new BankReceiptResponseDto();
+        dto.setId(1L);
+
+        // Base fields from BaseBankReceiptDto
+        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
+        dto.setAmount(new BigDecimal("1000.00"));
+        dto.setBankCommission(new BigDecimal("5.00"));
+        dto.setDescription("Test bank receipt");
+        dto.setPaymentPurpose("Payment for services");
+        dto.setPaymentReference("REF-001");
+        dto.setExternalTransactionId("EXT-001");
+        dto.setBankReference("BANK-REF-001");
+        dto.setTransactionDate(LocalDate.of(2024, 1, 15));
+        dto.setValueDate(LocalDate.of(2024, 1, 15));
+
+        // Related entities (null for unit tests - we're testing mapper call)
+        dto.setAccount(null);
+        dto.setCounterparty(null);
+        dto.setCounterpartyBankAccount(null);
+        dto.setCurrency(null);
+        dto.setOrganization(null);
+
+        // Status and timestamps
+        dto.setStatus(DocumentStatus.DRAFT);
+        dto.setCreatedAt(LocalDateTime.now());
+        dto.setUpdatedAt(LocalDateTime.now());
+
+        return dto;
+    }
+
+    // Helper method
+    public static BankReceipt createTestBankReceipt() {
+        BankReceipt receipt = new BankReceipt();
+        receipt.setId(1L);
+        receipt.setIncomingDocumentNumber("BR-001");
+        receipt.setDocumentDate(LocalDate.of(2024, 1, 15));
+        receipt.setAmount(new BigDecimal("1000.00"));
+        receipt.setDescription("Test receipt");
+
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+        receipt.setAccount(account);
+
+        Organization organization = new Organization();
+        organization.setId(1L);
+        receipt.setOrganization(organization);
+
+        Currency currency = new Currency();
+        currency.setId(1L);
+        receipt.setCurrency(currency);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+        receipt.setCounterparty(counterparty);
+
+        return receipt;
     }
 }

@@ -2,6 +2,8 @@ package com.tarasantoniuk.finance.common;
 
 import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
@@ -34,10 +36,18 @@ public class TestDataCleaner {
     @Autowired
     private CountryRepository countryRepository;
 
+    @Autowired
+    private BankAccountTransactionEventRepository transactionEventRepository;
+
+    @Autowired
+    private BankAccountBalanceSnapshotRepository balanceSnapshotRepository;
+
     /**
      * Очищає всі дані у правильному порядку (від залежних до головних)
      */
     public void cleanAll() {
+        transactionEventRepository.deleteAll();
+        balanceSnapshotRepository.deleteAll();
         bankReceiptRepository.deleteAll();
         bankAccountRepository.deleteAll();
         counterpartyRepository.deleteAll();
