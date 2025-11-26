@@ -2,12 +2,15 @@ package com.tarasantoniuk.finance.banking.bankreceipt.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType;
 import com.tarasantoniuk.finance.banking.bankreceipt.mapper.BankReceiptMapper;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
+import com.tarasantoniuk.finance.common.TestDataFactory;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
@@ -20,6 +23,7 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -62,6 +66,9 @@ class BankReceiptServiceTest {
 
     @InjectMocks
     private BankReceiptService bankReceiptService;
+
+    @Mock
+    private BankAccountTransactionService transactionService;
 
     private BankReceiptRequestDto requestDto;
     private BankReceipt receipt;
@@ -356,4 +363,225 @@ class BankReceiptServiceTest {
         verify(bankReceiptRepository).findByIdWithDetails(100L);
         verify(bankReceiptRepository, never()).delete(any());
     }
+
+    // ========== POST TESTS ==========
+
+    @Test
+    @DisplayName("post() - should post DRAFT receipt and create transaction event")
+    void post_ShouldPostReceiptAndCreateEvent() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.DRAFT);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+        when(transactionService.existsByDocument("BankReceipt", receipt.getId()))
+                .thenReturn(false);
+
+        BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+        mockEvent.setId(1L);
+        when(transactionService.createReceiptEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString()))
+                .thenReturn(mockEvent);
+
+        when(bankReceiptRepository.save(any(BankReceipt.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        BankReceiptResponseDto expectedDto = TestDataFactory.createBankReceiptResponseDto();
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(expectedDto);
+
+        // When
+        BankReceiptResponseDto result = bankReceiptService.post(receipt.getId());
+
+        // Then
+        assertNotNull(result);
+        verify(transactionService).existsByDocument("BankReceipt", receipt.getId());
+        verify(transactionService).createReceiptEvent(
+                receipt.getAccount().getId(),
+                receipt.getOrganization().getId(),
+                receipt.getCurrency().getId(),
+                receipt.getDocumentDate(),
+                receipt.getAmount(),
+                "BankReceipt",
+                receipt.getId(),
+                receipt.getDescription()
+        );
+        assertEquals(DocumentStatus.POSTED, receipt.getStatus());
+        verify(bankReceiptRepository).save(receipt);
+    }
+
+    @Test
+    @DisplayName("post() - should throw exception when receipt not found")
+    void post_ShouldThrowException_WhenReceiptNotFound() {
+        // Given
+        Long nonExistentId = 999L;
+        when(bankReceiptRepository.findByIdWithDetails(nonExistentId))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+                () -> bankReceiptService.post(nonExistentId));
+
+        verify(transactionService, never()).createReceiptEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("post() - should throw exception when receipt is not DRAFT")
+    void post_ShouldThrowException_WhenReceiptNotDraft() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.POSTED);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+
+        // When & Then
+        assertThrows(InvalidDocumentStatusException.class,
+                () -> bankReceiptService.post(receipt.getId()));
+
+        verify(transactionService, never()).existsByDocument(anyString(), anyLong());
+        verify(transactionService, never()).createReceiptEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("post() - should throw exception when transaction event already exists")
+    void post_ShouldThrowException_WhenEventAlreadyExists() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.DRAFT);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+        when(transactionService.existsByDocument("BankReceipt", receipt.getId()))
+                .thenReturn(true);
+
+        // When & Then
+        assertThrows(ResourceAlreadyExistsException.class,
+                () -> bankReceiptService.post(receipt.getId()));
+
+        verify(transactionService, never()).createReceiptEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+        verify(bankReceiptRepository, never()).save(any(BankReceipt.class));
+    }
+
+// ========== UNPOST TESTS ==========
+
+    @Test
+    @DisplayName("unpost() - should unpost POSTED receipt and reverse transaction")
+    void unpost_ShouldUnpostReceiptAndReverseTransaction() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.POSTED);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+
+        BankAccountTransactionEvent originalEvent = new BankAccountTransactionEvent();
+        originalEvent.setId(1L);
+        when(transactionService.findByDocument("BankReceipt", receipt.getId()))
+                .thenReturn(originalEvent);
+
+        BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
+        reversalEvent.setId(2L);
+        when(transactionService.createPaymentEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString()))
+                .thenReturn(reversalEvent);
+
+        when(bankReceiptRepository.save(any(BankReceipt.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        BankReceiptResponseDto expectedDto = TestDataFactory.createBankReceiptResponseDto();
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(expectedDto);
+
+        // When
+        BankReceiptResponseDto result = bankReceiptService.unpost(receipt.getId());
+
+        // Then
+        assertNotNull(result);
+        verify(transactionService).findByDocument("BankReceipt", receipt.getId());
+        verify(transactionService).createPaymentEvent(
+                receipt.getAccount().getId(),
+                receipt.getOrganization().getId(),
+                receipt.getCurrency().getId(),
+                receipt.getDocumentDate(),
+                receipt.getAmount(),
+                "BankReceiptReversal",
+                receipt.getId(),
+                "Reversal of: " + receipt.getDescription()
+        );
+        verify(transactionService).reverseTransaction(originalEvent.getId(), reversalEvent.getId());
+        assertEquals(DocumentStatus.DRAFT, receipt.getStatus());
+        verify(bankReceiptRepository).save(receipt);
+    }
+
+    @Test
+    @DisplayName("unpost() - should throw exception when receipt not found")
+    void unpost_ShouldThrowException_WhenReceiptNotFound() {
+        // Given
+        Long nonExistentId = 999L;
+        when(bankReceiptRepository.findByIdWithDetails(nonExistentId))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+                () -> bankReceiptService.unpost(nonExistentId));
+
+        verify(transactionService, never()).findByDocument(anyString(), anyLong());
+        verify(transactionService, never()).createPaymentEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("unpost() - should throw exception when receipt is not POSTED")
+    void unpost_ShouldThrowException_WhenReceiptNotPosted() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.DRAFT);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+
+        // When & Then
+        assertThrows(InvalidDocumentStatusException.class,
+                () -> bankReceiptService.unpost(receipt.getId()));
+
+        verify(transactionService, never()).findByDocument(anyString(), anyLong());
+        verify(transactionService, never()).createPaymentEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("unpost() - should throw exception when original event not found")
+    void unpost_ShouldThrowException_WhenOriginalEventNotFound() {
+        // Given
+        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
+        receipt.setStatus(DocumentStatus.POSTED);
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
+                .thenReturn(Optional.of(receipt));
+        when(transactionService.findByDocument("BankReceipt", receipt.getId()))
+                .thenThrow(new ResourceNotFoundException("Transaction event not found"));
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+                () -> bankReceiptService.unpost(receipt.getId()));
+
+        verify(transactionService, never()).createPaymentEvent(
+                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                any(BigDecimal.class), anyString(), anyLong(), anyString());
+        verify(bankReceiptRepository, never()).save(any(BankReceipt.class));
+    }
+
+
 }

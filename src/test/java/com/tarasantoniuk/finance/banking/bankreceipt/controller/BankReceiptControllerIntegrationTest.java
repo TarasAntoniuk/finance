@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -551,6 +552,158 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content", hasSize(0)));
     }
 
+    // ========== POST ENDPOINT TESTS ==========
+
+    @Test
+    void postBankReceipt_ShouldReturnPosted_WhenValidDraftReceipt() throws Exception {
+        // Given - create DRAFT receipt
+        BankReceipt receipt = createBankReceipt("EXT-POST-001");
+        receipt.setStatus(DocumentStatus.DRAFT);
+        bankReceiptRepository.save(receipt);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(receipt.getId()))
+                .andExpect(jsonPath("$.status").value("POSTED"));
+
+        // Verify receipt status changed in database
+        BankReceipt updatedReceipt = bankReceiptRepository.findById(receipt.getId()).orElseThrow();
+        assertEquals(DocumentStatus.POSTED, updatedReceipt.getStatus());
+    }
+
+    @Test
+    void postBankReceipt_ShouldReturnNotFound_WhenReceiptNotExists() throws Exception {
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", 99999L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void postBankReceipt_ShouldReturnConflict_WhenReceiptAlreadyPosted() throws Exception {
+        // Given - create POSTED receipt
+        BankReceipt receipt = createBankReceipt("EXT-ALREADY-POSTED");
+        receipt.setStatus(DocumentStatus.POSTED);
+        bankReceiptRepository.save(receipt);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void postBankReceipt_ShouldReturnConflict_WhenEventAlreadyExists() throws Exception {
+        // Given - create receipt and post it first time
+        BankReceipt receipt = createBankReceipt("EXT-DOUBLE-POST");
+
+        // Post first time
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Set status back to DRAFT manually (edge case simulation)
+        receipt.setStatus(DocumentStatus.DRAFT);
+        bankReceiptRepository.save(receipt);
+
+        // When & Then - try to post again (event already exists)
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+    }
+
+// ========== UNPOST ENDPOINT TESTS ==========
+
+    @Test
+    void unpostBankReceipt_ShouldReturnDraft_WhenValidPostedReceipt() throws Exception {
+        // Given - create and post receipt
+        BankReceipt receipt = createBankReceipt("EXT-UNPOST-001");
+
+        // Post it first
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // When & Then - unpost
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/unpost", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(receipt.getId()))
+                .andExpect(jsonPath("$.status").value("DRAFT"));
+
+        // Verify receipt status changed back to DRAFT in database
+        BankReceipt updatedReceipt = bankReceiptRepository.findById(receipt.getId()).orElseThrow();
+        assertEquals(DocumentStatus.DRAFT, updatedReceipt.getStatus());
+    }
+
+    @Test
+    void unpostBankReceipt_ShouldReturnNotFound_WhenReceiptNotExists() throws Exception {
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/unpost", 99999L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void unpostBankReceipt_ShouldReturnConflict_WhenReceiptIsNotPosted() throws Exception {
+        // Given - create DRAFT receipt
+        BankReceipt receipt = createBankReceipt("EXT-NOT-POSTED");
+        receipt.setStatus(DocumentStatus.DRAFT);
+        bankReceiptRepository.save(receipt);
+
+        // When & Then - try to unpost DRAFT receipt
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/unpost", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void unpostBankReceipt_ShouldReturnNotFound_WhenOriginalEventNotFound() throws Exception {
+        // Given - create receipt with POSTED status but WITHOUT event (edge case)
+        BankReceipt receipt = createBankReceipt("EXT-NO-EVENT");
+        receipt.setStatus(DocumentStatus.POSTED);
+        bankReceiptRepository.save(receipt);
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/unpost", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    // ========== POST/UNPOST FLOW TEST ==========
+
+    @Test
+    void postAndUnpostBankReceipt_ShouldWorkCorrectly_WhenFullFlow() throws Exception {
+        // Given - create DRAFT receipt
+        BankReceipt receipt = createBankReceipt("EXT-FLOW-001");
+
+        // Step 1: Post receipt
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("POSTED"));
+
+        // Verify status in DB
+        BankReceipt postedReceipt = bankReceiptRepository.findById(receipt.getId()).orElseThrow();
+        assertEquals(DocumentStatus.POSTED, postedReceipt.getStatus());
+
+        // Step 2: Unpost receipt
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/unpost", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DRAFT"));
+
+        // Verify status back to DRAFT in DB
+        BankReceipt unpostedReceipt = bankReceiptRepository.findById(receipt.getId()).orElseThrow();
+        assertEquals(DocumentStatus.DRAFT, unpostedReceipt.getStatus());
+
+        // Step 3: Post again (should work)
+        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("POSTED"));
+    }
+
 //    // ==================== Helper Methods ====================
 //
 //    private Country createCountry() {
@@ -575,7 +728,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
 //        currency.setCode("UAH");
 //        currency.setName("Ukrainian Hryvnia");
 //        currency.setSymbol("₴");
-//        currency.setNumericCode("980"); // ✅ ДОДАНО - ISO 4217 код для UAH
+//        currency.setNumericCode("980");
 //        currency.setMinorUnit(2);
 //        currency.setIsActive(true);
 //        return currencyRepository.save(currency);
