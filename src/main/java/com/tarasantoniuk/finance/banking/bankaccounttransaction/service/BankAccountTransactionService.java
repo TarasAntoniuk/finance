@@ -7,7 +7,6 @@ import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccou
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
-import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
