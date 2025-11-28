@@ -11,6 +11,7 @@ import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepos
 import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
+import com.tarasantoniuk.finance.banking.bankreceipt.service.BankReceiptService;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.country.entity.Country;
@@ -41,6 +42,9 @@ public class TestDataFactoryBanking {
 
     @Autowired
     private BankPaymentRepository bankPaymentRepository;
+
+    @Autowired
+    private BankReceiptService bankReceiptService;
 
     // ==================== Banks ====================
 
@@ -378,6 +382,98 @@ public class TestDataFactoryBanking {
         payment.setStatus(DocumentStatus.DRAFT);
         payment.setDescription("Test payment");
         return bankPaymentRepository.save(payment);
+    }
+
+    /**
+     * Creates bank payment with external transaction ID
+     * Status: DRAFT
+     * Type: SUPPLIER_PAYMENT
+     */
+    public BankPayment createBankPayment(
+            BankAccount organizationAccount,
+            Counterparty counterparty,
+            Currency currency,
+            Organization organization,
+            String externalTransactionId
+    ) {
+        BankPayment payment = createBankPayment(
+                organizationAccount,
+                counterparty,
+                null,
+                currency,
+                organization,
+                new BigDecimal("10000.00")
+        );
+
+        payment.setExternalTransactionId(externalTransactionId);
+        return bankPaymentRepository.save(payment);
+    }
+
+    // ==================== Balance Management ====================
+
+    /**
+     * Creates initial balance on organization account by posting a bank receipt
+     * This is required for payment post operations to succeed (balance validation)
+     *
+     * Default amount: 50000.00
+     *
+     * @param organizationAccount Account to create balance on
+     * @param counterparty Counterparty for the receipt
+     * @param counterpartyAccount Optional counterparty bank account
+     * @param currency Currency for the receipt
+     * @param organization Organization for the receipt
+     * @return Posted bank receipt that created the balance
+     */
+    public BankReceipt createInitialBalance(
+            BankAccount organizationAccount,
+            Counterparty counterparty,
+            BankAccount counterpartyAccount,
+            Currency currency,
+            Organization organization
+    ) {
+        return createInitialBalance(
+                organizationAccount,
+                counterparty,
+                counterpartyAccount,
+                currency,
+                organization,
+                new BigDecimal("50000.00")
+        );
+    }
+
+    /**
+     * Creates initial balance on organization account with custom amount
+     * Posts the receipt to actually create the balance via TransactionEvent
+     *
+     * @param organizationAccount Account to create balance on
+     * @param counterparty Counterparty for the receipt
+     * @param counterpartyAccount Optional counterparty bank account
+     * @param currency Currency for the receipt
+     * @param organization Organization for the receipt
+     * @param amount Balance amount to create
+     * @return Posted bank receipt that created the balance
+     */
+    public BankReceipt createInitialBalance(
+            BankAccount organizationAccount,
+            Counterparty counterparty,
+            BankAccount counterpartyAccount,
+            Currency currency,
+            Organization organization,
+            BigDecimal amount
+    ) {
+        BankReceipt receipt = createBankReceipt(
+                organizationAccount,
+                counterparty,
+                counterpartyAccount,
+                currency,
+                organization,
+                amount
+        );
+
+        // Post the receipt to create actual balance via TransactionEvent
+        bankReceiptService.post(receipt.getId());
+
+        return receipt;
     }
 
     // ==================== Helper Methods ====================

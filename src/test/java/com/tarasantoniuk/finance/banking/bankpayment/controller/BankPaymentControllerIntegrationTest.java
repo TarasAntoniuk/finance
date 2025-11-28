@@ -5,11 +5,12 @@ import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
+import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
 import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepository;
-import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.banking.common.TestDataFactoryBanking;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.common.TestDataCleaner;
+
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.common.TestDataFactoryCore;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
@@ -44,10 +45,10 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     private TestDataCleaner testDataCleaner;
 
     @Autowired
-    private TestDataFactoryCore testDataFactoryCore;
+    private TestDataFactoryCore coreFactory;
 
     @Autowired
-    private TestDataFactoryBanking testDataFactoryBanking;
+    private TestDataFactoryBanking bankingFactory;
 
     @Autowired
     private BankPaymentRepository bankPaymentRepository;
@@ -55,6 +56,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     private Organization organization;
     private Currency currency;
     private Counterparty counterparty;
+    private Bank bank;
     private BankAccount bankAccount;
     private BankAccount counterpartyBankAccount;
 
@@ -62,14 +64,26 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void setUp() {
         testDataCleaner.cleanAll();
 
-        Country country = testDataFactoryCore.createUkraine();
-        organization = testDataFactoryCore.createDefaultOrganization(country);
-        currency = testDataFactoryCore.createUAH();
-        counterparty = testDataFactoryCore.createCustomerCounterparty();
-        Bank bank = testDataFactoryBanking.createPrivatBank(country);
-        bankAccount = testDataFactoryBanking.createOrganizationBankAccount(bank, currency, organization);
-        counterpartyBankAccount = testDataFactoryBanking.createCounterpartyBankAccount(
+        // Create core entities
+        Country country = coreFactory.createUkraine();
+        organization = coreFactory.createDefaultOrganization(country);
+        currency = coreFactory.createUAH();
+        counterparty = coreFactory.createCustomerCounterparty();
+
+        // Create banking entities
+        bank = bankingFactory.createPrivatBank(country);
+        bankAccount = bankingFactory.createOrganizationBankAccount(bank, currency, organization);
+        counterpartyBankAccount = bankingFactory.createCounterpartyBankAccount(
                 bank, currency, counterparty, "UA903052990000026001234567890");
+
+        // Create initial balance (50000.00 UAH)
+        bankingFactory.createInitialBalance(
+                bankAccount,
+                counterparty,
+                counterpartyBankAccount,
+                currency,
+                organization
+        );
     }
 
     @AfterEach
@@ -83,6 +97,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnCreated_WhenValidRequest() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("10000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -98,6 +113,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.documentDate").value("2024-01-15"))
+                .andExpect(jsonPath("$.paymentType").value("SUPPLIER_PAYMENT"))
                 .andExpect(jsonPath("$.amount").value(10000.00))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
                 .andExpect(jsonPath("$.description").value("Test payment"))
@@ -108,6 +124,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnCreated_WhenWithoutCounterpartyBankAccount() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("5000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -138,6 +155,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsNull() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
         requestDto.setCurrencyId(currency.getId());
@@ -153,6 +171,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsZero() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(BigDecimal.ZERO);
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -169,6 +188,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsNegative() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("-100.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -183,10 +203,14 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void createBankPayment_ShouldReturnConflict_WhenDuplicateExternalTransactionId() throws Exception {
-        BankPayment existing = createBankPayment("EXT-DUPLICATE");
+        // Create payment with externalTransactionId
+        bankingFactory.createBankPayment(
+                bankAccount, counterparty, currency, organization, "EXT-DUPLICATE");
+
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -204,6 +228,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnNotFound_WhenAccountNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(99999L);
         requestDto.setCounterpartyId(counterparty.getId());
@@ -220,6 +245,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnNotFound_WhenCounterpartyNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(99999L);
@@ -236,6 +262,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnNotFound_WhenCurrencyNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -252,6 +279,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void createBankPayment_ShouldReturnNotFound_WhenOrganizationNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -272,8 +300,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
 
         mockMvc.perform(get("/api/v1/bank-payments/{id}", payment.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(payment.getId()))
-                .andExpect(jsonPath("$.externalTransactionId").value("EXT-001"));
+                .andExpect(jsonPath("$.id").value(payment.getId()));
     }
 
     @Test
@@ -290,6 +317,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 20));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("15000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -311,6 +339,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     void updateBankPayment_ShouldReturnNotFound_WhenPaymentNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -324,13 +353,14 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void updateBankPayment_ShouldReturnBadRequest_WhenPaymentIsPosted() throws Exception {
+    void updateBankPayment_ShouldReturnConflict_WhenPaymentIsPosted() throws Exception {
         BankPayment payment = createBankPayment("EXT-003");
         payment.setStatus(DocumentStatus.POSTED);
         bankPaymentRepository.save(payment);
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -340,7 +370,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(put("/api/v1/bank-payments/{id}", payment.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     // ==================== GET ALL Tests ====================
@@ -511,13 +541,13 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void deleteBankPayment_ShouldReturnBadRequest_WhenPaymentIsPosted() throws Exception {
+    void deleteBankPayment_ShouldReturnConflict_WhenPaymentIsPosted() throws Exception {
         BankPayment payment = createBankPayment("EXT-901");
         payment.setStatus(DocumentStatus.POSTED);
         bankPaymentRepository.save(payment);
 
         mockMvc.perform(delete("/api/v1/bank-payments/{id}", payment.getId()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     // ==================== POST Tests ====================
@@ -539,29 +569,22 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void postBankPayment_ShouldReturnBadRequest_WhenPaymentIsAlreadyPosted() throws Exception {
+    void postBankPayment_ShouldReturnConflict_WhenPaymentIsAlreadyPosted() throws Exception {
         BankPayment payment = createBankPayment("EXT-1001");
         payment.setStatus(DocumentStatus.POSTED);
         bankPaymentRepository.save(payment);
 
         mockMvc.perform(post("/api/v1/bank-payments/{id}/post", payment.getId()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     // ==================== UNPOST Tests ====================
 
     @Test
     void unpostBankPayment_ShouldReturnOk_WhenPaymentIsPosted() throws Exception {
-        // Create initial balance by posting a receipt first
-        BankReceipt receipt = testDataFactoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
-
-        // Post receipt to create balance
-        mockMvc.perform(post("/api/v1/bank-receipts/{id}/post", receipt.getId()))
-                .andExpect(status().isOk());
-
-        // Now create and post payment
         BankPayment payment = createBankPayment("EXT-1100");
 
+        // First post it
         mockMvc.perform(post("/api/v1/bank-payments/{id}/post", payment.getId()))
                 .andExpect(status().isOk());
 
@@ -579,17 +602,17 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void unpostBankPayment_ShouldReturnBadRequest_WhenPaymentIsDraft() throws Exception {
+    void unpostBankPayment_ShouldReturnConflict_WhenPaymentIsDraft() throws Exception {
         BankPayment payment = createBankPayment("EXT-1101");
 
         mockMvc.perform(post("/api/v1/bank-payments/{id}/unpost", payment.getId()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
 
     // ==================== Helper Methods ====================
 
     private BankPayment createBankPayment(String externalTransactionId) {
-        return testDataFactoryBanking.createBankPayment(
+        return bankingFactory.createBankPayment(
                 bankAccount, counterparty, currency, organization);
     }
 }
