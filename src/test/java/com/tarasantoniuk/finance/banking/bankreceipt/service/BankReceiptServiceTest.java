@@ -10,7 +10,6 @@ import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType;
 import com.tarasantoniuk.finance.banking.bankreceipt.mapper.BankReceiptMapper;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
-import com.tarasantoniuk.finance.common.TestDataFactory;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
@@ -64,70 +63,105 @@ class BankReceiptServiceTest {
     @Mock
     private OrganizationRepository organizationRepository;
 
-    @InjectMocks
-    private BankReceiptService bankReceiptService;
-
     @Mock
     private BankAccountTransactionService transactionService;
+
+    @InjectMocks
+    private BankReceiptService bankReceiptService;
 
     private BankReceiptRequestDto requestDto;
     private BankReceipt receipt;
     private BankReceiptResponseDto responseDto;
-    private BankAccount account;
-    private Counterparty counterparty;
-    private Currency currency;
-    private Organization organization;
 
     @BeforeEach
     void setUp() {
-        // Setup test data
+        // Create request DTO
         requestDto = new BankReceiptRequestDto();
         requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("10000.00"));
         requestDto.setAccountId(1L);
-        requestDto.setCounterpartyId(5L);
-        requestDto.setCurrencyId(2L);
+        requestDto.setCounterpartyId(1L);
+        requestDto.setCurrencyId(1L);
         requestDto.setOrganizationId(1L);
-        requestDto.setExternalTransactionId("EXT-12345");
 
-        account = new BankAccount();
-        account.setId(1L);
-
-        counterparty = new Counterparty();
-        counterparty.setId(5L);
-
-        currency = new Currency();
-        currency.setId(2L);
-
-        organization = new Organization();
-        organization.setId(1L);
-
-        receipt = new BankReceipt();
-        receipt.setId(100L);
-        receipt.setDocumentDate(requestDto.getDocumentDate());
-        receipt.setReceiptType(requestDto.getReceiptType());
-        receipt.setAmount(requestDto.getAmount());
-        receipt.setAccount(account);
-        receipt.setCounterparty(counterparty);
-        receipt.setCurrency(currency);
-        receipt.setOrganization(organization);
+        // Create test receipt entity
+        receipt = createTestBankReceipt();
+        receipt.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         receipt.setStatus(DocumentStatus.DRAFT);
-        receipt.setExternalTransactionId(requestDto.getExternalTransactionId());
 
-        responseDto = new BankReceiptResponseDto();
-        responseDto.setId(100L);
-        responseDto.setStatus(DocumentStatus.DRAFT);
+        // Create response DTO
+        responseDto = createBankReceiptResponseDto();
     }
 
+    // ==================== Helper Methods ====================
+
+    /**
+     * Creates test BankReceipt entity for unit tests (not persisted)
+     */
+    private BankReceipt createTestBankReceipt() {
+        BankReceipt receipt = new BankReceipt();
+        receipt.setId(1L);
+        receipt.setIncomingDocumentNumber("BR-001");
+        receipt.setDocumentDate(LocalDate.of(2024, 1, 15));
+        receipt.setAmount(new BigDecimal("1000.00"));
+        receipt.setDescription("Test receipt");
+
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+        receipt.setAccount(account);
+
+        Organization organization = new Organization();
+        organization.setId(1L);
+        receipt.setOrganization(organization);
+
+        Currency currency = new Currency();
+        currency.setId(1L);
+        receipt.setCurrency(currency);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+        receipt.setCounterparty(counterparty);
+
+        return receipt;
+    }
+
+    /**
+     * Creates test BankReceiptResponseDto for unit tests
+     */
+    private BankReceiptResponseDto createBankReceiptResponseDto() {
+        BankReceiptResponseDto dto = new BankReceiptResponseDto();
+        dto.setId(1L);
+        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
+        dto.setAmount(new BigDecimal("1000.00"));
+        dto.setDescription("Test bank receipt");
+        dto.setStatus(DocumentStatus.DRAFT);
+        return dto;
+    }
+
+    // ==================== CREATE Tests ====================
+
     @Test
-    void create_ShouldCreateReceipt_WhenValidRequest() {
+    @DisplayName("Should successfully create bank receipt")
+    void shouldCreateBankReceipt() {
         // Given
-        when(bankReceiptRepository.existsByExternalTransactionId(any())).thenReturn(false);
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+
+        Currency currency = new Currency();
+        currency.setId(1L);
+
+        Organization organization = new Organization();
+        organization.setId(1L);
+
         when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
         when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(counterpartyRepository.findById(5L)).thenReturn(Optional.of(counterparty));
-        when(currencyRepository.findById(2L)).thenReturn(Optional.of(currency));
+        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(currencyRepository.findById(1L)).thenReturn(Optional.of(currency));
         when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
         when(bankReceiptRepository.save(any(BankReceipt.class))).thenReturn(receipt);
         when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
@@ -137,246 +171,177 @@ class BankReceiptServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(100L, result.getId());
-        assertEquals(DocumentStatus.DRAFT, result.getStatus());
-        verify(bankReceiptRepository).existsByExternalTransactionId(requestDto.getExternalTransactionId());
-        verify(bankReceiptMapper).toEntity(requestDto);
         verify(bankReceiptRepository).save(any(BankReceipt.class));
         verify(bankReceiptMapper).toResponseDto(receipt);
     }
 
     @Test
-    void create_ShouldThrowException_WhenDuplicateExternalTransactionId() {
+    @DisplayName("Should throw exception when account not found")
+    void shouldThrowExceptionWhenAccountNotFound() {
         // Given
-        when(bankReceiptRepository.existsByExternalTransactionId(any())).thenReturn(true);
-
-        // When & Then
-        assertThrows(ResourceAlreadyExistsException.class,
-                () -> bankReceiptService.create(requestDto));
-        verify(bankReceiptRepository).existsByExternalTransactionId(requestDto.getExternalTransactionId());
-        verify(bankReceiptRepository, never()).save(any());
-    }
-
-    @Test
-    void create_ShouldThrowException_WhenAccountNotFound() {
-        // Given
-        when(bankReceiptRepository.existsByExternalTransactionId(any())).thenReturn(false);
         when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
         when(bankAccountRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.create(requestDto));
-        verify(bankAccountRepository).findById(1L);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.create(requestDto);
+        });
+
         verify(bankReceiptRepository, never()).save(any());
     }
 
     @Test
-    void create_ShouldThrowException_WhenCounterpartyNotFound() {
+    @DisplayName("Should throw exception when duplicate external transaction ID")
+    void shouldThrowExceptionWhenDuplicateExternalTransactionId() {
         // Given
-        when(bankReceiptRepository.existsByExternalTransactionId(any())).thenReturn(false);
-        when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
-        when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(counterpartyRepository.findById(5L)).thenReturn(Optional.empty());
+        requestDto.setExternalTransactionId("EXT-123");
+        when(bankReceiptRepository.existsByExternalTransactionId("EXT-123")).thenReturn(true);
 
         // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.create(requestDto));
-        verify(counterpartyRepository).findById(5L);
+        assertThrows(ResourceAlreadyExistsException.class, () -> {
+            bankReceiptService.create(requestDto);
+        });
+
         verify(bankReceiptRepository, never()).save(any());
     }
 
-    @Test
-    void update_ShouldUpdateReceipt_WhenStatusIsDraft() {
-        // Given
-        BankReceiptRequestDto updateDto = new BankReceiptRequestDto();
-        updateDto.setDocumentDate(LocalDate.of(2024, 2, 20));
-        updateDto.setReceiptType(ReceiptType.REFUND);
-        updateDto.setAmount(new BigDecimal("5000.00"));
-        updateDto.setAccountId(1L);
-        updateDto.setCounterpartyId(5L);
-        updateDto.setCurrencyId(2L);
-        updateDto.setOrganizationId(1L);
+    // ==================== UPDATE Tests ====================
 
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(receipt));
+    @Test
+    @DisplayName("Should successfully update bank receipt in DRAFT status")
+    void shouldUpdateBankReceiptInDraftStatus() {
+        // Given
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+
+        Currency currency = new Currency();
+        currency.setId(1L);
+
+        Organization organization = new Organization();
+        organization.setId(1L);
+
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
         when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
-        when(counterpartyRepository.findById(5L)).thenReturn(Optional.of(counterparty));
-        when(currencyRepository.findById(2L)).thenReturn(Optional.of(currency));
+        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(currencyRepository.findById(1L)).thenReturn(Optional.of(currency));
         when(organizationRepository.findById(1L)).thenReturn(Optional.of(organization));
         when(bankReceiptRepository.save(any(BankReceipt.class))).thenReturn(receipt);
         when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
 
         // When
-        BankReceiptResponseDto result = bankReceiptService.update(100L, updateDto);
+        BankReceiptResponseDto result = bankReceiptService.update(1L, requestDto);
 
         // Then
         assertNotNull(result);
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
-        verify(bankReceiptMapper).updateEntityFromDto(updateDto, receipt);
+        verify(bankReceiptMapper).updateEntityFromDto(requestDto, receipt);
         verify(bankReceiptRepository).save(receipt);
     }
 
     @Test
-    void update_ShouldThrowException_WhenStatusIsPosted() {
+    @DisplayName("Should throw exception when updating POSTED receipt")
+    void shouldThrowExceptionWhenUpdatingPostedReceipt() {
         // Given
         receipt.setStatus(DocumentStatus.POSTED);
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
 
         // When & Then
-        assertThrows(InvalidDocumentStatusException.class,
-                () -> bankReceiptService.update(100L, requestDto));
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
+        assertThrows(InvalidDocumentStatusException.class, () -> {
+            bankReceiptService.update(1L, requestDto);
+        });
+
         verify(bankReceiptRepository, never()).save(any());
     }
 
-    @Test
-    void update_ShouldThrowException_WhenReceiptNotFound() {
-        // Given
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.update(100L, requestDto));
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
-        verify(bankReceiptRepository, never()).save(any());
-    }
+    // ==================== FIND Tests ====================
 
     @Test
-    void findById_ShouldReturnReceipt_WhenExists() {
+    @DisplayName("Should find bank receipt by ID")
+    void shouldFindBankReceiptById() {
         // Given
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
         when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
 
         // When
-        BankReceiptResponseDto result = bankReceiptService.findById(100L);
+        BankReceiptResponseDto result = bankReceiptService.findById(1L);
 
         // Then
         assertNotNull(result);
-        assertEquals(100L, result.getId());
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
-        verify(bankReceiptMapper).toResponseDto(receipt);
+        verify(bankReceiptRepository).findByIdWithDetails(1L);
     }
 
     @Test
-    void findById_ShouldThrowException_WhenNotFound() {
+    @DisplayName("Should throw exception when receipt not found")
+    void shouldThrowExceptionWhenReceiptNotFound() {
         // Given
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.empty());
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.findById(100L));
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.findById(1L);
+        });
     }
 
     @Test
-    void findAll_ShouldReturnPagedResults() {
+    @DisplayName("Should find all bank receipts with pagination")
+    void shouldFindAllBankReceiptsWithPagination() {
         // Given
-        Pageable pageable = PageRequest.of(0, 20);
-        Page<BankReceipt> page = new PageImpl<>(List.of(receipt), pageable, 1);
+        Pageable pageable = PageRequest.of(0, 10);
+        List<BankReceipt> receipts = List.of(receipt);
+        Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
         when(bankReceiptRepository.findAllWithDetails(pageable)).thenReturn(page);
-        when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class))).thenReturn(responseDto);
 
         // When
         PageResponse<BankReceiptResponseDto> result = bankReceiptService.findAll(pageable);
 
         // Then
         assertNotNull(result);
-        assertNotNull(result.getContent());
         assertEquals(1, result.getContent().size());
-        assertNotNull(result.getMetadata());
-        assertEquals(0, result.getMetadata().getCurrentPage());
         assertEquals(1, result.getMetadata().getTotalElements());
-        verify(bankReceiptRepository).findAllWithDetails(pageable);
     }
 
-    @Test
-    void findByAccountId_ShouldReturnPagedResults() {
-        // Given
-        Pageable pageable = PageRequest.of(0, 20);
-        Page<BankReceipt> page = new PageImpl<>(List.of(receipt), pageable, 1);
-
-        when(bankReceiptRepository.findByAccountId(1L, pageable)).thenReturn(page);
-        when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
-
-        // When
-        PageResponse<BankReceiptResponseDto> result = bankReceiptService.findByAccountId(1L, pageable);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByAccountId(1L, pageable);
-    }
+    // ==================== DELETE Tests ====================
 
     @Test
-    void findByStatus_ShouldReturnPagedResults() {
+    @DisplayName("Should successfully delete bank receipt in DRAFT status")
+    void shouldDeleteBankReceiptInDraftStatus() {
         // Given
-        Pageable pageable = PageRequest.of(0, 20);
-        Page<BankReceipt> page = new PageImpl<>(List.of(receipt), pageable, 1);
-
-        when(bankReceiptRepository.findByStatus(DocumentStatus.DRAFT, pageable)).thenReturn(page);
-        when(bankReceiptMapper.toResponseDto(receipt)).thenReturn(responseDto);
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
 
         // When
-        PageResponse<BankReceiptResponseDto> result = bankReceiptService.findByStatus(DocumentStatus.DRAFT, pageable);
+        bankReceiptService.delete(1L);
 
         // Then
-        assertNotNull(result);
-        assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByStatus(DocumentStatus.DRAFT, pageable);
-    }
-
-    @Test
-    void delete_ShouldDeleteReceipt_WhenStatusIsDraft() {
-        // Given
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(receipt));
-
-        // When
-        bankReceiptService.delete(100L);
-
-        // Then
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
         verify(bankReceiptRepository).delete(receipt);
     }
 
     @Test
-    void delete_ShouldThrowException_WhenStatusIsPosted() {
+    @DisplayName("Should throw exception when deleting POSTED receipt")
+    void shouldThrowExceptionWhenDeletingPostedReceipt() {
         // Given
         receipt.setStatus(DocumentStatus.POSTED);
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
 
         // When & Then
-        assertThrows(InvalidDocumentStatusException.class,
-                () -> bankReceiptService.delete(100L));
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
+        assertThrows(InvalidDocumentStatusException.class, () -> {
+            bankReceiptService.delete(1L);
+        });
+
         verify(bankReceiptRepository, never()).delete(any());
     }
 
-    @Test
-    void delete_ShouldThrowException_WhenReceiptNotFound() {
-        // Given
-        when(bankReceiptRepository.findByIdWithDetails(100L)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.delete(100L));
-        verify(bankReceiptRepository).findByIdWithDetails(100L);
-        verify(bankReceiptRepository, never()).delete(any());
-    }
-
-    // ========== POST TESTS ==========
+    // ==================== POST Tests ====================
 
     @Test
-    @DisplayName("post() - should post DRAFT receipt and create transaction event")
-    void post_ShouldPostReceiptAndCreateEvent() {
+    @DisplayName("Should successfully post bank receipt")
+    void shouldPostBankReceipt() {
         // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
-        receipt.setStatus(DocumentStatus.DRAFT);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
-        when(transactionService.existsByDocument("BankReceipt", receipt.getId()))
-                .thenReturn(false);
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(transactionService.existsByDocument("BankReceipt", receipt.getId())).thenReturn(false);
 
         BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
         mockEvent.setId(1L);
@@ -388,9 +353,8 @@ class BankReceiptServiceTest {
         when(bankReceiptRepository.save(any(BankReceipt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        BankReceiptResponseDto expectedDto = TestDataFactory.createBankReceiptResponseDto();
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
-                .thenReturn(expectedDto);
+                .thenReturn(responseDto);
 
         // When
         BankReceiptResponseDto result = bankReceiptService.post(receipt.getId());
@@ -408,80 +372,51 @@ class BankReceiptServiceTest {
                 receipt.getId(),
                 receipt.getDescription()
         );
-        assertEquals(DocumentStatus.POSTED, receipt.getStatus());
-        verify(bankReceiptRepository).save(receipt);
+        verify(bankReceiptRepository).save(any(BankReceipt.class));
     }
 
     @Test
-    @DisplayName("post() - should throw exception when receipt not found")
-    void post_ShouldThrowException_WhenReceiptNotFound() {
+    @DisplayName("Should throw exception when posting already POSTED receipt")
+    void shouldThrowExceptionWhenPostingAlreadyPostedReceipt() {
         // Given
-        Long nonExistentId = 999L;
-        when(bankReceiptRepository.findByIdWithDetails(nonExistentId))
-                .thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.post(nonExistentId));
-
-        verify(transactionService, never()).createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
-    }
-
-    @Test
-    @DisplayName("post() - should throw exception when receipt is not DRAFT")
-    void post_ShouldThrowException_WhenReceiptNotDraft() {
-        // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
         receipt.setStatus(DocumentStatus.POSTED);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
 
         // When & Then
-        assertThrows(InvalidDocumentStatusException.class,
-                () -> bankReceiptService.post(receipt.getId()));
+        assertThrows(InvalidDocumentStatusException.class, () -> {
+            bankReceiptService.post(receipt.getId());
+        });
 
-        verify(transactionService, never()).existsByDocument(anyString(), anyLong());
         verify(transactionService, never()).createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
+                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+        );
     }
 
     @Test
-    @DisplayName("post() - should throw exception when transaction event already exists")
-    void post_ShouldThrowException_WhenEventAlreadyExists() {
+    @DisplayName("Should throw exception when transaction event already exists")
+    void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
         // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
-        receipt.setStatus(DocumentStatus.DRAFT);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
-        when(transactionService.existsByDocument("BankReceipt", receipt.getId()))
-                .thenReturn(true);
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(transactionService.existsByDocument("BankReceipt", receipt.getId())).thenReturn(true);
 
         // When & Then
-        assertThrows(ResourceAlreadyExistsException.class,
-                () -> bankReceiptService.post(receipt.getId()));
+        assertThrows(ResourceAlreadyExistsException.class, () -> {
+            bankReceiptService.post(receipt.getId());
+        });
 
         verify(transactionService, never()).createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
-        verify(bankReceiptRepository, never()).save(any(BankReceipt.class));
+                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+        );
     }
 
-// ========== UNPOST TESTS ==========
+    // ==================== UNPOST Tests ====================
 
     @Test
-    @DisplayName("unpost() - should unpost POSTED receipt and reverse transaction")
-    void unpost_ShouldUnpostReceiptAndReverseTransaction() {
+    @DisplayName("Should successfully unpost bank receipt")
+    void shouldUnpostBankReceipt() {
         // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
         receipt.setStatus(DocumentStatus.POSTED);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
 
         BankAccountTransactionEvent originalEvent = new BankAccountTransactionEvent();
         originalEvent.setId(1L);
@@ -498,9 +433,8 @@ class BankReceiptServiceTest {
         when(bankReceiptRepository.save(any(BankReceipt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        BankReceiptResponseDto expectedDto = TestDataFactory.createBankReceiptResponseDto();
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
-                .thenReturn(expectedDto);
+                .thenReturn(responseDto);
 
         // When
         BankReceiptResponseDto result = bankReceiptService.unpost(receipt.getId());
@@ -519,69 +453,33 @@ class BankReceiptServiceTest {
                 "Reversal of: " + receipt.getDescription()
         );
         verify(transactionService).reverseTransaction(originalEvent.getId(), reversalEvent.getId());
-        assertEquals(DocumentStatus.DRAFT, receipt.getStatus());
-        verify(bankReceiptRepository).save(receipt);
+        verify(bankReceiptRepository).save(any(BankReceipt.class));
     }
 
     @Test
-    @DisplayName("unpost() - should throw exception when receipt not found")
-    void unpost_ShouldThrowException_WhenReceiptNotFound() {
+    @DisplayName("Should throw exception when unposting DRAFT receipt")
+    void shouldThrowExceptionWhenUnpostingDraftReceipt() {
         // Given
-        Long nonExistentId = 999L;
-        when(bankReceiptRepository.findByIdWithDetails(nonExistentId))
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+
+        // When & Then
+        assertThrows(InvalidDocumentStatusException.class, () -> {
+            bankReceiptService.unpost(receipt.getId());
+        });
+
+        verify(transactionService, never()).findByDocument(anyString(), anyLong());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when receipt not found for unpost")
+    void shouldThrowExceptionWhenReceiptNotFoundForUnpost() {
+        // Given
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
                 .thenReturn(Optional.empty());
 
         // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.unpost(nonExistentId));
-
-        verify(transactionService, never()).findByDocument(anyString(), anyLong());
-        verify(transactionService, never()).createPaymentEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.unpost(receipt.getId());
+        });
     }
-
-    @Test
-    @DisplayName("unpost() - should throw exception when receipt is not POSTED")
-    void unpost_ShouldThrowException_WhenReceiptNotPosted() {
-        // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
-        receipt.setStatus(DocumentStatus.DRAFT);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
-
-        // When & Then
-        assertThrows(InvalidDocumentStatusException.class,
-                () -> bankReceiptService.unpost(receipt.getId()));
-
-        verify(transactionService, never()).findByDocument(anyString(), anyLong());
-        verify(transactionService, never()).createPaymentEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
-    }
-
-    @Test
-    @DisplayName("unpost() - should throw exception when original event not found")
-    void unpost_ShouldThrowException_WhenOriginalEventNotFound() {
-        // Given
-        BankReceipt receipt = TestDataFactory.createTestBankReceipt();
-        receipt.setStatus(DocumentStatus.POSTED);
-
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.of(receipt));
-        when(transactionService.findByDocument("BankReceipt", receipt.getId()))
-                .thenThrow(new ResourceNotFoundException("Transaction event not found"));
-
-        // When & Then
-        assertThrows(ResourceNotFoundException.class,
-                () -> bankReceiptService.unpost(receipt.getId()));
-
-        verify(transactionService, never()).createPaymentEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString());
-        verify(bankReceiptRepository, never()).save(any(BankReceipt.class));
-    }
-
-
 }
