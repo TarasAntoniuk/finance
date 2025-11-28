@@ -2,10 +2,9 @@ package com.tarasantoniuk.finance.core.externalexchangerate.mapper;
 
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
-import com.tarasantoniuk.finance.core.externalexchangerate.mapper.ExternalExchangeRateMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -26,7 +25,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.of(2024, 11, 15));
         requestDTO.setCurrencyFromId(1L); // USD
         requestDTO.setCurrencyToId(2L);   // EUR
@@ -57,7 +56,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullOptionalFields() {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.of(2024, 11, 15));
         requestDTO.setCurrencyFromId(3L);
         requestDTO.setCurrencyToId(4L);
@@ -77,7 +76,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateBothCurrenciesWithOnlyIdSet() {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.of(2024, 10, 1));
         requestDTO.setCurrencyFromId(10L);
         requestDTO.setCurrencyToId(20L);
@@ -100,7 +99,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentRatePrecisions() {
         // Test with various decimal precisions
-        ExternalExchangeRateRequestDTO requestDTO1 = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO1 = new ExternalExchangeRateRequestDto();
         requestDTO1.setExchangeDate(LocalDate.now());
         requestDTO1.setCurrencyFromId(1L);
         requestDTO1.setCurrencyToId(2L);
@@ -111,7 +110,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         assertThat(entity1.getRate()).isEqualByComparingTo(new BigDecimal("1.123456"));
 
         // Test with integer rate
-        ExternalExchangeRateRequestDTO requestDTO2 = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO2 = new ExternalExchangeRateRequestDto();
         requestDTO2.setExchangeDate(LocalDate.now());
         requestDTO2.setCurrencyFromId(1L);
         requestDTO2.setCurrencyToId(2L);
@@ -162,7 +161,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now.minusDays(2));
 
         // When
-        ExternalExchangeRateResponseDTO responseDTO = exchangeRateMapper.toResponseDTO(entity);
+        ExternalExchangeRateResponseDto responseDTO = exchangeRateMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -218,7 +217,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null); // optional
 
         // When
-        ExternalExchangeRateResponseDTO responseDTO = exchangeRateMapper.toResponseDTO(entity);
+        ExternalExchangeRateResponseDto responseDTO = exchangeRateMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getSourceUrl()).isNull();
@@ -263,7 +262,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         List<ExternalExchangeRate> rates = Arrays.asList(rate1, rate2);
 
         // When
-        List<ExternalExchangeRateResponseDTO> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);
+        List<ExternalExchangeRateResponseDto> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -287,7 +286,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         List<ExternalExchangeRate> rates = List.of();
 
         // When
-        List<ExternalExchangeRateResponseDTO> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);
+        List<ExternalExchangeRateResponseDto> responseDTOs = exchangeRateMapper.toResponseDTOList(rates);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -319,7 +318,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.of(2024, 11, 15));
         updateDTO.setCurrencyFromId(3L); // UAH
         updateDTO.setCurrencyToId(4L);   // PLN
@@ -368,7 +367,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         existingEntity.setSourceUrl("https://existing.com");
         existingEntity.setIsActive(true);
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.of(2024, 11, 15)); // update
         updateDTO.setCurrencyFromId(null); // ignore
         updateDTO.setCurrencyToId(null);   // ignore
@@ -407,7 +406,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         existingEntity.setRate(new BigDecimal("1.0"));
         existingEntity.setSource("TEST");
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.of(2024, 11, 1));
         updateDTO.setCurrencyFromId(10L); // change
         updateDTO.setCurrencyToId(20L);   // change
@@ -441,7 +440,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         existingEntity.setSourceUrl("https://old.com");
         existingEntity.setIsActive(false);
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.of(2024, 11, 1));
         updateDTO.setCurrencyFromId(1L);
         updateDTO.setCurrencyToId(2L);
@@ -478,7 +477,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         existingEntity.setSourceUrl("https://ecb.eu");
         existingEntity.setIsActive(true);
 
-        ExternalExchangeRateRequestDTO updateDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto updateDTO = new ExternalExchangeRateRequestDto();
         updateDTO.setExchangeDate(LocalDate.of(2024, 11, 15)); // update
         updateDTO.setCurrencyFromId(null); // ignore
         updateDTO.setCurrencyToId(2L);     // keep same
@@ -503,7 +502,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentSources() {
         // Test ECB
-        ExternalExchangeRateRequestDTO ecb = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto ecb = new ExternalExchangeRateRequestDto();
         ecb.setExchangeDate(LocalDate.now());
         ecb.setCurrencyFromId(1L);
         ecb.setCurrencyToId(2L);
@@ -514,7 +513,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         assertThat(ecbEntity.getSource()).isEqualTo("ECB");
 
         // Test NBU
-        ExternalExchangeRateRequestDTO nbu = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto nbu = new ExternalExchangeRateRequestDto();
         nbu.setExchangeDate(LocalDate.now());
         nbu.setCurrencyFromId(1L);
         nbu.setCurrencyToId(3L);
@@ -525,7 +524,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
         assertThat(nbuEntity.getSource()).isEqualTo("NBU");
 
         // Test MONOBANK
-        ExternalExchangeRateRequestDTO mono = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto mono = new ExternalExchangeRateRequestDto();
         mono.setExchangeDate(LocalDate.now());
         mono.setCurrencyFromId(1L);
         mono.setCurrencyToId(3L);
@@ -539,7 +538,7 @@ class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleSameCurrencyPair() {
         // Given - same currency (rate should be 1.0)
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L); // USD
         requestDTO.setCurrencyToId(1L);   // USD

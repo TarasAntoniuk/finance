@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.mapper;
 
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
@@ -22,18 +22,18 @@ public interface AccountingPolicyMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "organization", source = "organizationId", qualifiedByName = "idToOrganization")
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "idToCurrency")
-    AccountingPolicy toEntity(AccountingPolicyRequestDTO requestDTO);
+    AccountingPolicy toEntity(AccountingPolicyRequestDto requestDTO);
 
-    AccountingPolicyResponseDTO toResponseDTO(AccountingPolicy accountingPolicy);
+    AccountingPolicyResponseDto toResponseDTO(AccountingPolicy accountingPolicy);
 
-    List<AccountingPolicyResponseDTO> toResponseDTOList(List<AccountingPolicy> accountingPolicies);
+    List<AccountingPolicyResponseDto> toResponseDTOList(List<AccountingPolicy> accountingPolicies);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "organization", source = "organizationId", qualifiedByName = "idToOrganization")
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "idToCurrency")
-    void updateEntityFromDTO(AccountingPolicyRequestDTO requestDTO, @MappingTarget AccountingPolicy accountingPolicy);
+    void updateEntityFromDTO(AccountingPolicyRequestDto requestDTO, @MappingTarget AccountingPolicy accountingPolicy);
 
     @Named("idToOrganization")
     default Organization idToOrganization(Long organizationId) {

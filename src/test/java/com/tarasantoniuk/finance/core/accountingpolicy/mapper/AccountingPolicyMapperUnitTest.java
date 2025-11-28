@@ -1,8 +1,7 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.mapper;
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
-import com.tarasantoniuk.finance.core.accountingpolicy.mapper.AccountingPolicyMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -21,7 +20,7 @@ class AccountingPolicyMapperUnitTest {
     @Test
     void toEntity_shouldHandleNullOrganizationId() {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(null); // null!
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
@@ -38,7 +37,7 @@ class AccountingPolicyMapperUnitTest {
     @Test
     void toEntity_shouldHandleNullCurrencyId() {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(null); // null!
@@ -58,7 +57,7 @@ class AccountingPolicyMapperUnitTest {
         AccountingPolicy existingEntity = new AccountingPolicy();
         existingEntity.setId(1L);
 
-        AccountingPolicyRequestDTO updateDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto updateDTO = new AccountingPolicyRequestDto();
         updateDTO.setOrganizationId(null);
         updateDTO.setYear(2024);
         updateDTO.setCurrencyId(null);

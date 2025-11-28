@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankaccount.controller;
 
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDTO;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDTO;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.service.BankAccountService;
@@ -31,8 +31,8 @@ public class BankAccountController {
     @GetMapping
     @Operation(summary = "Get all bank accounts", description = "Retrieve a list of all bank accounts")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankAccountResponseDTO>> getAllBankAccounts() {
-        List<BankAccountResponseDTO> bankAccounts = bankAccountService.getAllBankAccounts();
+    public ResponseEntity<List<BankAccountResponseDto>> getAllBankAccounts() {
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getAllBankAccounts();
         return ResponseEntity.ok(bankAccounts);
     }
 
@@ -42,9 +42,9 @@ public class BankAccountController {
             @ApiResponse(responseCode = "200", description = "Bank account found"),
             @ApiResponse(responseCode = "404", description = "Bank account not found")
     })
-    public ResponseEntity<BankAccountResponseDTO> getBankAccountById(
+    public ResponseEntity<BankAccountResponseDto> getBankAccountById(
             @Parameter(description = "Bank account ID", required = true) @PathVariable Long id) {
-        BankAccountResponseDTO bankAccount = bankAccountService.getBankAccountById(id);
+        BankAccountResponseDto bankAccount = bankAccountService.getBankAccountById(id);
         return ResponseEntity.ok(bankAccount);
     }
 
@@ -54,47 +54,47 @@ public class BankAccountController {
             @ApiResponse(responseCode = "200", description = "Bank account found"),
             @ApiResponse(responseCode = "404", description = "Bank account not found")
     })
-    public ResponseEntity<BankAccountResponseDTO> getBankAccountByAccountNumber(
+    public ResponseEntity<BankAccountResponseDto> getBankAccountByAccountNumber(
             @Parameter(description = "Account number", required = true) @PathVariable String accountNumber) {
-        BankAccountResponseDTO bankAccount = bankAccountService.getBankAccountByAccountNumber(accountNumber);
+        BankAccountResponseDto bankAccount = bankAccountService.getBankAccountByAccountNumber(accountNumber);
         return ResponseEntity.ok(bankAccount);
     }
 
     @GetMapping("/holder/{holderType}/{holderId}")
     @Operation(summary = "Get bank accounts by holder", description = "Retrieve all bank accounts for a specific holder")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankAccountResponseDTO>> getBankAccountsByHolder(
+    public ResponseEntity<List<BankAccountResponseDto>> getBankAccountsByHolder(
             @Parameter(description = "Holder type (ORGANIZATION or COUNTERPARTY)", required = true) @PathVariable AccountHolderType holderType,
             @Parameter(description = "Holder ID", required = true) @PathVariable Long holderId) {
-        List<BankAccountResponseDTO> bankAccounts = bankAccountService.getBankAccountsByHolder(holderType, holderId);
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getBankAccountsByHolder(holderType, holderId);
         return ResponseEntity.ok(bankAccounts);
     }
 
     @GetMapping("/bank/{bankId}")
     @Operation(summary = "Get bank accounts by bank", description = "Retrieve all bank accounts for a specific bank")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankAccountResponseDTO>> getBankAccountsByBank(
+    public ResponseEntity<List<BankAccountResponseDto>> getBankAccountsByBank(
             @Parameter(description = "Bank ID", required = true) @PathVariable Long bankId) {
-        List<BankAccountResponseDTO> bankAccounts = bankAccountService.getBankAccountsByBank(bankId);
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getBankAccountsByBank(bankId);
         return ResponseEntity.ok(bankAccounts);
     }
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Get bank accounts by status", description = "Retrieve all bank accounts with a specific status")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankAccountResponseDTO>> getBankAccountsByStatus(
+    public ResponseEntity<List<BankAccountResponseDto>> getBankAccountsByStatus(
             @Parameter(description = "Account status (ACTIVE, INACTIVE, or CLOSED)", required = true) @PathVariable AccountStatus status) {
-        List<BankAccountResponseDTO> bankAccounts = bankAccountService.getBankAccountsByStatus(status);
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getBankAccountsByStatus(status);
         return ResponseEntity.ok(bankAccounts);
     }
 
     @GetMapping("/holder/{holderType}/{holderId}/default")
     @Operation(summary = "Get default bank accounts by holder", description = "Retrieve default bank accounts for a specific holder")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankAccountResponseDTO>> getDefaultBankAccountsByHolder(
+    public ResponseEntity<List<BankAccountResponseDto>> getDefaultBankAccountsByHolder(
             @Parameter(description = "Holder type (ORGANIZATION or COUNTERPARTY)", required = true) @PathVariable AccountHolderType holderType,
             @Parameter(description = "Holder ID", required = true) @PathVariable Long holderId) {
-        List<BankAccountResponseDTO> bankAccounts = bankAccountService.getDefaultBankAccountsByHolder(holderType, holderId);
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getDefaultBankAccountsByHolder(holderType, holderId);
         return ResponseEntity.ok(bankAccounts);
     }
 
@@ -104,10 +104,10 @@ public class BankAccountController {
             @ApiResponse(responseCode = "201", description = "Bank account created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<BankAccountResponseDTO> createBankAccount(
+    public ResponseEntity<BankAccountResponseDto> createBankAccount(
             @Parameter(description = "Bank account data", required = true)
-            @Valid @RequestBody BankAccountRequestDTO requestDTO) {
-        BankAccountResponseDTO bankAccount = bankAccountService.createBankAccount(requestDTO);
+            @Valid @RequestBody BankAccountRequestDto requestDTO) {
+        BankAccountResponseDto bankAccount = bankAccountService.createBankAccount(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(bankAccount);
     }
 
@@ -118,11 +118,11 @@ public class BankAccountController {
             @ApiResponse(responseCode = "404", description = "Bank account not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<BankAccountResponseDTO> updateBankAccount(
+    public ResponseEntity<BankAccountResponseDto> updateBankAccount(
             @Parameter(description = "Bank account ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated bank account data", required = true)
-            @Valid @RequestBody BankAccountRequestDTO requestDTO) {
-        BankAccountResponseDTO bankAccount = bankAccountService.updateBankAccount(id, requestDTO);
+            @Valid @RequestBody BankAccountRequestDto requestDTO) {
+        BankAccountResponseDto bankAccount = bankAccountService.updateBankAccount(id, requestDTO);
         return ResponseEntity.ok(bankAccount);
     }
 
@@ -132,10 +132,10 @@ public class BankAccountController {
             @ApiResponse(responseCode = "200", description = "Status changed successfully"),
             @ApiResponse(responseCode = "404", description = "Bank account not found")
     })
-    public ResponseEntity<BankAccountResponseDTO> changeStatus(
+    public ResponseEntity<BankAccountResponseDto> changeStatus(
             @Parameter(description = "Bank account ID", required = true) @PathVariable Long id,
             @Parameter(description = "New status", required = true) @PathVariable AccountStatus status) {
-        BankAccountResponseDTO bankAccount = bankAccountService.changeStatus(id, status);
+        BankAccountResponseDto bankAccount = bankAccountService.changeStatus(id, status);
         return ResponseEntity.ok(bankAccount);
     }
 
@@ -145,9 +145,9 @@ public class BankAccountController {
             @ApiResponse(responseCode = "200", description = "Account set as default successfully"),
             @ApiResponse(responseCode = "404", description = "Bank account not found")
     })
-    public ResponseEntity<BankAccountResponseDTO> setAsDefault(
+    public ResponseEntity<BankAccountResponseDto> setAsDefault(
             @Parameter(description = "Bank account ID", required = true) @PathVariable Long id) {
-        BankAccountResponseDTO bankAccount = bankAccountService.setAsDefault(id);
+        BankAccountResponseDto bankAccount = bankAccountService.setAsDefault(id);
         return ResponseEntity.ok(bankAccount);
     }
 
@@ -157,9 +157,9 @@ public class BankAccountController {
             @ApiResponse(responseCode = "200", description = "Default flag removed successfully"),
             @ApiResponse(responseCode = "404", description = "Bank account not found")
     })
-    public ResponseEntity<BankAccountResponseDTO> unsetAsDefault(
+    public ResponseEntity<BankAccountResponseDto> unsetAsDefault(
             @Parameter(description = "Bank account ID", required = true) @PathVariable Long id) {
-        BankAccountResponseDTO bankAccount = bankAccountService.unsetAsDefault(id);
+        BankAccountResponseDto bankAccount = bankAccountService.unsetAsDefault(id);
         return ResponseEntity.ok(bankAccount);
     }
 

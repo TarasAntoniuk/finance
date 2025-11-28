@@ -3,7 +3,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.exeption;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.externalexchangerate.controller.ExternalExchangeRateController;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateAlreadyExistsException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateNotFoundException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.InvalidExchangeRateException;
@@ -68,14 +68,14 @@ class ExchangeRateErrorTest {
     @Test
     void createExchangeRate_WhenCurrencyFromNotExists_ShouldReturn404() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(999L);
         requestDTO.setCurrencyToId(1L);
         requestDTO.setRate(BigDecimal.valueOf(1.0));
         requestDTO.setSource("TEST");
 
-        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDto.class)))
                 .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then
@@ -89,14 +89,14 @@ class ExchangeRateErrorTest {
     @Test
     void createExchangeRate_WhenCurrencyToNotExists_ShouldReturn404() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(999L);
         requestDTO.setRate(BigDecimal.valueOf(1.0));
         requestDTO.setSource("TEST");
 
-        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDto.class)))
                 .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then
@@ -109,14 +109,14 @@ class ExchangeRateErrorTest {
     @Test
     void createExchangeRate_WhenSameCurrency_ShouldReturn400() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(1L);
         requestDTO.setRate(BigDecimal.valueOf(1.0));
         requestDTO.setSource("TEST");
 
-        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDto.class)))
                 .thenThrow(InvalidExchangeRateException.sameCurrency());
 
         // When & Then
@@ -132,14 +132,14 @@ class ExchangeRateErrorTest {
     void createExchangeRate_WhenAlreadyExists_ShouldReturn409() throws Exception {
         // Given
         LocalDate date = LocalDate.now();
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(date);
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
         requestDTO.setRate(BigDecimal.valueOf(0.92));
         requestDTO.setSource("ECB");
 
-        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.createExchangeRate(any(ExternalExchangeRateRequestDto.class)))
                 .thenThrow(ExchangeRateAlreadyExistsException.forDateCurrencyAndSource(date, 1L, 2L, "ECB"));
 
         // When & Then
@@ -153,7 +153,7 @@ class ExchangeRateErrorTest {
     @Test
     void createExchangeRate_WhenInvalidRate_ShouldReturn400() throws Exception {
         // Given - rate must be positive
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
@@ -170,7 +170,7 @@ class ExchangeRateErrorTest {
     @Test
     void createExchangeRate_WhenMissingRequiredFields_ShouldReturn400() throws Exception {
         // Given - missing required fields
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         // Всі поля пусті
 
         // When & Then
@@ -216,14 +216,14 @@ class ExchangeRateErrorTest {
     @Test
     void updateExchangeRate_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        ExternalExchangeRateRequestDTO requestDTO = new ExternalExchangeRateRequestDTO();
+        ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
         requestDTO.setRate(BigDecimal.valueOf(0.92));
         requestDTO.setSource("TEST");
 
-        when(exchangeRateService.updateExchangeRate(anyLong(), any(ExternalExchangeRateRequestDTO.class)))
+        when(exchangeRateService.updateExchangeRate(anyLong(), any(ExternalExchangeRateRequestDto.class)))
                 .thenThrow(ExchangeRateNotFoundException.byId(999L));
 
         // When & Then

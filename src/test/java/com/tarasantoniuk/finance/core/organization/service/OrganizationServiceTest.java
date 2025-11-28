@@ -3,8 +3,8 @@ package com.tarasantoniuk.finance.core.organization.service;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlreadyExistsException;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
@@ -40,8 +40,8 @@ class OrganizationServiceTest {
     private OrganizationService organizationService;
 
     private Organization organization;
-    private OrganizationRequestDTO requestDTO;
-    private OrganizationResponseDTO responseDTO;
+    private OrganizationRequestDto requestDTO;
+    private OrganizationResponseDto responseDTO;
     private Country country;
 
     @BeforeEach
@@ -61,7 +61,7 @@ class OrganizationServiceTest {
         organization.setPhone("+380501234567");
         organization.setAddress("Kyiv, Ukraine");
 
-        requestDTO = new OrganizationRequestDTO();
+        requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Organization");
         requestDTO.setRegistrationNumber("12345678");
         requestDTO.setVatNumber("UA12345678");
@@ -70,7 +70,7 @@ class OrganizationServiceTest {
         requestDTO.setPhone("+380501234567");
         requestDTO.setAddress("Kyiv, Ukraine");
 
-        responseDTO = new OrganizationResponseDTO();
+        responseDTO = new OrganizationResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("Test Organization");
         responseDTO.setRegistrationNumber("12345678");
@@ -82,7 +82,7 @@ class OrganizationServiceTest {
         when(organizationRepository.findAllWithCountry()).thenReturn(organizations);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDTO> result = organizationService.getAllOrganizations();
+        List<OrganizationResponseDto> result = organizationService.getAllOrganizations();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -94,7 +94,7 @@ class OrganizationServiceTest {
         when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.getOrganizationById(1L);
+        OrganizationResponseDto result = organizationService.getOrganizationById(1L);
 
         assertNotNull(result);
         assertEquals("12345678", result.getRegistrationNumber());
@@ -115,7 +115,7 @@ class OrganizationServiceTest {
         when(organizationRepository.findByCountryIdWithCountry(1L)).thenReturn(organizations);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDTO> result = organizationService.getOrganizationsByCountry(1L);
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -129,7 +129,7 @@ class OrganizationServiceTest {
                 .thenReturn(organizations);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDTO> result = organizationService.searchOrganizationsByName("Test");
+        List<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("Test");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -144,7 +144,7 @@ class OrganizationServiceTest {
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.createOrganization(requestDTO);
+        OrganizationResponseDto result = organizationService.createOrganization(requestDTO);
 
         assertNotNull(result);
         assertEquals("12345678", result.getRegistrationNumber());
@@ -177,7 +177,7 @@ class OrganizationServiceTest {
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+        OrganizationResponseDto result = organizationService.updateOrganization(1L, requestDTO);
 
         assertNotNull(result);
         verify(organizationRepository, times(1)).save(organization);
@@ -211,7 +211,7 @@ class OrganizationServiceTest {
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+        OrganizationResponseDto result = organizationService.updateOrganization(1L, requestDTO);
 
         assertNotNull(result);
         verify(organizationRepository, never()).existsByRegistrationNumber(anyString());
@@ -228,7 +228,7 @@ class OrganizationServiceTest {
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+        OrganizationResponseDto result = organizationService.updateOrganization(1L, requestDTO);
 
         assertNotNull(result);
         verify(organizationRepository, never()).existsByRegistrationNumber(anyString());
@@ -260,7 +260,7 @@ class OrganizationServiceTest {
         when(organizationRepository.save(organization)).thenReturn(organization);
         when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
 
-        OrganizationResponseDTO result = organizationService.updateOrganization(1L, requestDTO);
+        OrganizationResponseDto result = organizationService.updateOrganization(1L, requestDTO);
 
         assertNotNull(result);
         verify(organizationRepository, times(1)).existsByRegistrationNumber("99999999");

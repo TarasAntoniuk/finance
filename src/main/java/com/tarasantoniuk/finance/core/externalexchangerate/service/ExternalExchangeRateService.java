@@ -4,8 +4,8 @@ import com.tarasantoniuk.finance.common.dto.PageMetadata;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateAlreadyExistsException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateNotFoundException;
@@ -43,13 +43,13 @@ public class ExternalExchangeRateService {
      * Uses JOIN FETCH to load currencies in a single query.
      */
     @Transactional(readOnly = true)
-    public PageResponse<ExternalExchangeRateResponseDTO> getAllExchangeRates(int page, int size) {
+    public PageResponse<ExternalExchangeRateResponseDto> getAllExchangeRates(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
 
         // Using optimized method with JOIN FETCH
         Page<ExternalExchangeRate> ratePage = exchangeRateRepository.findAllWithCurrencies(pageable);
 
-        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+        List<ExternalExchangeRateResponseDto> dtos = ratePage.getContent()
                 .stream()
                 .map(exchangeRateMapper::toResponseDTO)
                 .toList();
@@ -63,7 +63,7 @@ public class ExternalExchangeRateService {
                 .hasPrevious(ratePage.hasPrevious())
                 .build();
 
-        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        return PageResponse.<ExternalExchangeRateResponseDto>builder()
                 .content(dtos)
                 .metadata(metadata)
                 .build();
@@ -73,7 +73,7 @@ public class ExternalExchangeRateService {
      * Get exchange rate by ID with optimized query.
      */
     @Transactional(readOnly = true)
-    public ExternalExchangeRateResponseDTO getExchangeRateById(Long id) {
+    public ExternalExchangeRateResponseDto getExchangeRateById(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         return exchangeRateMapper.toResponseDTO(rate);
@@ -83,7 +83,7 @@ public class ExternalExchangeRateService {
      * Get exchange rates by date with optimized query.
      */
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDate(LocalDate date) {
+    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDate(LocalDate date) {
         List<ExternalExchangeRate> rates = exchangeRateRepository.findByExchangeDateWithCurrencies(date);
         return exchangeRateMapper.toResponseDTOList(rates);
     }
@@ -92,7 +92,7 @@ public class ExternalExchangeRateService {
      * Get exchange rates by date and source with optimized query.
      */
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getExchangeRatesByDateAndSource(LocalDate date, String source) {
+    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDateAndSource(LocalDate date, String source) {
         List<ExternalExchangeRate> rates = exchangeRateRepository
                 .findByExchangeDateAndSourceWithCurrencies(date, source);
         return exchangeRateMapper.toResponseDTOList(rates);
@@ -102,7 +102,7 @@ public class ExternalExchangeRateService {
      * Get exchange rates by date range with optimized query.
      */
     @Transactional(readOnly = true)
-    public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByDateRange(
+    public PageResponse<ExternalExchangeRateResponseDto> getExchangeRatesByDateRange(
             LocalDate startDate, LocalDate endDate, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
@@ -110,7 +110,7 @@ public class ExternalExchangeRateService {
         Page<ExternalExchangeRate> ratePage = exchangeRateRepository
                 .findByExchangeDateBetweenWithCurrencies(startDate, endDate, pageable);
 
-        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+        List<ExternalExchangeRateResponseDto> dtos = ratePage.getContent()
                 .stream()
                 .map(exchangeRateMapper::toResponseDTO)
                 .toList();
@@ -124,7 +124,7 @@ public class ExternalExchangeRateService {
                 .hasPrevious(ratePage.hasPrevious())
                 .build();
 
-        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        return PageResponse.<ExternalExchangeRateResponseDto>builder()
                 .content(dtos)
                 .metadata(metadata)
                 .build();
@@ -134,7 +134,7 @@ public class ExternalExchangeRateService {
      * Get exchange rates by currency pair with optimized query.
      */
     @Transactional(readOnly = true)
-    public PageResponse<ExternalExchangeRateResponseDTO> getExchangeRatesByCurrencyPair(
+    public PageResponse<ExternalExchangeRateResponseDto> getExchangeRatesByCurrencyPair(
             Long currencyFromId, Long currencyToId, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size);
@@ -142,7 +142,7 @@ public class ExternalExchangeRateService {
         Page<ExternalExchangeRate> ratePage = exchangeRateRepository
                 .findByCurrencyPairWithCurrencies(currencyFromId, currencyToId, pageable);
 
-        List<ExternalExchangeRateResponseDTO> dtos = ratePage.getContent()
+        List<ExternalExchangeRateResponseDto> dtos = ratePage.getContent()
                 .stream()
                 .map(exchangeRateMapper::toResponseDTO)
                 .toList();
@@ -156,7 +156,7 @@ public class ExternalExchangeRateService {
                 .hasPrevious(ratePage.hasPrevious())
                 .build();
 
-        return PageResponse.<ExternalExchangeRateResponseDTO>builder()
+        return PageResponse.<ExternalExchangeRateResponseDto>builder()
                 .content(dtos)
                 .metadata(metadata)
                 .build();
@@ -166,7 +166,7 @@ public class ExternalExchangeRateService {
      * Get latest rates by date and currency from with optimized query.
      */
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDTO> getLatestRatesByDateAndCurrencyFrom(
+    public List<ExternalExchangeRateResponseDto> getLatestRatesByDateAndCurrencyFrom(
             LocalDate date, Long currencyFromId) {
 
         if (!currencyRepository.existsById(currencyFromId)) {
@@ -207,7 +207,7 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional
-    public ExternalExchangeRateResponseDTO createExchangeRate(ExternalExchangeRateRequestDTO requestDTO) {
+    public ExternalExchangeRateResponseDto createExchangeRate(ExternalExchangeRateRequestDto requestDTO) {
         if (!currencyRepository.existsById(requestDTO.getCurrencyFromId())) {
             throw CurrencyNotFoundException.byId(requestDTO.getCurrencyFromId());
         }
@@ -234,7 +234,7 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional
-    public ExternalExchangeRateResponseDTO updateExchangeRate(Long id, ExternalExchangeRateRequestDTO requestDTO) {
+    public ExternalExchangeRateResponseDto updateExchangeRate(Long id, ExternalExchangeRateRequestDto requestDTO) {
         ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
 
@@ -276,7 +276,7 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional
-    public ExternalExchangeRateResponseDTO deactivateExchangeRate(Long id) {
+    public ExternalExchangeRateResponseDto deactivateExchangeRate(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(false);
@@ -285,7 +285,7 @@ public class ExternalExchangeRateService {
     }
 
     @Transactional
-    public ExternalExchangeRateResponseDTO activateExchangeRate(Long id) {
+    public ExternalExchangeRateResponseDto activateExchangeRate(Long id) {
         ExternalExchangeRate rate = exchangeRateRepository.findByIdWithCurrencies(id)
                 .orElseThrow(() -> ExchangeRateNotFoundException.byId(id));
         rate.setIsActive(true);

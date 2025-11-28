@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.currency.service;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
@@ -24,46 +24,46 @@ public class CurrencyService {
     }
 
     @Transactional(readOnly = true)
-    public List<CurrencyResponseDTO> getAllCurrencies() {
+    public List<CurrencyResponseDto> getAllCurrencies() {
         List<Currency> currencies = currencyRepository.findAll();
         return currencyMapper.toResponseDTOList(currencies);
     }
 
     @Transactional(readOnly = true)
-    public List<CurrencyResponseDTO> getActiveCurrencies() {
+    public List<CurrencyResponseDto> getActiveCurrencies() {
         List<Currency> currencies = currencyRepository.findByIsActive(true);
         return currencyMapper.toResponseDTOList(currencies);
     }
 
     @Transactional(readOnly = true)
-    public CurrencyResponseDTO getCurrencyById(Long id) {
+    public CurrencyResponseDto getCurrencyById(Long id) {
         Currency currency = currencyRepository.findById(id)
                 .orElseThrow(() -> CurrencyNotFoundException.byId(id));
         return currencyMapper.toResponseDTO(currency);
     }
 
     @Transactional(readOnly = true)
-    public CurrencyResponseDTO getCurrencyByCode(String code) {
+    public CurrencyResponseDto getCurrencyByCode(String code) {
         Currency currency = currencyRepository.findByCode(code.toUpperCase())
                 .orElseThrow(() -> CurrencyNotFoundException.byCode(code));
         return currencyMapper.toResponseDTO(currency);
     }
 
     @Transactional(readOnly = true)
-    public CurrencyResponseDTO getCurrencyByNumericCode(String numericCode) {
+    public CurrencyResponseDto getCurrencyByNumericCode(String numericCode) {
         Currency currency = currencyRepository.findByNumericCode(numericCode)
                 .orElseThrow(() -> CurrencyNotFoundException.byNumericCode(numericCode));
         return currencyMapper.toResponseDTO(currency);
     }
 
     @Transactional(readOnly = true)
-    public List<CurrencyResponseDTO> searchCurrenciesByName(String name) {
+    public List<CurrencyResponseDto> searchCurrenciesByName(String name) {
         List<Currency> currencies = currencyRepository.findByNameContainingIgnoreCase(name);
         return currencyMapper.toResponseDTOList(currencies);
     }
 
     @Transactional
-    public CurrencyResponseDTO createCurrency(CurrencyRequestDTO requestDTO) {
+    public CurrencyResponseDto createCurrency(CurrencyRequestDto requestDTO) {
         if (currencyRepository.existsByCode(requestDTO.getCode().toUpperCase())) {
             throw CurrencyAlreadyExistsException.byCode(requestDTO.getCode());
         }
@@ -79,7 +79,7 @@ public class CurrencyService {
     }
 
     @Transactional
-    public CurrencyResponseDTO updateCurrency(Long id, CurrencyRequestDTO requestDTO) {
+    public CurrencyResponseDto updateCurrency(Long id, CurrencyRequestDto requestDTO) {
         Currency currency = currencyRepository.findById(id)
                 .orElseThrow(() -> CurrencyNotFoundException.byId(id));
 
@@ -108,7 +108,7 @@ public class CurrencyService {
     }
 
     @Transactional
-    public CurrencyResponseDTO deactivateCurrency(Long id) {
+    public CurrencyResponseDto deactivateCurrency(Long id) {
         Currency currency = currencyRepository.findById(id)
                 .orElseThrow(() -> CurrencyNotFoundException.byId(id));
         currency.setIsActive(false);
@@ -117,7 +117,7 @@ public class CurrencyService {
     }
 
     @Transactional
-    public CurrencyResponseDTO activateCurrency(Long id) {
+    public CurrencyResponseDto activateCurrency(Long id) {
         Currency currency = currencyRepository.findById(id)
                 .orElseThrow(() -> CurrencyNotFoundException.byId(id));
         currency.setIsActive(true);

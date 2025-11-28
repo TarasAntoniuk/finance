@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.country.service;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryAlreadyExistsException;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
@@ -34,8 +34,8 @@ class CountryServiceTest {
     private CountryService countryService;
 
     private Country country;
-    private CountryRequestDTO requestDTO;
-    private CountryResponseDTO responseDTO;
+    private CountryRequestDto requestDTO;
+    private CountryResponseDto responseDTO;
 
     @BeforeEach
     void setUp() {
@@ -45,12 +45,12 @@ class CountryServiceTest {
         country.setIsoCode("USA");
         country.setPhoneCode("+1");
 
-        requestDTO = new CountryRequestDTO();
+        requestDTO = new CountryRequestDto();
         requestDTO.setName("United States");
         requestDTO.setIsoCode("USA");
         requestDTO.setPhoneCode("+1");
 
-        responseDTO = new CountryResponseDTO();
+        responseDTO = new CountryResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("United States");
         responseDTO.setIsoCode("USA");
@@ -62,7 +62,7 @@ class CountryServiceTest {
         when(countryRepository.findAllWithCurrency()).thenReturn(countries);
         when(countryMapper.toResponseDTOList(countries)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<CountryResponseDTO> result = countryService.getAllCountries();
+        List<CountryResponseDto> result = countryService.getAllCountries();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -74,7 +74,7 @@ class CountryServiceTest {
         when(countryRepository.findByIdWithCurrency(1L)).thenReturn(Optional.of(country));
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.getCountryById(1L);
+        CountryResponseDto result = countryService.getCountryById(1L);
 
         assertNotNull(result);
         assertEquals("USA", result.getIsoCode());
@@ -94,7 +94,7 @@ class CountryServiceTest {
         when(countryRepository.findByIsoCodeWithCurrency("USA")).thenReturn(Optional.of(country));
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.getCountryByIsoCode("USA");
+        CountryResponseDto result = countryService.getCountryByIsoCode("USA");
 
         assertNotNull(result);
         assertEquals("USA", result.getIsoCode());
@@ -114,7 +114,7 @@ class CountryServiceTest {
         when(countryRepository.findByIsoCodeWithCurrency("usa")).thenReturn(Optional.of(country));
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.getCountryByIsoCode("usa");
+        CountryResponseDto result = countryService.getCountryByIsoCode("usa");
 
         assertNotNull(result);
         verify(countryRepository, times(1)).findByIsoCodeWithCurrency("usa");
@@ -127,7 +127,7 @@ class CountryServiceTest {
         when(countryRepository.save(country)).thenReturn(country);
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.createCountry(requestDTO);
+        CountryResponseDto result = countryService.createCountry(requestDTO);
 
         assertNotNull(result);
         assertEquals("USA", result.getIsoCode());
@@ -149,7 +149,7 @@ class CountryServiceTest {
         when(countryRepository.save(country)).thenReturn(country);
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.updateCountry(1L, requestDTO);
+        CountryResponseDto result = countryService.updateCountry(1L, requestDTO);
 
         assertNotNull(result);
         verify(countryRepository, times(1)).save(country);
@@ -173,7 +173,7 @@ class CountryServiceTest {
         when(countryRepository.save(country)).thenReturn(country);
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.updateCountry(1L, requestDTO);
+        CountryResponseDto result = countryService.updateCountry(1L, requestDTO);
 
         assertNotNull(result);
         verify(countryRepository, never()).existsByIsoCode(anyString());
@@ -203,7 +203,7 @@ class CountryServiceTest {
         when(countryRepository.save(country)).thenReturn(country);
         when(countryMapper.toResponseDTO(country)).thenReturn(responseDTO);
 
-        CountryResponseDTO result = countryService.updateCountry(1L, requestDTO);
+        CountryResponseDto result = countryService.updateCountry(1L, requestDTO);
 
         assertNotNull(result);
         verify(countryRepository, times(1)).existsByIsoCode("MEX");

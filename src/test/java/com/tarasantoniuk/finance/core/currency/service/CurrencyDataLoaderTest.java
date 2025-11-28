@@ -1,9 +1,7 @@
 package com.tarasantoniuk.finance.core.currency.service;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.core.currency.service.CurrencyDataLoader;
-import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +33,7 @@ class CurrencyDataLoaderTest {
     private CurrencyDataLoader currencyDataLoader;
 
     @Captor
-    private ArgumentCaptor<CurrencyRequestDTO> currencyCaptor;
+    private ArgumentCaptor<CurrencyRequestDto> currencyCaptor;
 
     @BeforeEach
     void setUp() {
@@ -53,7 +51,7 @@ class CurrencyDataLoaderTest {
 
         // Then
         verify(currencyRepository, times(1)).count();
-        verify(currencyService, atLeast(1)).createCurrency(any(CurrencyRequestDTO.class));
+        verify(currencyService, atLeast(1)).createCurrency(any(CurrencyRequestDto.class));
     }
 
     @Test
@@ -67,7 +65,7 @@ class CurrencyDataLoaderTest {
 
         // Then
         verify(currencyRepository, times(1)).count();
-        verify(currencyService, never()).createCurrency(any(CurrencyRequestDTO.class));
+        verify(currencyService, never()).createCurrency(any(CurrencyRequestDto.class));
     }
 
     @Test
@@ -84,7 +82,7 @@ class CurrencyDataLoaderTest {
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
         List<String> loadedCodes = currencyCaptor.getAllValues().stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(loadedCodes).containsAll(List.of(requiredMajorCurrencies));
@@ -102,7 +100,7 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        CurrencyRequestDTO uah = currencyCaptor.getAllValues().stream()
+        CurrencyRequestDto uah = currencyCaptor.getAllValues().stream()
                 .filter(c -> "UAH".equals(c.getCode()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("UAH not found in loaded currencies"));
@@ -163,9 +161,9 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        List<CurrencyRequestDTO> currencies = currencyCaptor.getAllValues();
+        List<CurrencyRequestDto> currencies = currencyCaptor.getAllValues();
         Set<String> uniqueCodes = currencies.stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toSet());
 
         assertThat(uniqueCodes)
@@ -185,9 +183,9 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        List<CurrencyRequestDTO> currencies = currencyCaptor.getAllValues();
+        List<CurrencyRequestDto> currencies = currencyCaptor.getAllValues();
         Set<String> uniqueNumericCodes = currencies.stream()
-                .map(CurrencyRequestDTO::getNumericCode)
+                .map(CurrencyRequestDto::getNumericCode)
                 .collect(Collectors.toSet());
 
         assertThat(uniqueNumericCodes)
@@ -200,7 +198,7 @@ class CurrencyDataLoaderTest {
     void shouldHandleServiceExceptionsGracefully() throws Exception {
         // Given
         when(currencyRepository.count()).thenReturn(0L);
-        when(currencyService.createCurrency(any(CurrencyRequestDTO.class)))
+        when(currencyService.createCurrency(any(CurrencyRequestDto.class)))
                 .thenThrow(new RuntimeException("Database error"))
                 .thenReturn(null)
                 .thenReturn(null);
@@ -210,7 +208,7 @@ class CurrencyDataLoaderTest {
 
         // Then - should not throw exception, just log errors
         verify(currencyRepository, times(1)).count();
-        verify(currencyService, atLeast(3)).createCurrency(any(CurrencyRequestDTO.class));
+        verify(currencyService, atLeast(3)).createCurrency(any(CurrencyRequestDto.class));
     }
 
     @Test
@@ -227,7 +225,7 @@ class CurrencyDataLoaderTest {
 
         List<String> zeroMinorUnitCurrencies = currencyCaptor.getAllValues().stream()
                 .filter(c -> c.getMinorUnit() == 0)
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(zeroMinorUnitCurrencies)
@@ -270,7 +268,7 @@ class CurrencyDataLoaderTest {
 
         List<String> threeMinorUnitCurrencies = currencyCaptor.getAllValues().stream()
                 .filter(c -> c.getMinorUnit() == 3)
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(threeMinorUnitCurrencies)
@@ -292,7 +290,7 @@ class CurrencyDataLoaderTest {
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
         List<String> loadedCodes = currencyCaptor.getAllValues().stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(loadedCodes)
@@ -312,7 +310,7 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        List<CurrencyRequestDTO> cryptoCurrencies = currencyCaptor.getAllValues().stream()
+        List<CurrencyRequestDto> cryptoCurrencies = currencyCaptor.getAllValues().stream()
                 .filter(c -> c.getCode().matches("(BTC|ETH)"))
                 .collect(Collectors.toList());
 
@@ -337,7 +335,7 @@ class CurrencyDataLoaderTest {
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
         List<String> loadedCodes = currencyCaptor.getAllValues().stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(loadedCodes)
@@ -357,7 +355,7 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        List<CurrencyRequestDTO> metals = currencyCaptor.getAllValues().stream()
+        List<CurrencyRequestDto> metals = currencyCaptor.getAllValues().stream()
                 .filter(c -> c.getCode().matches("X(AU|AG|PT|PD)"))
                 .collect(Collectors.toList());
 
@@ -382,7 +380,7 @@ class CurrencyDataLoaderTest {
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
         List<String> loadedCodes = currencyCaptor.getAllValues().stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(loadedCodes)
@@ -404,7 +402,7 @@ class CurrencyDataLoaderTest {
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
         List<String> loadedCodes = currencyCaptor.getAllValues().stream()
-                .map(CurrencyRequestDTO::getCode)
+                .map(CurrencyRequestDto::getCode)
                 .collect(Collectors.toList());
 
         assertThat(loadedCodes)
@@ -448,7 +446,7 @@ class CurrencyDataLoaderTest {
         // Then
         verify(currencyService, atLeastOnce()).createCurrency(currencyCaptor.capture());
 
-        List<CurrencyRequestDTO> currencies = currencyCaptor.getAllValues();
+        List<CurrencyRequestDto> currencies = currencyCaptor.getAllValues();
 
         assertThat(currencies)
                 .as("No currency should be null")

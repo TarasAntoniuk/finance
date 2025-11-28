@@ -1,10 +1,9 @@
 package com.tarasantoniuk.finance.core.currency.mapper;
 
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
-import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -23,7 +22,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("840");
         requestDTO.setName("US Dollar");
@@ -50,7 +49,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullSymbol() {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("XAU");
         requestDTO.setNumericCode("959");
         requestDTO.setName("Gold");
@@ -81,7 +80,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now);
 
         // When
-        CurrencyResponseDTO responseDTO = currencyMapper.toResponseDTO(entity);
+        CurrencyResponseDto responseDTO = currencyMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -111,7 +110,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null); // null updatedAt
 
         // When
-        CurrencyResponseDTO responseDTO = currencyMapper.toResponseDTO(entity);
+        CurrencyResponseDto responseDTO = currencyMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getSymbol()).isNull();
@@ -142,7 +141,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
         List<Currency> currencies = Arrays.asList(currency1, currency2);
 
         // When
-        List<CurrencyResponseDTO> responseDTOs = currencyMapper.toResponseDTOList(currencies);
+        List<CurrencyResponseDto> responseDTOs = currencyMapper.toResponseDTOList(currencies);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -167,7 +166,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        CurrencyRequestDTO updateDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto updateDTO = new CurrencyRequestDto();
         updateDTO.setCode("NEW");
         updateDTO.setNumericCode("999");
         updateDTO.setName("New Currency");
@@ -205,7 +204,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
         existingEntity.setMinorUnit(2);
         existingEntity.setIsActive(true);
 
-        CurrencyRequestDTO updateDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto updateDTO = new CurrencyRequestDto();
         updateDTO.setCode("EUR"); // update this
         updateDTO.setNumericCode(null); // this should be ignored
         updateDTO.setName("Euro"); // update this
@@ -227,7 +226,7 @@ class CurrencyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldSetDefaultIsActiveIfNotProvided() {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("GBP");
         requestDTO.setNumericCode("826");
         requestDTO.setName("British Pound");

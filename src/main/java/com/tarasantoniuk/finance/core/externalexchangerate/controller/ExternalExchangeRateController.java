@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.controller;
 
 import com.tarasantoniuk.finance.common.dto.PageResponse;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.service.ExternalExchangeRateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -43,7 +43,7 @@ public class ExternalExchangeRateController {
                     """
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
-    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getAllExchangeRates(
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getAllExchangeRates(
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of items per page", example = "200")
@@ -55,7 +55,7 @@ public class ExternalExchangeRateController {
             size = maxSize;
         }
 
-        PageResponse<ExternalExchangeRateResponseDTO> response =
+        PageResponse<ExternalExchangeRateResponseDto> response =
                 exchangeRateService.getAllExchangeRates(page, size);
 
         return ResponseEntity.ok(response);
@@ -67,19 +67,19 @@ public class ExternalExchangeRateController {
             @ApiResponse(responseCode = "200", description = "Exchange rate found"),
             @ApiResponse(responseCode = "404", description = "Exchange rate not found")
     })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> getExchangeRateById(
+    public ResponseEntity<ExternalExchangeRateResponseDto> getExchangeRateById(
             @Parameter(description = "Exchange rate ID", required = true) @PathVariable Long id) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService.getExchangeRateById(id);
+        ExternalExchangeRateResponseDto rate = exchangeRateService.getExchangeRateById(id);
         return ResponseEntity.ok(rate);
     }
 
     @GetMapping("/date/{date}")
     @Operation(summary = "Get exchange rates by date", description = "Retrieve all exchange rates for a specific date")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesByDate(
+    public ResponseEntity<List<ExternalExchangeRateResponseDto>> getExchangeRatesByDate(
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService.getExchangeRatesByDate(date);
+        List<ExternalExchangeRateResponseDto> rates = exchangeRateService.getExchangeRatesByDate(date);
         return ResponseEntity.ok(rates);
     }
 
@@ -87,12 +87,12 @@ public class ExternalExchangeRateController {
     @Operation(summary = "Get exchange rates by date and source",
             description = "Retrieve exchange rates for a specific date from a specific source")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getExchangeRatesByDateAndSource(
+    public ResponseEntity<List<ExternalExchangeRateResponseDto>> getExchangeRatesByDateAndSource(
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Source name", required = true, example = "NBU")
             @PathVariable String source) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
+        List<ExternalExchangeRateResponseDto> rates = exchangeRateService
                 .getExchangeRatesByDateAndSource(date, source);
         return ResponseEntity.ok(rates);
     }
@@ -109,7 +109,7 @@ public class ExternalExchangeRateController {
                     """
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
-    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getExchangeRatesByDateRange(
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getExchangeRatesByDateRange(
             @Parameter(description = "Start date", required = true, example = "2024-01-01")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @Parameter(description = "End date", required = true, example = "2024-12-31")
@@ -125,7 +125,7 @@ public class ExternalExchangeRateController {
             size = maxSize;
         }
 
-        PageResponse<ExternalExchangeRateResponseDTO> response =
+        PageResponse<ExternalExchangeRateResponseDto> response =
                 exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
 
         return ResponseEntity.ok(response);
@@ -143,7 +143,7 @@ public class ExternalExchangeRateController {
                     """
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
-    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDTO>> getExchangeRatesByCurrencyPair(
+    public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getExchangeRatesByCurrencyPair(
             @Parameter(description = "Currency From ID", required = true, example = "1")
             @RequestParam Long currencyFromId,
             @Parameter(description = "Currency To ID", required = true, example = "2")
@@ -159,7 +159,7 @@ public class ExternalExchangeRateController {
             size = maxSize;
         }
 
-        PageResponse<ExternalExchangeRateResponseDTO> response =
+        PageResponse<ExternalExchangeRateResponseDto> response =
                 exchangeRateService.getExchangeRatesByCurrencyPair(currencyFromId, currencyToId, page, size);
 
         return ResponseEntity.ok(response);
@@ -169,12 +169,12 @@ public class ExternalExchangeRateController {
     @Operation(summary = "Get latest exchange rates for date",
             description = "Retrieve all latest exchange rates from a base currency for a specific date")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<ExternalExchangeRateResponseDTO>> getLatestRatesByDate(
+    public ResponseEntity<List<ExternalExchangeRateResponseDto>> getLatestRatesByDate(
             @Parameter(description = "Date", required = true, example = "2025-11-03")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Currency From ID", required = true, example = "2")
             @RequestParam Long currencyFromId) {
-        List<ExternalExchangeRateResponseDTO> rates = exchangeRateService
+        List<ExternalExchangeRateResponseDto> rates = exchangeRateService
                 .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
         return ResponseEntity.ok(rates);
     }
@@ -200,10 +200,10 @@ public class ExternalExchangeRateController {
             @ApiResponse(responseCode = "201", description = "Exchange rate created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> createExchangeRate(
+    public ResponseEntity<ExternalExchangeRateResponseDto> createExchangeRate(
             @Parameter(description = "Exchange rate data", required = true)
-            @Valid @RequestBody ExternalExchangeRateRequestDTO requestDTO) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService.createExchangeRate(requestDTO);
+            @Valid @RequestBody ExternalExchangeRateRequestDto requestDTO) {
+        ExternalExchangeRateResponseDto rate = exchangeRateService.createExchangeRate(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(rate);
     }
 
@@ -214,11 +214,11 @@ public class ExternalExchangeRateController {
             @ApiResponse(responseCode = "404", description = "Exchange rate not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> updateExchangeRate(
+    public ResponseEntity<ExternalExchangeRateResponseDto> updateExchangeRate(
             @Parameter(description = "Exchange rate ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated exchange rate data", required = true)
-            @Valid @RequestBody ExternalExchangeRateRequestDTO requestDTO) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService.updateExchangeRate(id, requestDTO);
+            @Valid @RequestBody ExternalExchangeRateRequestDto requestDTO) {
+        ExternalExchangeRateResponseDto rate = exchangeRateService.updateExchangeRate(id, requestDTO);
         return ResponseEntity.ok(rate);
     }
 
@@ -228,9 +228,9 @@ public class ExternalExchangeRateController {
             @ApiResponse(responseCode = "200", description = "Exchange rate deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Exchange rate not found")
     })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> deactivateExchangeRate(
+    public ResponseEntity<ExternalExchangeRateResponseDto> deactivateExchangeRate(
             @Parameter(description = "Exchange rate ID", required = true) @PathVariable Long id) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService.deactivateExchangeRate(id);
+        ExternalExchangeRateResponseDto rate = exchangeRateService.deactivateExchangeRate(id);
         return ResponseEntity.ok(rate);
     }
 
@@ -240,9 +240,9 @@ public class ExternalExchangeRateController {
             @ApiResponse(responseCode = "200", description = "Exchange rate activated successfully"),
             @ApiResponse(responseCode = "404", description = "Exchange rate not found")
     })
-    public ResponseEntity<ExternalExchangeRateResponseDTO> activateExchangeRate(
+    public ResponseEntity<ExternalExchangeRateResponseDto> activateExchangeRate(
             @Parameter(description = "Exchange rate ID", required = true) @PathVariable Long id) {
-        ExternalExchangeRateResponseDTO rate = exchangeRateService.activateExchangeRate(id);
+        ExternalExchangeRateResponseDto rate = exchangeRateService.activateExchangeRate(id);
         return ResponseEntity.ok(rate);
     }
 

@@ -1,10 +1,9 @@
 package com.tarasantoniuk.finance.core.country.mapper;
 
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
-import com.tarasantoniuk.finance.core.country.mapper.CountryMapper;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +23,7 @@ class CountryMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Ukraine");
         requestDTO.setIsoCode("UKR");
         requestDTO.setPhoneCode("+380");
@@ -48,7 +47,7 @@ class CountryMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCurrencyId() {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Antarctica");
         requestDTO.setIsoCode("ATA");
         requestDTO.setPhoneCode(null);
@@ -68,7 +67,7 @@ class CountryMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullPhoneCode() {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Vatican City");
         requestDTO.setIsoCode("VAT");
         requestDTO.setPhoneCode(null);
@@ -109,7 +108,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now);
 
         // When
-        CountryResponseDTO responseDTO = countryMapper.toResponseDTO(entity);
+        CountryResponseDto responseDTO = countryMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -145,7 +144,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         entity.setCreatedAt(LocalDateTime.now());
 
         // When
-        CountryResponseDTO responseDTO = countryMapper.toResponseDTO(entity);
+        CountryResponseDto responseDTO = countryMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getCurrency()).isNull();
@@ -164,7 +163,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null);
 
         // When
-        CountryResponseDTO responseDTO = countryMapper.toResponseDTO(entity);
+        CountryResponseDto responseDTO = countryMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getPhoneCode()).isNull();
@@ -202,7 +201,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         List<Country> countries = Arrays.asList(usa, germany);
 
         // When
-        List<CountryResponseDTO> responseDTOs = countryMapper.toResponseDTOList(countries);
+        List<CountryResponseDto> responseDTOs = countryMapper.toResponseDTOList(countries);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -222,7 +221,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         List<Country> countries = List.of();
 
         // When
-        List<CountryResponseDTO> responseDTOs = countryMapper.toResponseDTOList(countries);
+        List<CountryResponseDto> responseDTOs = countryMapper.toResponseDTOList(countries);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -247,7 +246,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        CountryRequestDTO updateDTO = new CountryRequestDTO();
+        CountryRequestDto updateDTO = new CountryRequestDto();
         updateDTO.setName("New Country Name");
         updateDTO.setIsoCode("NEW");
         updateDTO.setPhoneCode("+222");
@@ -283,7 +282,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         existingEntity.setPhoneCode("+123");
         existingEntity.setCurrency(existingCurrency);
 
-        CountryRequestDTO updateDTO = new CountryRequestDTO();
+        CountryRequestDto updateDTO = new CountryRequestDto();
         updateDTO.setName("Updated Name"); // update this
         updateDTO.setIsoCode(null); // should be ignored
         updateDTO.setPhoneCode(null); // should be ignored
@@ -313,7 +312,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         existingEntity.setPhoneCode("+456");
         existingEntity.setCurrency(existingCurrency);
 
-        CountryRequestDTO updateDTO = new CountryRequestDTO();
+        CountryRequestDto updateDTO = new CountryRequestDto();
         updateDTO.setName("Country Without Currency");
         updateDTO.setIsoCode("CWC");
         updateDTO.setPhoneCode("+456");
@@ -341,7 +340,7 @@ class CountryMapperTest extends BaseIntegrationTest {
         existingEntity.setPhoneCode("+34");
         existingEntity.setCurrency(oldCurrency);
 
-        CountryRequestDTO updateDTO = new CountryRequestDTO();
+        CountryRequestDto updateDTO = new CountryRequestDto();
         updateDTO.setName("Spain");
         updateDTO.setIsoCode("ESP");
         updateDTO.setPhoneCode("+34");
@@ -358,7 +357,7 @@ class CountryMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateCountryWithOnlyCurrencyIdSet() {
         // Given
-        CountryRequestDTO requestDTO = new CountryRequestDTO();
+        CountryRequestDto requestDTO = new CountryRequestDto();
         requestDTO.setName("Poland");
         requestDTO.setIsoCode("POL");
         requestDTO.setPhoneCode("+48");

@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.country.service;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryRequestDTO;
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.exception.CountryAlreadyExistsException;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
@@ -28,7 +28,7 @@ public class CountryService {
      * Get all countries with optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load currency in a single query.
      */
-    public List<CountryResponseDTO> getAllCountries() {
+    public List<CountryResponseDto> getAllCountries() {
         List<Country> countries = countryRepository.findAllWithCurrency();
         return countryMapper.toResponseDTOList(countries);
     }
@@ -36,7 +36,7 @@ public class CountryService {
     /**
      * Get country by ID with optimized query.
      */
-    public CountryResponseDTO getCountryById(Long id) {
+    public CountryResponseDto getCountryById(Long id) {
         Country country = countryRepository.findByIdWithCurrency(id)
                 .orElseThrow(() -> CountryNotFoundException.byId(id));
         return countryMapper.toResponseDTO(country);
@@ -45,14 +45,14 @@ public class CountryService {
     /**
      * Get country by ISO code with optimized query.
      */
-    public CountryResponseDTO getCountryByIsoCode(String isoCode) {
+    public CountryResponseDto getCountryByIsoCode(String isoCode) {
         Country country = countryRepository.findByIsoCodeWithCurrency(isoCode)
                 .orElseThrow(() -> CountryNotFoundException.byIsoCode(isoCode));
         return countryMapper.toResponseDTO(country);
     }
 
     @Transactional
-    public CountryResponseDTO createCountry(CountryRequestDTO requestDTO) {
+    public CountryResponseDto createCountry(CountryRequestDto requestDTO) {
         if (countryRepository.existsByIsoCode(requestDTO.getIsoCode())) {
             throw CountryAlreadyExistsException.byIsoCode(requestDTO.getIsoCode());
         }
@@ -63,7 +63,7 @@ public class CountryService {
     }
 
     @Transactional
-    public CountryResponseDTO updateCountry(Long id, CountryRequestDTO requestDTO) {
+    public CountryResponseDto updateCountry(Long id, CountryRequestDto requestDTO) {
         Country country = countryRepository.findByIdWithCurrency(id)
                 .orElseThrow(() -> CountryNotFoundException.byId(id));
 

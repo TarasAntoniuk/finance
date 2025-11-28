@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.controller;
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -29,8 +29,8 @@ public class AccountingPolicyController {
     @GetMapping
     @Operation(summary = "Get all accounting policies", description = "Retrieve a list of all accounting policies")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getAllAccountingPolicies() {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService.getAllAccountingPolicies();
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getAllAccountingPolicies() {
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService.getAllAccountingPolicies();
         return ResponseEntity.ok(policies);
     }
 
@@ -40,9 +40,9 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "200", description = "Accounting policy found"),
             @ApiResponse(responseCode = "404", description = "Accounting policy not found")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> getAccountingPolicyById(
+    public ResponseEntity<AccountingPolicyResponseDto> getAccountingPolicyById(
             @Parameter(description = "Accounting policy ID", required = true) @PathVariable Long id) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService.getAccountingPolicyById(id);
+        AccountingPolicyResponseDto policy = accountingPolicyService.getAccountingPolicyById(id);
         return ResponseEntity.ok(policy);
     }
 
@@ -53,10 +53,10 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "200", description = "Accounting policy found"),
             @ApiResponse(responseCode = "404", description = "Accounting policy not found")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> getAccountingPolicyByOrganizationAndYear(
+    public ResponseEntity<AccountingPolicyResponseDto> getAccountingPolicyByOrganizationAndYear(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId,
             @Parameter(description = "Year", required = true, example = "2024") @PathVariable Integer year) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService
+        AccountingPolicyResponseDto policy = accountingPolicyService
                 .getAccountingPolicyByOrganizationAndYear(organizationId, year);
         return ResponseEntity.ok(policy);
     }
@@ -65,9 +65,9 @@ public class AccountingPolicyController {
     @Operation(summary = "Get accounting policies by organization",
             description = "Retrieve all accounting policies for a specific organization")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getAccountingPoliciesByOrganization(
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByOrganization(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId) {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService
                 .getAccountingPoliciesByOrganization(organizationId);
         return ResponseEntity.ok(policies);
     }
@@ -76,9 +76,9 @@ public class AccountingPolicyController {
     @Operation(summary = "Get active accounting policies by organization",
             description = "Retrieve active accounting policies for a specific organization")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getActiveAccountingPoliciesByOrganization(
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getActiveAccountingPoliciesByOrganization(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId) {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService
                 .getActiveAccountingPoliciesByOrganization(organizationId);
         return ResponseEntity.ok(policies);
     }
@@ -87,9 +87,9 @@ public class AccountingPolicyController {
     @Operation(summary = "Get accounting policies by year",
             description = "Retrieve all accounting policies for a specific year")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getAccountingPoliciesByYear(
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByYear(
             @Parameter(description = "Year", required = true, example = "2024") @PathVariable Integer year) {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService
                 .getAccountingPoliciesByYear(year);
         return ResponseEntity.ok(policies);
     }
@@ -98,10 +98,10 @@ public class AccountingPolicyController {
     @Operation(summary = "Get accounting policies by year range",
             description = "Retrieve accounting policies within a year range")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getAccountingPoliciesByYearRange(
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByYearRange(
             @Parameter(description = "Start year", required = true, example = "2020") @RequestParam Integer startYear,
             @Parameter(description = "End year", required = true, example = "2024") @RequestParam Integer endYear) {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService
                 .getAccountingPoliciesByYearRange(startYear, endYear);
         return ResponseEntity.ok(policies);
     }
@@ -110,9 +110,9 @@ public class AccountingPolicyController {
     @Operation(summary = "Get accounting policies by currency",
             description = "Retrieve all accounting policies using a specific currency")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDTO>> getAccountingPoliciesByCurrency(
+    public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByCurrency(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long currencyId) {
-        List<AccountingPolicyResponseDTO> policies = accountingPolicyService
+        List<AccountingPolicyResponseDto> policies = accountingPolicyService
                 .getAccountingPoliciesByCurrency(currencyId);
         return ResponseEntity.ok(policies);
     }
@@ -123,10 +123,10 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "201", description = "Accounting policy created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> createAccountingPolicy(
+    public ResponseEntity<AccountingPolicyResponseDto> createAccountingPolicy(
             @Parameter(description = "Accounting policy data", required = true)
-            @Valid @RequestBody AccountingPolicyRequestDTO requestDTO) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService.createAccountingPolicy(requestDTO);
+            @Valid @RequestBody AccountingPolicyRequestDto requestDTO) {
+        AccountingPolicyResponseDto policy = accountingPolicyService.createAccountingPolicy(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(policy);
     }
 
@@ -137,11 +137,11 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "404", description = "Accounting policy not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> updateAccountingPolicy(
+    public ResponseEntity<AccountingPolicyResponseDto> updateAccountingPolicy(
             @Parameter(description = "Accounting policy ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated accounting policy data", required = true)
-            @Valid @RequestBody AccountingPolicyRequestDTO requestDTO) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService.updateAccountingPolicy(id, requestDTO);
+            @Valid @RequestBody AccountingPolicyRequestDto requestDTO) {
+        AccountingPolicyResponseDto policy = accountingPolicyService.updateAccountingPolicy(id, requestDTO);
         return ResponseEntity.ok(policy);
     }
 
@@ -151,9 +151,9 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "200", description = "Accounting policy deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Accounting policy not found")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> deactivateAccountingPolicy(
+    public ResponseEntity<AccountingPolicyResponseDto> deactivateAccountingPolicy(
             @Parameter(description = "Accounting policy ID", required = true) @PathVariable Long id) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService.deactivateAccountingPolicy(id);
+        AccountingPolicyResponseDto policy = accountingPolicyService.deactivateAccountingPolicy(id);
         return ResponseEntity.ok(policy);
     }
 
@@ -163,9 +163,9 @@ public class AccountingPolicyController {
             @ApiResponse(responseCode = "200", description = "Accounting policy activated successfully"),
             @ApiResponse(responseCode = "404", description = "Accounting policy not found")
     })
-    public ResponseEntity<AccountingPolicyResponseDTO> activateAccountingPolicy(
+    public ResponseEntity<AccountingPolicyResponseDto> activateAccountingPolicy(
             @Parameter(description = "Accounting policy ID", required = true) @PathVariable Long id) {
-        AccountingPolicyResponseDTO policy = accountingPolicyService.activateAccountingPolicy(id);
+        AccountingPolicyResponseDto policy = accountingPolicyService.activateAccountingPolicy(id);
         return ResponseEntity.ok(policy);
     }
 
