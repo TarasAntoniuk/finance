@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.common;
 
+import com.tarasantoniuk.finance.banking.bankpayment.service.BankPaymentService;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty.CounterpartyType;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
@@ -77,59 +78,71 @@ public class TestDataFactoryCore {
     // ==================== Currencies ====================
 
     /**
-     * Creates Ukrainian Hryvnia (UAH)
+     * Creates or returns existing Ukrainian Hryvnia (UAH)
      */
     public Currency createUAH() {
-        Currency currency = new Currency();
-        currency.setCode("UAH");
-        currency.setName("Ukrainian Hryvnia");
-        currency.setSymbol("₴");
-        currency.setNumericCode("980");
-        currency.setMinorUnit(2);
-        currency.setIsActive(true);
-        return currencyRepository.save(currency);
+        return currencyRepository.findByCode("UAH")
+                .orElseGet(() -> {
+                    Currency currency = new Currency();
+                    currency.setCode("UAH");
+                    currency.setName("Ukrainian Hryvnia");
+                    currency.setSymbol("₴");
+                    currency.setNumericCode("980");
+                    currency.setMinorUnit(2);
+                    currency.setIsActive(true);
+                    return currencyRepository.save(currency);
+                });
     }
 
     /**
-     * Creates US Dollar (USD)
+     * Creates or returns existing US Dollar (USD)
      */
     public Currency createUSD() {
-        Currency currency = new Currency();
-        currency.setCode("USD");
-        currency.setName("US Dollar");
-        currency.setSymbol("$");
-        currency.setNumericCode("840");
-        currency.setMinorUnit(2);
-        currency.setIsActive(true);
-        return currencyRepository.save(currency);
+        return currencyRepository.findByCode("USD")
+                .orElseGet(() -> {
+                    Currency currency = new Currency();
+                    currency.setCode("USD");
+                    currency.setName("US Dollar");
+                    currency.setSymbol("$");
+                    currency.setNumericCode("840");
+                    currency.setMinorUnit(2);
+                    currency.setIsActive(true);
+                    return currencyRepository.save(currency);
+                });
     }
 
     /**
-     * Creates Euro (EUR)
+     * Creates or returns existing Euro (EUR)
      */
     public Currency createEUR() {
-        Currency currency = new Currency();
-        currency.setCode("EUR");
-        currency.setName("Euro");
-        currency.setSymbol("€");
-        currency.setNumericCode("978");
-        currency.setMinorUnit(2);
-        currency.setIsActive(true);
-        return currencyRepository.save(currency);
+        return currencyRepository.findByCode("EUR")
+                .orElseGet(() -> {
+                    Currency currency = new Currency();
+                    currency.setCode("EUR");
+                    currency.setName("Euro");
+                    currency.setSymbol("€");
+                    currency.setNumericCode("978");
+                    currency.setMinorUnit(2);
+                    currency.setIsActive(true);
+                    return currencyRepository.save(currency);
+                });
     }
 
     /**
-     * Creates custom currency with specified parameters
+     * Creates or returns existing custom currency with specified parameters
      */
     public Currency createCurrency(String code, String name, String symbol, String numericCode) {
-        Currency currency = new Currency();
-        currency.setCode(code);
-        currency.setName(name);
-        currency.setSymbol(symbol);
-        currency.setNumericCode(numericCode);
-        currency.setMinorUnit(2);
-        currency.setIsActive(true);
-        return currencyRepository.save(currency);
+        return currencyRepository.findByCode(code)
+                .orElseGet(() -> {
+                    Currency currency = new Currency();
+                    currency.setCode(code);
+                    currency.setName(name);
+                    currency.setSymbol(symbol);
+                    currency.setNumericCode(numericCode);
+                    currency.setMinorUnit(2);
+                    currency.setIsActive(true);
+                    return currencyRepository.save(currency);
+                });
     }
 
     // ==================== Organizations ====================
@@ -178,5 +191,9 @@ public class TestDataFactoryCore {
         counterparty.setType(type);
         counterparty.setIsActive(true);
         return counterpartyRepository.save(counterparty);
+    }
+
+    public CurrencyRepository getCurrencyRepository() {
+        return currencyRepository;
     }
 }

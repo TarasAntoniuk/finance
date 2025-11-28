@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.banking.common;
 
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
-
 import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
@@ -9,6 +8,8 @@ import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepos
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Cleaner for banking domain entities in integration tests.
@@ -37,14 +38,22 @@ public class TestDataCleanerBanking {
 
     /**
      * Deletes all banking domain test data in correct order
-     * Order: TransactionEvents → BalanceSnapshots → Payments → Receipts → BankAccounts → Banks
+     * CRITICAL ORDER (most dependent first):
+     * 1. TransactionEvents (→ BankAccount, Organization, Currency)
+     * 2. BalanceSnapshots (→ BankAccount, Organization, Currency)
+     * 3. Payments (→ BankAccount)
+     * 4. Receipts (→ BankAccount)
+     * 5. BankAccounts (→ Bank, Currency)
+     * 6. Banks (→ Country)
      */
+    //@Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanAll() {
-        transactionEventRepository.deleteAll();
-        balanceSnapshotRepository.deleteAll();
-        bankPaymentRepository.deleteAll();
-        bankReceiptRepository.deleteAll();
-        bankAccountRepository.deleteAll();
-        bankRepository.deleteAll();
+        transactionEventRepository.deleteAllInBatch();
+        balanceSnapshotRepository.deleteAllInBatch();
+        bankPaymentRepository.deleteAllInBatch();
+        bankReceiptRepository.deleteAllInBatch();
+        bankAccountRepository.deleteAllInBatch();
+        bankRepository.deleteAllInBatch();
     }
 }

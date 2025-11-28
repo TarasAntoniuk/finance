@@ -6,6 +6,8 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Cleaner for core domain entities in integration tests.
@@ -28,12 +30,17 @@ public class TestDataCleanerCore {
 
     /**
      * Deletes all core domain test data in correct order
-     * Order: Counterparties → Organizations → Currencies → Countries
+     * CRITICAL ORDER (most dependent first):
+     * 1. Counterparties (independent)
+     * 2. Organizations (→ Country)
+     * 3. Currencies (independent)
+     * 4. Countries (independent)
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanAll() {
-        counterpartyRepository.deleteAll();
-        organizationRepository.deleteAll();
-        currencyRepository.deleteAll();
-        countryRepository.deleteAll();
+        counterpartyRepository.deleteAllInBatch();
+        organizationRepository.deleteAllInBatch();
+        currencyRepository.deleteAllInBatch();
+        countryRepository.deleteAllInBatch();
     }
 }
