@@ -482,4 +482,178 @@ class BankReceiptServiceTest {
             bankReceiptService.unpost(receipt.getId());
         });
     }
+
+    // ==================== FIND BY FILTERS Tests ====================
+
+    @Test
+    @DisplayName("Should find receipts by date range")
+    void shouldFindReceiptsByDateRange() {
+        // Given
+        LocalDate startDate = LocalDate.of(2024, 1, 1);
+        LocalDate endDate = LocalDate.of(2024, 1, 31);
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<BankReceipt> receipts = List.of(receipt);
+        Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
+
+        when(bankReceiptRepository.findByDocumentDateBetween(startDate, endDate, pageable))
+                .thenReturn(page);
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(responseDto);
+
+        // When
+        PageResponse<BankReceiptResponseDto> result =
+                bankReceiptService.findByDateRange(startDate, endDate, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(bankReceiptRepository).findByDocumentDateBetween(startDate, endDate, pageable);
+    }
+
+    @Test
+    @DisplayName("Should find receipts by account ID")
+    void shouldFindReceiptsByAccountId() {
+        // Given
+        Long accountId = 1L;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<BankReceipt> receipts = List.of(receipt);
+        Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
+
+        when(bankReceiptRepository.findByAccountId(accountId, pageable))
+                .thenReturn(page);
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(responseDto);
+
+        // When
+        PageResponse<BankReceiptResponseDto> result =
+                bankReceiptService.findByAccountId(accountId, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(bankReceiptRepository).findByAccountId(accountId, pageable);
+    }
+
+    @Test
+    @DisplayName("Should find receipts by counterparty ID")
+    void shouldFindReceiptsByCounterpartyId() {
+        // Given
+        Long counterpartyId = 1L;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<BankReceipt> receipts = List.of(receipt);
+        Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
+
+        when(bankReceiptRepository.findByCounterpartyId(counterpartyId, pageable))
+                .thenReturn(page);
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(responseDto);
+
+        // When
+        PageResponse<BankReceiptResponseDto> result =
+                bankReceiptService.findByCounterpartyId(counterpartyId, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(bankReceiptRepository).findByCounterpartyId(counterpartyId, pageable);
+    }
+
+    @Test
+    @DisplayName("Should find receipts by status")
+    void shouldFindReceiptsByStatus() {
+        // Given
+        DocumentStatus status = DocumentStatus.DRAFT;
+        Pageable pageable = PageRequest.of(0, 10);
+
+        List<BankReceipt> receipts = List.of(receipt);
+        Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
+
+        when(bankReceiptRepository.findByStatus(status, pageable))
+                .thenReturn(page);
+        when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                .thenReturn(responseDto);
+
+        // When
+        PageResponse<BankReceiptResponseDto> result =
+                bankReceiptService.findByStatus(status, pageable);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+        verify(bankReceiptRepository).findByStatus(status, pageable);
+    }
+
+// ==================== LOAD RELATED ENTITIES Tests ====================
+
+    @Test
+    @DisplayName("Should throw exception when counterparty not found during create")
+    void shouldThrowExceptionWhenCounterpartyNotFoundDuringCreate() {
+        // Given
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+
+        when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
+        when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(counterpartyRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.create(requestDto);
+        });
+
+        verify(bankReceiptRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when currency not found during create")
+    void shouldThrowExceptionWhenCurrencyNotFoundDuringCreate() {
+        // Given
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+
+        when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
+        when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(currencyRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.create(requestDto);
+        });
+
+        verify(bankReceiptRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when organization not found during create")
+    void shouldThrowExceptionWhenOrganizationNotFoundDuringCreate() {
+        // Given
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+
+        Counterparty counterparty = new Counterparty();
+        counterparty.setId(1L);
+
+        Currency currency = new Currency();
+        currency.setId(1L);
+
+        when(bankReceiptMapper.toEntity(requestDto)).thenReturn(receipt);
+        when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(counterpartyRepository.findById(1L)).thenReturn(Optional.of(counterparty));
+        when(currencyRepository.findById(1L)).thenReturn(Optional.of(currency));
+        when(organizationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankReceiptService.create(requestDto);
+        });
+
+        verify(bankReceiptRepository, never()).save(any());
+    }
 }
