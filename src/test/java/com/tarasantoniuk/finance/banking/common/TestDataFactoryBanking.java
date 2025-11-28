@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Factory for creating banking domain entities in integration tests.
@@ -45,6 +46,9 @@ public class TestDataFactoryBanking {
 
     @Autowired
     private BankReceiptService bankReceiptService;
+
+    // Counter for unique account numbers
+    private final AtomicLong accountNumberCounter = new AtomicLong(0);
 
     // ==================== Banks ====================
 
@@ -479,11 +483,13 @@ public class TestDataFactoryBanking {
     // ==================== Helper Methods ====================
 
     /**
-     * Generates Ukrainian IBAN account number
+     * Generates Ukrainian IBAN account number with unique counter
      * Format: UA + 27 digits
+     * Uses atomic counter to ensure uniqueness across multiple calls
      */
     private String generateAccountNumber(String countryCode, Long id) {
-        String idPart = String.format("%027d", id);
-        return countryCode + idPart;
+        long counter = accountNumberCounter.incrementAndGet();
+        String accountPart = String.format("%027d", id * 1000000 + counter);
+        return countryCode + accountPart;
     }
 }

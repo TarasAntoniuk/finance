@@ -11,13 +11,14 @@ import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ValidationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Global exception handler for all REST controllers
@@ -97,9 +98,15 @@ public class GlobalExceptionHandler {
 
     // ========== VALIDATION EXCEPTIONS ==========
 
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(
-            ValidationException ex, HttpServletRequest request) {
+    @ExceptionHandler(jakarta.validation.ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleJakartaValidationException(
+            jakarta.validation.ValidationException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(com.tarasantoniuk.finance.common.exception.ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleCustomValidationException(
+            com.tarasantoniuk.finance.common.exception.ValidationException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
@@ -118,6 +125,23 @@ public class GlobalExceptionHandler {
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String message = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
+                ex.getValue(),
+                ex.getName(),
+                ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown");
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
     // ========== GLOBAL EXCEPTION ==========
