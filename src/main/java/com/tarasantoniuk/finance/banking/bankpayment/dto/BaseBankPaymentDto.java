@@ -23,7 +23,6 @@ public abstract class BaseBankPaymentDto {
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
-    @Positive(message = "Bank commission must be positive")
     private BigDecimal bankCommission;
 
     private String description;

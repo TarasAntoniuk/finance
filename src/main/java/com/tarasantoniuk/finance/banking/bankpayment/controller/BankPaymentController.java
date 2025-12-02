@@ -8,6 +8,7 @@ import com.tarasantoniuk.finance.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,6 +47,36 @@ public class BankPaymentController {
             @ApiResponse(responseCode = "404", description = "Account or counterparty not found",
                     content = @Content)
     })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Bank payment data",
+            required = true,
+            content = @Content(
+                    schema = @Schema(implementation = BankPaymentRequestDto.class),
+                    examples = @ExampleObject(
+                            name = "Supplier Payment",
+                            value = """
+                                    {
+                                      "documentDate": "2025-12-02",
+                                      "paymentType": "SUPPLIER_PAYMENT",
+                                      "amount": 5000.00,
+                                      "accountId": 1,
+                                      "counterpartyId": 7,
+                                      "counterpartyBankAccountId": 6,
+                                      "currencyId": 2,
+                                      "organizationId": 1,
+                                      "description": "Payment for consulting services",
+                                      "paymentPurpose": "Invoice #SUP-2025-100, November services",
+                                      "paymentReference": "SUP-2025-100",
+                                      "outgoingDocumentNumber": "PAY-OUT-12345",
+                                      "outgoingDocumentDate": "2025-12-01",
+                                      "transactionDate": "2025-12-02",
+                                      "valueDate": "2025-12-02",
+                                      "externalTransactionId": "BANK-TXN-OUT-2025-001"
+                                    }
+                                    """
+                    )
+            )
+    )
     public ResponseEntity<BankPaymentResponseDto> createBankPayment(
             @Valid @RequestBody BankPaymentRequestDto requestDto) {
         BankPaymentResponseDto responseDto = bankPaymentService.create(requestDto);
