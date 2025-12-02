@@ -34,14 +34,17 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     /**
      * Find all receipts with pagination and related entities (N+1 optimization)
      */
-    @Query("""
-        SELECT DISTINCT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account a
-        LEFT JOIN FETCH a.bank
-        LEFT JOIN FETCH a.currency
-        LEFT JOIN FETCH br.organization
-        LEFT JOIN FETCH br.counterparty
-        LEFT JOIN FETCH br.currency
+    @Query(value = """
+    SELECT DISTINCT br FROM BankReceipt br
+    LEFT JOIN FETCH br.account a
+    LEFT JOIN FETCH a.bank
+    LEFT JOIN FETCH a.currency
+    LEFT JOIN FETCH br.organization
+    LEFT JOIN FETCH br.counterparty
+    LEFT JOIN FETCH br.currency
+    """,
+            countQuery = """
+    SELECT COUNT(DISTINCT br) FROM BankReceipt br
     """)
     Page<BankReceipt> findAllWithDetails(Pageable pageable);
 

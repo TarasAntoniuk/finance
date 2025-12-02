@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -85,12 +86,22 @@ public class BankPaymentController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all bank payments",
-            description = "Returns a paginated list of all bank payments. Default sorting by document date (descending)")
+    @Operation(
+            summary = "Get all bank payments",
+            description = """
+                    Returns a paginated list of all bank payments. Default sorting by document date (descending).
+                    
+                    **Sort examples:**
+                    - `sort=documentDate,desc` - sort by document date descending
+                    - `sort=amount,asc` - sort by amount ascending
+                    - `sort=id,desc` - sort by ID descending
+                    """
+    )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of bank payments")
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getAllBankPayments(
-            @Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findAll(pageable);
         return ResponseEntity.ok(response);
     }
@@ -105,8 +116,9 @@ public class BankPaymentController {
     })
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByAccountId(
             @Parameter(description = "Bank account ID") @PathVariable Long accountId,
-            @Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByAccountId(accountId, pageable);
         return ResponseEntity.ok(response);
     }
@@ -121,8 +133,9 @@ public class BankPaymentController {
     })
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByCounterpartyId(
             @Parameter(description = "Counterparty ID") @PathVariable Long counterpartyId,
-            @Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByCounterpartyId(counterpartyId, pageable);
         return ResponseEntity.ok(response);
     }
@@ -133,8 +146,9 @@ public class BankPaymentController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of payments")
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByStatus(
             @Parameter(description = "Document status", example = "DRAFT") @PathVariable DocumentStatus status,
-            @Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByStatus(status, pageable);
         return ResponseEntity.ok(response);
     }
@@ -148,12 +162,13 @@ public class BankPaymentController {
                     content = @Content)
     })
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByDateRange(
-            @Parameter(description = "Start date (inclusive)", example = "2024-01-01")
+            @Parameter(description = "Start date (inclusive)", example = "2025-01-01")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @Parameter(description = "End date (inclusive)", example = "2024-12-31")
+            @Parameter(description = "End date (inclusive)", example = "2025-12-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC) Pageable pageable) {
+            @ParameterObject
+            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByDateRange(startDate, endDate, pageable);
         return ResponseEntity.ok(response);
     }
