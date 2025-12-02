@@ -456,6 +456,178 @@ class AccountTurnoverReportServiceTest {
         assertNull(item.getAccountStatus());
     }
 
+    @Test
+    @DisplayName("Should handle null currency code in summary calculation")
+    void generateReport_ShouldHandleNullCurrencyCodeInSummary() {
+        // Given
+        testAccount.setCurrency(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("5000.00"));
+        when(transactionService.getAccountEventsInDateRange(anyLong(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(createTestEvents());
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
+        assertTrue(summary.containsKey("UNKNOWN"));
+        AccountTurnoverTotalDto unknownTotal = summary.get("UNKNOWN");
+        assertNotNull(unknownTotal);
+    }
+
+    @Test
+    @DisplayName("Should handle null opening balance")
+    void generateReport_ShouldHandleNullOpeningBalance() {
+        // Given
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+
+        // Return null for opening balance (day before start)
+        when(transactionService.calculateBalance(eq(testAccount.getId()), eq(startDate.minusDays(1))))
+                .thenReturn(null);
+
+        when(transactionService.getAccountEventsInDateRange(anyLong(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.emptyList());
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        assertNotNull(report);
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        // Should treat null opening balance as BigDecimal.ZERO
+        assertEquals(BigDecimal.ZERO, item.getOpeningBalance());
+        assertEquals(BigDecimal.ZERO, item.getClosingBalance()); // 0 + 0 - 0 = 0
+    }
+
+    @Test
+    @DisplayName("Should handle accounts with zero balances in summary calculation")
+    void generateReport_ShouldHandleZeroBalancesInSummary() {
+        // Given
+        BankAccount account2 = createSecondAccount();
+
+        when(bankAccountRepository.findAllWithRelations())
+                .thenReturn(Arrays.asList(testAccount, account2));
+
+        // Mock only opening balances (day before start)
+        when(transactionService.calculateBalance(eq(testAccount.getId()), eq(startDate.minusDays(1))))
+                .thenReturn(new BigDecimal("1000.00"));
+        when(transactionService.calculateBalance(eq(account2.getId()), eq(startDate.minusDays(1))))
+                .thenReturn(BigDecimal.ZERO);
+
+        when(transactionService.getAccountEventsInDateRange(anyLong(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.emptyList());
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
+        AccountTurnoverTotalDto uahTotal = summary.get("UAH");
+        // Should handle zero balances correctly
+        assertEquals(new BigDecimal("1000.00"), uahTotal.getTotalOpeningBalance());
+    }
+
+    @Test
+    @DisplayName("Should handle null debit turnover in summary calculation")
+    void generateReport_ShouldHandleNullDebitTurnoverInSummary() {
+        // Given
+        BankAccount account2 = createSecondAccount();
+
+        when(bankAccountRepository.findAllWithRelations())
+                .thenReturn(Arrays.asList(testAccount, account2));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("1000.00"));
+
+        // First account has debit transactions
+        when(transactionService.getAccountEventsInDateRange(eq(testAccount.getId()), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Arrays.asList(createEvent(TransactionType.DEBIT, new BigDecimal("500.00"), false)));
+
+        // Second account has no transactions (will result in null/zero debit)
+        when(transactionService.getAccountEventsInDateRange(eq(account2.getId()), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.emptyList());
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
+        AccountTurnoverTotalDto uahTotal = summary.get("UAH");
+        // Should handle both normal and zero/null values correctly
+        assertEquals(new BigDecimal("500.00"), uahTotal.getTotalDebitTurnover());
+    }
+
+    @Test
+    @DisplayName("Should handle null credit turnover in summary calculation")
+    void generateReport_ShouldHandleNullCreditTurnoverInSummary() {
+        // Given
+        BankAccount account2 = createSecondAccount();
+
+        when(bankAccountRepository.findAllWithRelations())
+                .thenReturn(Arrays.asList(testAccount, account2));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("1000.00"));
+
+        // First account has credit transactions
+        when(transactionService.getAccountEventsInDateRange(eq(testAccount.getId()), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Arrays.asList(createEvent(TransactionType.CREDIT, new BigDecimal("300.00"), false)));
+
+        // Second account has no transactions (will result in null/zero credit)
+        when(transactionService.getAccountEventsInDateRange(eq(account2.getId()), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.emptyList());
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
+        AccountTurnoverTotalDto uahTotal = summary.get("UAH");
+        // Should handle both normal and zero/null values correctly
+        assertEquals(new BigDecimal("300.00"), uahTotal.getTotalCreditTurnover());
+    }
+
+    @Test
+    @DisplayName("Should handle null closing balance in summary calculation")
+    void generateReport_ShouldHandleNullClosingBalanceInSummary() {
+        // Given
+        BankAccount account2 = createSecondAccount();
+
+        when(bankAccountRepository.findAllWithRelations())
+                .thenReturn(Arrays.asList(testAccount, account2));
+
+        // First account has normal balance
+        when(transactionService.calculateBalance(eq(testAccount.getId()), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("1000.00"));
+
+        // Second account opening balance is normal, but closing will be calculated as null
+        when(transactionService.calculateBalance(eq(account2.getId()), eq(startDate.minusDays(1))))
+                .thenReturn(new BigDecimal("500.00"));
+
+        // Mock for closing balance calculation - we need to ensure getAccountEventsInDateRange returns empty
+        when(transactionService.getAccountEventsInDateRange(anyLong(), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.emptyList());
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(startDate, endDate, null, null, null);
+
+        // Then
+        Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
+        AccountTurnoverTotalDto uahTotal = summary.get("UAH");
+        // Should handle mixed balances correctly
+        assertNotNull(uahTotal.getTotalClosingBalance());
+    }
+
     // ==================== Helper Methods ====================
 
     private List<BankAccountTransactionEvent> createTestEvents() {

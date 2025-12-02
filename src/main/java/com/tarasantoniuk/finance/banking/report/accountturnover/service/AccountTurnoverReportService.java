@@ -147,6 +147,11 @@ public class AccountTurnoverReportService {
         LocalDate dayBeforeStart = startDate.minusDays(1);
         BigDecimal openingBalance = transactionService.calculateBalance(account.getId(), dayBeforeStart);
 
+        // Handle null opening balance
+        if (openingBalance == null) {
+            openingBalance = BigDecimal.ZERO;
+        }
+
         // Get events in period
         List<BankAccountTransactionEvent> eventsInPeriod = transactionService
                 .getAccountEventsInDateRange(account.getId(), startDate, endDate);
