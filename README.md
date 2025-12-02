@@ -39,8 +39,6 @@ Explore the interactive API documentation:
 ![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)
 ![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/branches.svg)
 
-[![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)](https://github.com/TarasAntoniuk/finance/actions)
-
 ### Implemented Features
 
 #### Core Modules

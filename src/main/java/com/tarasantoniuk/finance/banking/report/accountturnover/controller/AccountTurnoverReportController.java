@@ -104,8 +104,8 @@ public class AccountTurnoverReportController {
     }
 
     /**
-     * Отримати першу дату поточного кварталу
-     */
+    * Get the first date of the current quarter
+    */
     private LocalDate getQuarterStartDate(LocalDate date) {
         int currentMonth = date.getMonthValue();
         int quarterStartMonth = ((currentMonth - 1) / 3) * 3 + 1;
@@ -113,7 +113,7 @@ public class AccountTurnoverReportController {
     }
 
     /**
-     * Отримати останню дату поточного кварталу
+     * Get the last date of the current quarter
      */
     private LocalDate getQuarterEndDate(LocalDate date) {
         int currentMonth = date.getMonthValue();
