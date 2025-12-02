@@ -17,7 +17,7 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/banking/reports")
-@Tag(name = "Banking Reports", description = "Banking reports and analytics endpoints")
+@Tag(name = "Banking - Banking Reports", description = "Banking reports and analytics endpoints")
 public class AccountBalanceReportController {
 
     private final AccountBalanceReportService reportService;

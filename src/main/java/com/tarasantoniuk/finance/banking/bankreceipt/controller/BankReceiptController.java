@@ -26,7 +26,7 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/bank-receipts")
-@Tag(name = "Bank Receipts", description = "Operations for managing bank receipt documents")
+@Tag(name = "Banking - Bank Receipts", description = "Operations for managing bank receipt documents")
 public class BankReceiptController {
 
     private final BankReceiptService bankReceiptService;
