@@ -1,174 +1,137 @@
-# Financial Accounting Prototype – Backend Project
+# Financial Accounting System – Backend API
 
 ## Overview
 
-This is a **Financial Accounting Prototype** with backend focus.  
-Currently implements **currency rate management**, **banking operations**, and demonstrates enterprise-grade architecture, service design, and automated workflows.
+**Financial Accounting System** with **Event Sourcing** for banking operations and automatic **ECB currency integration**.
 
-> **Important Note:**  
-> This project is developed **in my spare time** as a side project.  
-> Development pace depends on time availability. This is a prototype and foundation for future growth.
+**Architecture**: Modular monolith with Core (foundation) and Banking (transactions) modules.
+
+> **Development Note:** Spare-time project demonstrating production-ready practices and enterprise patterns.
 
 ---
 
 ## 📚 Documentation
 
-- **[System Description](docs/SYSTEM_DESCRIPTION.md)** — Architecture, features, data model
-- **[Technology Stack](docs/TECH_STACK.md)** — Complete list of technologies and tools
-- **[Release History](docs/RELEASES.md)** — Version history and changelog
-- **[Future Plans](docs/FUTURE_PLANS.md)** — Roadmap and planned features
+- **[Changelog](docs/CHANGELOG.md)** — Version history
+- **[Roadmap](docs/ROADMAP.md)** — Planned features
+- **[Technology Stack](docs/TECH_STACK.md)** — Technologies and tools
 
 ---
 
 ## 🌐 Live Demo
 
-**Production API**: https://api.tarasantoniuk.com
-
-Explore the interactive API documentation:  
-**[Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html)** — Try all endpoints directly in your browser
-
-> **Note**: This is a live production environment. Please use responsibly.
-
----
-
-## Current Status
-
-**Version**: 0.0.3  
-**Status**: Prototype / Active Development
+**API**: https://api.tarasantoniuk.com  
+**Swagger**: [Interactive Docs](https://api.tarasantoniuk.com/swagger-ui/index.html)  
+**Exchange Rates**: https://tarasantoniuk.com/exchange-rates.html
 
 ![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)
 ![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/branches.svg)
 
-### Implemented Features
+---
 
-#### Core Modules
-✅ **Currency Management** — ISO 4217 compliant currency operations  
-✅ **Country Management** — Country reference data with ISO codes  
-✅ **Organization Management** — Organizational entities  
-✅ **Accounting Policy Management** — Fiscal year policies per organization  
-✅ **Exchange Rate Management** — Automatic daily updates from ECB (16:05 CET)  
-✅ **Bank Management** — SWIFT code validation, country relationships  
-✅ **Bank Account Management** — Multi-holder accounts (Organizations/Counterparties)
+## 🎯 Key Features
 
-#### Technical Implementation
-✅ REST API with Swagger/OpenAPI documentation  
-✅ PostgreSQL 17 database with JPA/Hibernate  
-✅ MapStruct for DTO-Entity mapping  
-✅ Comprehensive test coverage (>95% branch coverage)  
-✅ Unit tests (JUnit 5 + Mockito)  
-✅ Integration tests (Testcontainers)  
-✅ CI/CD pipeline with GitHub Actions  
-✅ JaCoCo coverage reports with automated badges
+### 💱 Core Module
+✅ **Automatic ECB Integration** — Daily sync at 16:05 CET  
+✅ **190k+ Exchange Rates** — Historical data since EUR introduction  
+✅ **40+ Currencies** — ISO 4217 compliant  
+✅ **Public API** — Real-time currency data
 
-### Coming Next (Version 0.0.4)
-🔄 **Account Balance Tracking** — Event sourcing with immutable transactions  
-🔄 **Payment Documents** — PaymentOrder, PaymentReceived, BankCommission, Transfer  
-🔄 **Transaction History** — Complete audit trail with backdated changes support
+### 🏦 Banking Module
+✅ **Event Sourcing** — Immutable transaction audit trail  
+✅ **Bank Receipts & Payments** — 10+ transaction types each  
+✅ **Document Lifecycle** — DRAFT → POST → UNPOST  
+✅ **Financial Reports** — Balance & Turnover with filters  
+✅ **99% Test Coverage** — 170+ tests
 
-### Not Implemented Yet
-❌ Frontend interface  
-❌ User authentication/authorization  
-❌ Financial reporting  
-❌ Multi-organization support
+### 🔧 Technical Excellence
+✅ **PostgreSQL 17** with optimized queries  
+✅ **Testcontainers** for integration tests  
+✅ **N+1 Prevention** with `@EntityGraph`  
+✅ **CI/CD** with GitHub Actions
 
 ---
 
-## Quick Start
+## 🏗️ Architecture
+```
+Core Module (Foundation)
+├── Currency & Exchange Rates (ECB integration)
+├── Organizations & Banks
+└── Counterparties
+
+Banking Module (Transactions)
+├── Bank Receipts & Payments
+├── Event Sourcing (immutable events)
+└── Financial Reports
+```
+
+---
+
+## 📊 System Diagram
+
+<!-- TODO: Add high-level architecture diagram -->
+![Architecture Overview](docs/diagrams/system-overview.png)
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Java 21+
-- Maven 3.8+
-- PostgreSQL 17
-- Docker (for integration tests)
+Java 21, Maven 3.8+, PostgreSQL 17, Docker
 
-### Installation & Configuration
+### Run
 ```bash
-# Clone repository
-git clone [repository-url]
+git clone https://github.com/TarasAntoniuk/finance.git
 cd finance
 
-# Create configuration file
-# src/main/resources/env/env.dev.properties
-```
-
-**Configuration file content:**
-```properties
-DB_URL=jdbc:postgresql://host:5432/dbname
+# Configure: src/main/resources/env/env.dev.properties
+DB_URL=jdbc:postgresql://localhost:5432/finance
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
-```
 
-### Run Application
-```bash
-# Run application
 mvn spring-boot:run
-
-# Run tests
-mvn test
-
-# Run tests with coverage
-mvn clean test jacoco:report
 ```
 
-### Verify Local Installation
-
-- **Application**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **API Docs (JSON)**: http://localhost:8080/api-docs
+**Access**: http://localhost:8080/swagger-ui/index.html
 
 ---
 
-## API Endpoints
+## 💻 Technology Stack
 
-### Available Resources
-- `/api/currencies` — Currency management
-- `/api/countries` — Country management
-- `/api/organizations` — Organization management
-- `/api/accounting-policies` — Accounting policy management
-- `/api/exchange-rates` — Exchange rate management
-- `/api/banks` — Bank management
-- `/api/bank-accounts` — Bank account management
-
-**Interactive Documentation**: [Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html)
+**Backend**: Java 21, Spring Boot 3.5.5  
+**Database**: PostgreSQL 17, Flyway migrations  
+**Testing**: JUnit 5, Testcontainers, JaCoCo (99% coverage)  
+**API**: REST, Swagger/OpenAPI 3, MapStruct  
+**DevOps**: Docker, GitHub Actions
 
 ---
 
-## Development Workflow
+## 📦 Latest Release
 
-**Branch Strategy**:
-- `feature/*` — New feature development
-- `dev` — Development integration
-- `stable` — Stable releases
+**v0.0.4** (December 2024) — Banking Module with Event Sourcing 🚧  
+[Pull Request #10](https://github.com/TarasAntoniuk/finance/pull/10)
 
-**Versioning**: 0.0.x until production release (1.0.0)
+**Key Features**:
+- Bank Receipts & Payments with full lifecycle
+- Event Sourcing architecture
+- Financial reports (Balance, Turnover)
+- 170+ tests, 99% coverage
+- Documentation in progress
 
-**Commit Convention**: Conventional Commits
-- `feat:` — New features
-- `fix:` — Bug fixes
-- `test:` — Test additions
-- `refactor:` — Code refactoring
-- `docs:` — Documentation updates
+[Complete changelog](docs/CHANGELOG.md) | [Roadmap](docs/ROADMAP.md)
 
 ---
 
-## Technology Highlights
+## Development
 
-- **Java 21** with modern language features
-- **Spring Boot 3.5.5** enterprise framework
-- **PostgreSQL 17** with advanced indexing
-- **MapStruct 1.6.3** for type-safe mapping
-- **Testcontainers** for production-like testing
-- **JaCoCo** for comprehensive coverage reporting
+**Branch Strategy**: `feature/*` → `dev` → `stable`  
+**Commits**: Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `docs:`)
 
 ---
 
-## Contact
+## 👤 Contact
 
 **Taras Antoniuk**  
-📧 [bronya2004@gmail.com](mailto:bronya2004@gmail.com)  
+📧 bronya2004@gmail.com  
 🔗 [LinkedIn](https://www.linkedin.com/in/taras-antoniuk-7a550816a/)  
-💻 [HackerRank](https://www.hackerrank.com/profile/bronya2004)
-
----
-
-**Last Updated**: November 2025
+💻 [HackerRank](https://www.hackerrank.com/profile/bronya2004) (5-star SQL, Java)
