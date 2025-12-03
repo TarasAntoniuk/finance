@@ -7,13 +7,13 @@ import jakarta.persistence.*;
 
 /**
  * Bank Receipt - document representing money received into bank account.
- *
+ * <p>
  * Examples:
  * - Customer payment for goods/services
  * - Loan received from bank
  * - Refund from supplier
  * - Interest income
- *
+ * <p>
  * When posted, creates INBOUND transaction event(s).
  */
 @Entity

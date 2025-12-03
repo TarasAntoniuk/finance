@@ -4,9 +4,9 @@ import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceItemDto;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceReportDto;
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
@@ -17,7 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -42,9 +45,9 @@ public class AccountBalanceReportService {
     /**
      * Generate account balance report
      *
-     * @param asOfDate Date to calculate balances (null = today)
+     * @param asOfDate       Date to calculate balances (null = today)
      * @param organizationId Filter by organization (null = all)
-     * @param currencyId Filter by currency (null = all)
+     * @param currencyId     Filter by currency (null = all)
      * @return Account balance report
      */
     public AccountBalanceReportDto generateReport(

@@ -5,9 +5,9 @@ import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceItemDto;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceReportDto;
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
@@ -388,5 +388,185 @@ class AccountBalanceReportServiceTest {
         // Then
         // Should only include transaction before or on testDate (2024-01-15)
         assertEquals(LocalDate.of(2024, 1, 10), report.getAccounts().get(0).getLastTransactionDate());
+    }
+
+    @Test
+    @DisplayName("Should handle null Bank")
+    void generateReport_ShouldHandleNullBank() {
+        // Given
+        testAccount.setBank(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        AccountBalanceItemDto item = report.getAccounts().get(0);
+        assertNull(item.getBankName());
+        assertNull(item.getBankSwiftCode());
+    }
+
+    @Test
+    @DisplayName("Should handle null Currency")
+    void generateReport_ShouldHandleNullCurrency() {
+        // Given
+        testAccount.setCurrency(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        AccountBalanceItemDto item = report.getAccounts().get(0);
+        assertNull(item.getCurrencyCode());
+        assertNull(item.getCurrencySymbol());
+    }
+
+    @Test
+    @DisplayName("Should handle null Status")
+    void generateReport_ShouldHandleNullStatus() {
+        // Given
+        testAccount.setStatus(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        AccountBalanceItemDto item = report.getAccounts().get(0);
+        assertNull(item.getAccountStatus());
+    }
+
+    @Test
+    @DisplayName("Should handle null organization ID")
+    void generateReport_ShouldHandleNullOrganizationId() {
+        // Given
+        testAccount.setHolderId(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        AccountBalanceItemDto item = report.getAccounts().get(0);
+        assertNull(item.getOrganizationName());
+        assertNull(item.getOrganizationId());
+    }
+
+    @Test
+    @DisplayName("Should handle null organization name in totals calculation")
+    void generateReport_ShouldHandleNullOrganizationNameInTotals() {
+        // Given
+        testAccount.setHolderId(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        Map<String, Map<String, BigDecimal>> totalsByOrg = report.getTotalsByOrganization();
+        assertTrue(totalsByOrg.containsKey("Unknown"));
+        assertEquals(new BigDecimal("10000.00"), totalsByOrg.get("Unknown").get("UAH"));
+    }
+
+    @Test
+    @DisplayName("Should handle null currency code in totals calculation")
+    void generateReport_ShouldHandleNullCurrencyCodeInTotals() {
+        // Given
+        testAccount.setCurrency(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        Map<String, Map<String, BigDecimal>> totalsByOrg = report.getTotalsByOrganization();
+        assertTrue(totalsByOrg.get("Test Organization").containsKey("UNKNOWN"));
+        assertEquals(new BigDecimal("10000.00"), totalsByOrg.get("Test Organization").get("UNKNOWN"));
+    }
+
+    @Test
+    @DisplayName("Should handle null currency code in grand totals calculation")
+    void generateReport_ShouldHandleNullCurrencyCodeInGrandTotals() {
+        // Given
+        testAccount.setCurrency(null);
+        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDate.class)))
+                .thenReturn(new BigDecimal("10000.00"));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        Map<String, BigDecimal> grandTotal = report.getGrandTotalByCurrency();
+        assertTrue(grandTotal.containsKey("UNKNOWN"));
+        assertEquals(new BigDecimal("10000.00"), grandTotal.get("UNKNOWN"));
+    }
+
+    @Test
+    @DisplayName("Should handle null balance in totals calculation")
+    void generateReport_ShouldHandleNullBalanceInTotalsCalculation() {
+        // Given
+        BankAccount account2 = new BankAccount();
+        account2.setId(2L);
+        account2.setAccountNumber("UA987654321098765432109876543");
+        account2.setBank(testBank);
+        account2.setCurrency(testCurrency);
+        account2.setHolderId(testOrganization.getId());
+        account2.setStatus(AccountStatus.ACTIVE);
+
+        when(bankAccountRepository.findAllWithRelations())
+                .thenReturn(Arrays.asList(testAccount, account2));
+        when(transactionService.calculateBalance(testAccount.getId(), testDate))
+                .thenReturn(new BigDecimal("30000.00"));
+        when(transactionService.calculateBalance(account2.getId(), testDate))
+                .thenReturn(null); // null balance
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+        when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
+
+        // When
+        AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
+
+        // Then
+        assertNotNull(report);
+        assertEquals(2, report.getTotalAccounts());
+
+        Map<String, Map<String, BigDecimal>> totalsByOrg = report.getTotalsByOrganization();
+        // Should sum correctly even with null balance (treated as 0)
+        assertEquals(new BigDecimal("30000.00"), totalsByOrg.get("Test Organization").get("UAH"));
+
+        Map<String, BigDecimal> grandTotal = report.getGrandTotalByCurrency();
+        assertEquals(new BigDecimal("30000.00"), grandTotal.get("UAH"));
     }
 }

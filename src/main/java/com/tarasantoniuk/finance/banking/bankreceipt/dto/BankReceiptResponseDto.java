@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.banking.bankreceipt.dto;
 
 
-
 import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;

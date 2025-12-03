@@ -7,14 +7,14 @@ import jakarta.persistence.*;
 
 /**
  * Bank Payment - document representing money paid from bank account.
- *
+ * <p>
  * Examples:
  * - Payment to supplier for goods/services
  * - Salary payment to employee
  * - Tax payment
  * - Loan repayment
  * - Refund to customer
- *
+ * <p>
  * When posted, creates OUTBOUND transaction event(s).
  */
 @Entity

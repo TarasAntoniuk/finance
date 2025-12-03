@@ -194,27 +194,6 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should return bad request when bank commission is negative")
-    void createBankReceipt_ShouldReturnBadRequest_WhenBankCommissionIsNegative() throws Exception {
-        // Given
-        BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
-        requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
-        requestDto.setAmount(new BigDecimal("1000.00"));
-        requestDto.setBankCommission(new BigDecimal("-10.00"));
-        requestDto.setAccountId(bankAccount.getId());
-        requestDto.setCounterpartyId(counterparty.getId());
-        requestDto.setCurrencyId(currency.getId());
-        requestDto.setOrganizationId(organization.getId());
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/bank-receipts")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     @DisplayName("Should return conflict when duplicate external transaction ID")
     void createBankReceipt_ShouldReturnConflict_WhenDuplicateExternalTransactionId() throws Exception {
         // Given

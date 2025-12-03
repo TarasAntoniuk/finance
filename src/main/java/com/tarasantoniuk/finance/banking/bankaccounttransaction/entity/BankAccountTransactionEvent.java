@@ -1,9 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankaccounttransaction.entity;
 
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
-
-import com.tarasantoniuk.finance.common.document.entity.BaseDocument;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import jakarta.persistence.*;
@@ -17,7 +15,7 @@ import java.time.LocalDateTime;
  * Event Sourcing entity for storing all bank account transactions.
  * Each operation (bank receipt, bank payment) creates a separate event.
  * Events are immutable - this is the foundation of Event Sourcing.
- *
+ * <p>
  * Supports:
  * - Bank receipts (money in)
  * - Bank payments (money out)

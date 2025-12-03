@@ -1,9 +1,9 @@
 package com.tarasantoniuk.finance.banking.common;
 
+import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
-import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepository;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
 import org.springframework.beans.factory.annotation.Autowired;

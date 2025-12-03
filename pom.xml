@@ -111,6 +111,9 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+
+
+
     </dependencies>
 
     <build>
@@ -181,6 +184,57 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+
+            <!-- PlantUML Generator: Automatically generates UML class diagrams from Java entity classes.
+            Scans specified packages and creates .puml files in docs/uml directory.
+            Run: mvn plantuml-generator:generate -->
+            <plugin>
+                <groupId>de.elnarion.maven</groupId>
+                <artifactId>plantuml-generator-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-plantuml</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputFilename>domain-model.puml</outputFilename>
+                    <outputDirectory>${project.basedir}/docs/uml</outputDirectory>
+                    <scanPackages>
+                        <scanPackage>com.tarasantoniuk.finance</scanPackage>
+                    </scanPackages>
+                    <whitelistRegexp>.*\.entity\..*</whitelistRegexp>
+                </configuration>
+            </plugin>
+<!--            &lt;!&ndash; PlantUML Renderer: Converts .puml files to PNG/SVG images.-->
+<!--     Run: mvn net.sourceforge.plantuml:plantuml-maven-plugin:generate &ndash;&gt;-->
+<!--            <plugin>-->
+<!--                <groupId>net.sourceforge.plantuml</groupId>-->
+<!--                <artifactId>plantuml-maven-plugin</artifactId>-->
+<!--                <version>1.2</version>-->
+<!--                <configuration>-->
+<!--                    <sourceFiles>-->
+<!--                        <directory>${project.basedir}/docs/uml</directory>-->
+<!--                        <includes>-->
+<!--                            <include>**/*.puml</include>-->
+<!--                        </includes>-->
+<!--                    </sourceFiles>-->
+<!--                    <outputDirectory>${project.basedir}/docs/uml/images</outputDirectory>-->
+<!--                    <format>png</format>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>generate-resources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>generate</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 

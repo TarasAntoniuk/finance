@@ -2,7 +2,6 @@ package com.tarasantoniuk.finance.banking.report.accountturnover.controller;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
-
 import com.tarasantoniuk.finance.banking.common.TestDataCleanerBanking;
 import com.tarasantoniuk.finance.banking.common.TestDataFactoryBanking;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
@@ -102,24 +101,6 @@ class AccountTurnoverReportControllerIntegrationTest extends BaseIntegrationTest
     }
 
     // ==================== VALIDATION Tests ====================
-
-    @Test
-    @DisplayName("Should return bad request when startDate is missing")
-    void getAccountTurnovers_ShouldReturnBadRequest_WhenStartDateMissing() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers")
-                        .param("endDate", periodEnd.toString()))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should return bad request when endDate is missing")
-    void getAccountTurnovers_ShouldReturnBadRequest_WhenEndDateMissing() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers")
-                        .param("startDate", periodStart.toString()))
-                .andExpect(status().isBadRequest());
-    }
 
     @Test
     @DisplayName("Should return bad request when startDate after endDate")

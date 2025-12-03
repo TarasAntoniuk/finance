@@ -1,6 +1,5 @@
 package com.tarasantoniuk.finance.core.common;
 
-import com.tarasantoniuk.finance.banking.bankpayment.service.BankPaymentService;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty.CounterpartyType;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
