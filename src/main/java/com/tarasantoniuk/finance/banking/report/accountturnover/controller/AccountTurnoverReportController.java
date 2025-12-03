@@ -10,7 +10,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -104,8 +107,8 @@ public class AccountTurnoverReportController {
     }
 
     /**
-    * Get the first date of the current quarter
-    */
+     * Get the first date of the current quarter
+     */
     private LocalDate getQuarterStartDate(LocalDate date) {
         int currentMonth = date.getMonthValue();
         int quarterStartMonth = ((currentMonth - 1) / 3) * 3 + 1;

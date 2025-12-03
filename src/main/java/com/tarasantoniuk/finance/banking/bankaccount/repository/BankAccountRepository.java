@@ -53,7 +53,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      * Find bank accounts by holder with relationships loaded.
      *
      * @param holderType holder type
-     * @param holderId holder ID
+     * @param holderId   holder ID
      * @return list of bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
@@ -92,7 +92,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      * Find default bank accounts by holder with relationships loaded.
      *
      * @param holderType holder type
-     * @param holderId holder ID
+     * @param holderId   holder ID
      * @return list of default bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
@@ -138,7 +138,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      * Find bank accounts by holder ID and currency ID with relationships loaded.
      * Used for reports with multiple filters.
      *
-     * @param holderId holder ID (organization or counterparty)
+     * @param holderId   holder ID (organization or counterparty)
      * @param currencyId currency ID
      * @return list of bank accounts with relationships
      */

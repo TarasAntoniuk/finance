@@ -10,7 +10,6 @@ import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepos
 import com.tarasantoniuk.finance.banking.common.TestDataFactoryBanking;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.common.TestDataCleaner;
-
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.common.TestDataFactoryCore;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
@@ -30,7 +29,8 @@ import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {

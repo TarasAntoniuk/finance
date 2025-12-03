@@ -7,7 +7,10 @@ import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.core.counterparty.mapper.CounterpartyMapper;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapper;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(
         componentModel = "spring",

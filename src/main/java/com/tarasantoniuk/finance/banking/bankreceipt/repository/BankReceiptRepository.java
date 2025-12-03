@@ -19,82 +19,82 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      * Find receipt by ID with all related entities fetched (N+1 optimization)
      */
     @Query("""
-        SELECT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account a
-        LEFT JOIN FETCH a.bank
-        LEFT JOIN FETCH a.currency
-        LEFT JOIN FETCH br.organization
-        LEFT JOIN FETCH br.counterparty cp
-        LEFT JOIN FETCH br.counterpartyBankAccount cpa
-        LEFT JOIN FETCH br.currency
-        WHERE br.id = :id
-    """)
+                SELECT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank
+                LEFT JOIN FETCH a.currency
+                LEFT JOIN FETCH br.organization
+                LEFT JOIN FETCH br.counterparty cp
+                LEFT JOIN FETCH br.counterpartyBankAccount cpa
+                LEFT JOIN FETCH br.currency
+                WHERE br.id = :id
+            """)
     Optional<BankReceipt> findByIdWithDetails(@Param("id") Long id);
 
     /**
      * Find all receipts with pagination and related entities (N+1 optimization)
      */
     @Query(value = """
-    SELECT DISTINCT br FROM BankReceipt br
-    LEFT JOIN FETCH br.account a
-    LEFT JOIN FETCH a.bank
-    LEFT JOIN FETCH a.currency
-    LEFT JOIN FETCH br.organization
-    LEFT JOIN FETCH br.counterparty
-    LEFT JOIN FETCH br.currency
-    """,
+            SELECT DISTINCT br FROM BankReceipt br
+            LEFT JOIN FETCH br.account a
+            LEFT JOIN FETCH a.bank
+            LEFT JOIN FETCH a.currency
+            LEFT JOIN FETCH br.organization
+            LEFT JOIN FETCH br.counterparty
+            LEFT JOIN FETCH br.currency
+            """,
             countQuery = """
-    SELECT COUNT(DISTINCT br) FROM BankReceipt br
-    """)
+                    SELECT COUNT(DISTINCT br) FROM BankReceipt br
+                    """)
     Page<BankReceipt> findAllWithDetails(Pageable pageable);
 
     /**
      * Find receipts by account ID with pagination
      */
     @Query("""
-        SELECT DISTINCT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account a
-        LEFT JOIN FETCH a.bank
-        LEFT JOIN FETCH br.counterparty
-        LEFT JOIN FETCH br.currency
-        WHERE a.id = :accountId
-    """)
+                SELECT DISTINCT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank
+                LEFT JOIN FETCH br.counterparty
+                LEFT JOIN FETCH br.currency
+                WHERE a.id = :accountId
+            """)
     Page<BankReceipt> findByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 
     /**
      * Find receipts by counterparty ID with pagination
      */
     @Query("""
-        SELECT DISTINCT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account
-        LEFT JOIN FETCH br.counterparty cp
-        LEFT JOIN FETCH br.currency
-        WHERE cp.id = :counterpartyId
-    """)
+                SELECT DISTINCT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.counterparty cp
+                LEFT JOIN FETCH br.currency
+                WHERE cp.id = :counterpartyId
+            """)
     Page<BankReceipt> findByCounterpartyId(@Param("counterpartyId") Long counterpartyId, Pageable pageable);
 
     /**
      * Find receipts by status
      */
     @Query("""
-        SELECT DISTINCT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account
-        LEFT JOIN FETCH br.counterparty
-        LEFT JOIN FETCH br.currency
-        WHERE br.status = :status
-    """)
+                SELECT DISTINCT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.counterparty
+                LEFT JOIN FETCH br.currency
+                WHERE br.status = :status
+            """)
     Page<BankReceipt> findByStatus(@Param("status") DocumentStatus status, Pageable pageable);
 
     /**
      * Find receipts by document date range
      */
     @Query("""
-        SELECT DISTINCT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account
-        LEFT JOIN FETCH br.counterparty
-        LEFT JOIN FETCH br.currency
-        WHERE br.documentDate BETWEEN :startDate AND :endDate
-    """)
+                SELECT DISTINCT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.counterparty
+                LEFT JOIN FETCH br.currency
+                WHERE br.documentDate BETWEEN :startDate AND :endDate
+            """)
     Page<BankReceipt> findByDocumentDateBetween(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
@@ -110,12 +110,12 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      * Find receipt by external transaction ID with details (for idempotency check and retrieval)
      */
     @Query("""
-        SELECT br FROM BankReceipt br
-        LEFT JOIN FETCH br.account
-        LEFT JOIN FETCH br.counterparty
-        LEFT JOIN FETCH br.currency
-        WHERE br.externalTransactionId = :externalTransactionId
-    """)
+                SELECT br FROM BankReceipt br
+                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.counterparty
+                LEFT JOIN FETCH br.currency
+                WHERE br.externalTransactionId = :externalTransactionId
+            """)
     Optional<BankReceipt> findByExternalTransactionId(
             @Param("externalTransactionId") String externalTransactionId
     );

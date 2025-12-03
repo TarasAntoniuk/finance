@@ -46,5 +46,6 @@ public interface CountryRepository extends JpaRepository<Country, Long> {
 
     // Keep original methods for duplicate checks (don't need currency)
     Optional<Country> findByIsoCode(String isoCode);
+
     boolean existsByIsoCode(String isoCode);
 }

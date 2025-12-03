@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.banking.bank.dto;
 
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 
 import java.time.LocalDateTime;
 

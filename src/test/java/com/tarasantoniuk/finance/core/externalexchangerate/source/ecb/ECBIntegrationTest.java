@@ -5,8 +5,6 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
-import com.tarasantoniuk.finance.core.externalexchangerate.source.ecb.ECBClient;
-import com.tarasantoniuk.finance.core.externalexchangerate.source.ecb.ECBSyncService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +16,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 
 @Transactional

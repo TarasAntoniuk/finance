@@ -40,13 +40,13 @@ public class CounterpartyController {
     @Operation(
             summary = "Get all counterparties",
             description = """
-        Retrieve a paginated list of all counterparties, sorted by name (A-Z).
-        
-        Examples:
-        - GET /api/counterparties - first page with default settings
-        - GET /api/counterparties?page=1 - second page
-        - GET /api/counterparties?page=0&size=50 - first page with 50 items
-        """
+                    Retrieve a paginated list of all counterparties, sorted by name (A-Z).
+                    
+                    Examples:
+                    - GET /api/counterparties - first page with default settings
+                    - GET /api/counterparties?page=1 - second page
+                    - GET /api/counterparties?page=0&size=50 - first page with 50 items
+                    """
     )
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<CounterpartyResponseDto>> getAll(
@@ -71,7 +71,7 @@ public class CounterpartyController {
     @PutMapping("/{id}")
     @Operation(summary = "Update counterparty")
     public ResponseEntity<CounterpartyResponseDto> update(@PathVariable Long id,
-                                                       @Valid @RequestBody CounterpartyRequestDto request) {
+                                                          @Valid @RequestBody CounterpartyRequestDto request) {
         return ResponseEntity.ok(counterpartyService.update(id, request));
     }
 

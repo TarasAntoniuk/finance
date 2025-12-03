@@ -207,8 +207,8 @@ public class BankAccountTransactionService {
     }
 
     /**
-            * Check if event exists for document (only non-reversed)
-    */
+     * Check if event exists for document (only non-reversed)
+     */
     @Transactional(readOnly = true)
     public boolean existsByDocument(String documentType, Long documentId) {
         return transactionEventRepository.existsByDocumentTypeAndDocumentIdAndIsReversedFalse(documentType, documentId);

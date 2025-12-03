@@ -1,13 +1,13 @@
 package com.tarasantoniuk.finance.banking.bank.entity;
 
 import com.tarasantoniuk.finance.common.entity.BaseEntity;
-import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
+import com.tarasantoniuk.finance.core.country.entity.Country;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "banks", indexes = {
-    @Index(name = "idx_bank_swift_code", columnList = "swiftCode")
+        @Index(name = "idx_bank_swift_code", columnList = "swiftCode")
 })
 public class Bank extends BaseEntity {
 

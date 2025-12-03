@@ -418,14 +418,14 @@ public class TestDataFactoryBanking {
     /**
      * Creates initial balance on organization account by posting a bank receipt
      * This is required for payment post operations to succeed (balance validation)
-     *
+     * <p>
      * Default amount: 50000.00
      *
      * @param organizationAccount Account to create balance on
-     * @param counterparty Counterparty for the receipt
+     * @param counterparty        Counterparty for the receipt
      * @param counterpartyAccount Optional counterparty bank account
-     * @param currency Currency for the receipt
-     * @param organization Organization for the receipt
+     * @param currency            Currency for the receipt
+     * @param organization        Organization for the receipt
      * @return Posted bank receipt that created the balance
      */
     public BankReceipt createInitialBalance(
@@ -450,11 +450,11 @@ public class TestDataFactoryBanking {
      * Posts the receipt to actually create the balance via TransactionEvent
      *
      * @param organizationAccount Account to create balance on
-     * @param counterparty Counterparty for the receipt
+     * @param counterparty        Counterparty for the receipt
      * @param counterpartyAccount Optional counterparty bank account
-     * @param currency Currency for the receipt
-     * @param organization Organization for the receipt
-     * @param amount Balance amount to create
+     * @param currency            Currency for the receipt
+     * @param organization        Organization for the receipt
+     * @param amount              Balance amount to create
      * @return Posted bank receipt that created the balance
      */
     public BankReceipt createInitialBalance(

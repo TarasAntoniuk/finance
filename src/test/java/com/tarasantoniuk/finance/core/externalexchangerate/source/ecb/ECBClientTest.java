@@ -1,6 +1,5 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
-import com.tarasantoniuk.finance.core.externalexchangerate.source.ecb.ECBClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,7 +11,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

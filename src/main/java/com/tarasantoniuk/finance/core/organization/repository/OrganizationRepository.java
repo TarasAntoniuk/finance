@@ -57,5 +57,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
 
     // Keep original methods for duplicate checks (don't need country)
     Optional<Organization> findByRegistrationNumber(String registrationNumber);
+
     boolean existsByRegistrationNumber(String registrationNumber);
 }

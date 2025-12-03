@@ -5,11 +5,10 @@ import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
-import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverSummaryDto;
-import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverReportDto;
-import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverTotalDto;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
-//import com.tarasantoniuk.finance.common.exception.ValidationException;
+import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverReportDto;
+import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverSummaryDto;
+import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverTotalDto;
 import com.tarasantoniuk.finance.common.exception.ValidationException;
 import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
@@ -49,11 +48,11 @@ public class AccountTurnoverReportService {
     /**
      * Generate account turnover report for specified period
      *
-     * @param startDate Period start date
-     * @param endDate Period end date
+     * @param startDate      Period start date
+     * @param endDate        Period end date
      * @param organizationId Filter by organization (null = all)
-     * @param accountId Filter by specific account (null = all)
-     * @param currencyId Filter by currency (null = all)
+     * @param accountId      Filter by specific account (null = all)
+     * @param currencyId     Filter by currency (null = all)
      * @return Account turnover report
      */
     public AccountTurnoverReportDto generateReport(

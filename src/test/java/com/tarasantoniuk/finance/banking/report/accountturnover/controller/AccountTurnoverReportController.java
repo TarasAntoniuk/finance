@@ -2,7 +2,6 @@ package com.tarasantoniuk.finance.banking.report.accountturnover.controller;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
-
 import com.tarasantoniuk.finance.banking.common.TestDataCleanerBanking;
 import com.tarasantoniuk.finance.banking.common.TestDataFactoryBanking;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;

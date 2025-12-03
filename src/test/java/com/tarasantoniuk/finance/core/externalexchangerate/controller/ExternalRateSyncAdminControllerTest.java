@@ -1,6 +1,5 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.controller;
 
-import com.tarasantoniuk.finance.core.externalexchangerate.controller.ExternalRateSyncAdminController;
 import com.tarasantoniuk.finance.core.externalexchangerate.source.ecb.ECBSyncService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ExternalRateSyncAdminController.class)
 class ExternalRateSyncAdminControllerTest {
