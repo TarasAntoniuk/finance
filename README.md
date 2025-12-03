@@ -12,6 +12,7 @@
 
 ## 📚 Documentation
 
+- **[Architecture](docs/ARCHITECTURE.md)** — System design, Event Sourcing, modules
 - **[Changelog](docs/CHANGELOG.md)** — Version history
 - **[Roadmap](docs/ROADMAP.md)** — Planned features
 - **[Technology Stack](docs/TECH_STACK.md)** — Technologies and tools
@@ -42,7 +43,7 @@
 ✅ **Bank Receipts & Payments** — 10+ transaction types each  
 ✅ **Document Lifecycle** — DRAFT → POST → UNPOST  
 ✅ **Financial Reports** — Balance & Turnover with filters  
-✅ **99% Test Coverage** — 170+ tests
+✅ **Comprehensive Test Coverage** — 193 tests with 97% line & 95% branch coverage
 
 ### 🔧 Technical Excellence
 ✅ **PostgreSQL 17** with optimized queries  
@@ -52,25 +53,48 @@
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 ```
-Core Module (Foundation)
-├── Currency & Exchange Rates (ECB integration)
-├── Organizations & Banks
-└── Counterparties
-
-Banking Module (Transactions)
-├── Bank Receipts & Payments
-├── Event Sourcing (immutable events)
-└── Financial Reports
+┌───────────────────────────────────────────────┐
+│         External Systems                      │
+│  ┌──────────────┐   ┌──────────────────┐      │
+│  │ ECB API      │   │ User Browser     │      │
+│  │ (Daily sync) │   │ (Swagger UI)     │      │
+│  └──────┬───────┘   └────────┬─────────┘      │
+└─────────┼──────────────────────┼──────────────┘
+          │                      │
+          ▼                      ▼
+┌───────────────────────────────────────────────┐
+│      Spring Boot Application                  │
+│                                               │
+│  ┌──────────────────────────────────────┐     │
+│  │  Core Module                         │     │
+│  │  - Currency & Exchange Rates         │     │
+│  │  - Organizations                     │     │
+│  │  - Counterparties                    │     │
+│  │  - Countries                         │     │
+│  │  - Accounting Policies               │     │
+│  └──────────────────────────────────────┘     │
+│                                               │
+│  ┌──────────────────────────────────────┐     │
+│  │  Banking Module                      │     │
+│  │  - Banks & Bank Accounts             │     │
+│  │  - Bank Receipts & Payments          │     │
+│  │  - Event Sourcing                    │     │
+│  │  - Financial Reports                 │     │
+│  └──────────────────────────────────────┘     │
+└─────────────┬─────────────────────────────────┘
+              │
+              ▼
+┌───────────────────────────────────────────────┐
+│         PostgreSQL 17                         │
+│  - Transactional tables                       │
+│  - Event Store (append-only)                  │
+│  - 190k+ exchange rate records                │
+└───────────────────────────────────────────────┘
 ```
 
----
-
-## 📊 System Diagram
-
-<!-- TODO: Add high-level architecture diagram -->
-![Architecture Overview](docs/diagrams/system-overview.png)
+*See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed technical documentation*
 
 ---
 
@@ -100,7 +124,7 @@ mvn spring-boot:run
 
 **Backend**: Java 21, Spring Boot 3.5.5  
 **Database**: PostgreSQL 17, Flyway migrations  
-**Testing**: JUnit 5, Testcontainers, JaCoCo (99% coverage)  
+**Testing**: JUnit 5, Testcontainers, JaCoCo (97% line, 95% branch coverage)  
 **API**: REST, Swagger/OpenAPI 3, MapStruct  
 **DevOps**: Docker, GitHub Actions
 
@@ -115,7 +139,7 @@ mvn spring-boot:run
 - Bank Receipts & Payments with full lifecycle
 - Event Sourcing architecture
 - Financial reports (Balance, Turnover)
-- 170+ tests, 99% coverage
+- 193 tests with 97% line & 95% branch coverage
 - Documentation in progress
 
 [Complete changelog](docs/CHANGELOG.md) | [Roadmap](docs/ROADMAP.md)
@@ -132,6 +156,20 @@ mvn spring-boot:run
 ## 👤 Contact
 
 **Taras Antoniuk**  
+🌐 [tarasantoniuk.com](https://tarasantoniuk.com/)  
 📧 bronya2004@gmail.com  
 🔗 [LinkedIn](https://www.linkedin.com/in/taras-antoniuk-7a550816a/)  
-💻 [HackerRank](https://www.hackerrank.com/profile/bronya2004) (5-star SQL, Java)
+💻 [HackerRank](https://www.hackerrank.com/profile/bronya2004)
+
+**Certifications:**
+- SQL (Advanced)
+- SQL (Intermediate)
+- Java (Basic)
+
+*\*Java certification: HackerRank currently offers only Basic level for standard accounts*
+
+
+**Skills:**
+- Java: 5 stars
+- SQL: 5 stars
+- Problem Solving: 2 stars
