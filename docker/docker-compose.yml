@@ -11,6 +11,8 @@ services:
       - "127.0.0.1:5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - docker_finance-network
 
   app:
     build:
@@ -27,6 +29,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: test_password
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      - docker_finance-network
 
   nginx:
     image: nginx:alpine
@@ -43,6 +47,8 @@ services:
       - ./certs:/etc/letsencrypt
       - ./logs/nginx:/var/log/nginx
       - ./webroot:/var/www/certbot
+    networks:
+      - docker_finance-network
 
   certbot:
     image: certbot/certbot
@@ -51,6 +57,12 @@ services:
       - ./certs:/etc/letsencrypt
       - ./webroot:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew && chown -R 1000:1000 /etc/letsencrypt; sleep 12h & wait $${!}; done;'"
+    networks:
+      - docker_finance-network
 
 volumes:
   db_data:
+
+networks:
+  docker_finance-network:
+    external: true
