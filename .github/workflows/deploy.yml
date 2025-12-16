@@ -42,47 +42,31 @@ jobs:
           printf "%s" "$SERVER_SSH_KEY" | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
-      - name: Clean up old Docker resources
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
-            set -e
-            echo "🧹 Cleaning old Docker resources..."
-          
-            # Clean Docker
-            docker image prune -a -f || true
-            docker container prune -f || true
-          
-            # Remove old finance-core if exists
-            sudo rm -rf /srv/apps/finance-core 2>/dev/null || true
-          
-            echo "✅ Cleanup completed"
-            df -h | grep /dev/vda3
-          ENDSSH
-
       - name: Prepare deployment directories
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             APP_DIR=/srv/apps/finance
-            sudo mkdir -p $APP_DIR/docker/{app,nginx,db_data} $APP_DIR/{logs,certs,certs/webroot}
+            sudo mkdir -p $APP_DIR/docker/app
             sudo chown -R deploy:deploy $APP_DIR
             echo "✅ Directories ready"
           ENDSSH
 
-      - name: Fix permissions for SSL certificates
+      - name: Ensure .env exists
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
             set -e
             cd /srv/apps/finance/docker
           
-            # Ensure proper ownership and permissions
-            sudo chown -R deploy:deploy certs/ logs/ 2>/dev/null || true
-            sudo chmod -R 755 certs/ 2>/dev/null || true
+            if [ ! -f .env ]; then
+              echo "❌ ERROR: .env file not found!"
+              echo "Please create .env with FINANCE_DB_PASSWORD"
+              exit 1
+            fi
           
-            echo "✅ Permissions configured"
+            echo "✅ .env file exists"
           ENDSSH
 
       - name: Install rsync
@@ -97,6 +81,11 @@ jobs:
       - name: Copy Docker files
         run: |
           rsync -avz -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }}" \
+            --exclude='certs' \
+            --exclude='logs' \
+            --exclude='webroot' \
+            --exclude='data' \
+            --exclude='.env' \
             docker/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/srv/apps/finance/docker/
 
@@ -107,10 +96,10 @@ jobs:
             set -e
             cd /srv/apps/finance/docker
           
-            echo "🔄 Stopping old containers..."
-            docker compose down --remove-orphans || true
+            echo "🔄 Stopping old container..."
+            docker compose down || true
           
-            echo "🚀 Starting all services..."
+            echo "🚀 Starting finance-app..."
             docker compose up -d --build
           
             echo "✅ Deployment completed"
@@ -121,9 +110,12 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -p ${{ secrets.SERVER_SSH_PORT }} \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'ENDSSH'
           
-          
             echo "📦 Running containers:"
-            docker ps
+            docker ps | grep -E "finance-app|shared-postgres|shared-nginx"
+          
+            echo ""
+            echo "🌐 Network status:"
+            docker network inspect app-network --format '{{range .Containers}}{{.Name}} {{end}}'
           
             echo ""
             echo "🏥 Health check (with retry)..."
