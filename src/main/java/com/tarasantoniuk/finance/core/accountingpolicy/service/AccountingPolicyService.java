@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.service;
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyNotFoundException;
@@ -39,7 +39,7 @@ public class AccountingPolicyService {
      * Get all accounting policies with optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load organization and currency in a single query.
      */
-    public List<AccountingPolicyResponseDTO> getAllAccountingPolicies() {
+    public List<AccountingPolicyResponseDto> getAllAccountingPolicies() {
         List<AccountingPolicy> policies = accountingPolicyRepository.findAllWithRelations();
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
@@ -47,7 +47,7 @@ public class AccountingPolicyService {
     /**
      * Get accounting policy by ID with optimized query.
      */
-    public AccountingPolicyResponseDTO getAccountingPolicyById(Long id) {
+    public AccountingPolicyResponseDto getAccountingPolicyById(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         return accountingPolicyMapper.toResponseDTO(policy);
@@ -56,7 +56,7 @@ public class AccountingPolicyService {
     /**
      * Get accounting policy by organization and year with optimized query.
      */
-    public AccountingPolicyResponseDTO getAccountingPolicyByOrganizationAndYear(Long organizationId, Integer year) {
+    public AccountingPolicyResponseDto getAccountingPolicyByOrganizationAndYear(Long organizationId, Integer year) {
         AccountingPolicy policy = accountingPolicyRepository.findByOrganizationIdAndYearWithRelations(organizationId, year)
                 .orElseThrow(() -> AccountingPolicyNotFoundException.byOrganizationAndYear(organizationId, year));
         return accountingPolicyMapper.toResponseDTO(policy);
@@ -65,7 +65,7 @@ public class AccountingPolicyService {
     /**
      * Get accounting policies by organization with optimized query.
      */
-    public List<AccountingPolicyResponseDTO> getAccountingPoliciesByOrganization(Long organizationId) {
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByOrganization(Long organizationId) {
         List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdWithRelations(organizationId);
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
@@ -73,7 +73,7 @@ public class AccountingPolicyService {
     /**
      * Get accounting policies by year with optimized query.
      */
-    public List<AccountingPolicyResponseDTO> getAccountingPoliciesByYear(Integer year) {
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYear(Integer year) {
         List<AccountingPolicy> policies = accountingPolicyRepository.findByYearWithRelations(year);
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
@@ -81,7 +81,7 @@ public class AccountingPolicyService {
     /**
      * Get active accounting policies by organization with optimized query.
      */
-    public List<AccountingPolicyResponseDTO> getActiveAccountingPoliciesByOrganization(Long organizationId) {
+    public List<AccountingPolicyResponseDto> getActiveAccountingPoliciesByOrganization(Long organizationId) {
         List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(organizationId, true);
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
@@ -89,7 +89,7 @@ public class AccountingPolicyService {
     /**
      * Get accounting policies by currency with optimized query.
      */
-    public List<AccountingPolicyResponseDTO> getAccountingPoliciesByCurrency(Long currencyId) {
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByCurrency(Long currencyId) {
         List<AccountingPolicy> policies = accountingPolicyRepository.findByCurrencyIdWithRelations(currencyId);
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
@@ -97,13 +97,13 @@ public class AccountingPolicyService {
     /**
      * Get accounting policies by year range with optimized query.
      */
-    public List<AccountingPolicyResponseDTO> getAccountingPoliciesByYearRange(Integer startYear, Integer endYear) {
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYearRange(Integer startYear, Integer endYear) {
         List<AccountingPolicy> policies = accountingPolicyRepository.findByYearBetweenWithRelations(startYear, endYear);
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     @Transactional
-    public AccountingPolicyResponseDTO createAccountingPolicy(AccountingPolicyRequestDTO requestDTO) {
+    public AccountingPolicyResponseDto createAccountingPolicy(AccountingPolicyRequestDto requestDTO) {
         if (!organizationRepository.existsById(requestDTO.getOrganizationId())) {
             throw OrganizationNotFoundException.byId(requestDTO.getOrganizationId());
         }
@@ -124,7 +124,7 @@ public class AccountingPolicyService {
     }
 
     @Transactional
-    public AccountingPolicyResponseDTO updateAccountingPolicy(Long id, AccountingPolicyRequestDTO requestDTO) {
+    public AccountingPolicyResponseDto updateAccountingPolicy(Long id, AccountingPolicyRequestDto requestDTO) {
         AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
 
@@ -158,7 +158,7 @@ public class AccountingPolicyService {
     }
 
     @Transactional
-    public AccountingPolicyResponseDTO deactivateAccountingPolicy(Long id) {
+    public AccountingPolicyResponseDto deactivateAccountingPolicy(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         policy.setIsActive(false);
@@ -167,7 +167,7 @@ public class AccountingPolicyService {
     }
 
     @Transactional
-    public AccountingPolicyResponseDTO activateAccountingPolicy(Long id) {
+    public AccountingPolicyResponseDto activateAccountingPolicy(Long id) {
         AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
         policy.setIsActive(true);

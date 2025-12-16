@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.banking.bankaccount.mapper;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDTO;
-import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDTO;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
+import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
@@ -23,20 +23,20 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     BankAccountMapper bankAccountMapper;
 
     @Test
-    void toEntity_shouldMapAllFieldsFromRequestDTO() {
+    void toEntity_shouldMapAllFieldsFromrequestDto() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA213223130000026007233566001");
-        requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(10L);
-        requestDTO.setBankId(1L);
-        requestDTO.setCurrencyId(2L);
-        requestDTO.setAccountName("Main UAH Account");
-        requestDTO.setStatus(AccountStatus.ACTIVE);
-        requestDTO.setIsDefault(true);
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA213223130000026007233566001");
+        requestDto.setHolderType(AccountHolderType.ORGANIZATION);
+        requestDto.setHolderId(10L);
+        requestDto.setBankId(1L);
+        requestDto.setCurrencyId(2L);
+        requestDto.setAccountName("Main UAH Account");
+        requestDto.setStatus(AccountStatus.ACTIVE);
+        requestDto.setIsDefault(true);
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity).isNotNull();
@@ -58,18 +58,18 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullOptionalFields() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA123456789012345678901234567");
-        requestDTO.setHolderType(AccountHolderType.COUNTERPARTY);
-        requestDTO.setHolderId(5L);
-        requestDTO.setBankId(3L);
-        requestDTO.setCurrencyId(1L);
-        requestDTO.setAccountName(null);
-        requestDTO.setStatus(null);
-        requestDTO.setIsDefault(null);
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA123456789012345678901234567");
+        requestDto.setHolderType(AccountHolderType.COUNTERPARTY);
+        requestDto.setHolderId(5L);
+        requestDto.setBankId(3L);
+        requestDto.setCurrencyId(1L);
+        requestDto.setAccountName(null);
+        requestDto.setStatus(null);
+        requestDto.setIsDefault(null);
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity).isNotNull();
@@ -86,15 +86,15 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateBankAndCurrencyWithOnlyIdSet() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA111111111111111111111111111");
-        requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(1L);
-        requestDTO.setBankId(10L);
-        requestDTO.setCurrencyId(20L);
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA111111111111111111111111111");
+        requestDto.setHolderType(AccountHolderType.ORGANIZATION);
+        requestDto.setHolderId(1L);
+        requestDto.setBankId(10L);
+        requestDto.setCurrencyId(20L);
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity.getBank()).isNotNull();
@@ -136,7 +136,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now.minusDays(5));
 
         // When
-        BankAccountResponseDTO responseDTO = bankAccountMapper.toResponse(entity);
+        BankAccountResponseDto responseDTO = bankAccountMapper.toResponse(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -189,7 +189,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null);
 
         // When
-        BankAccountResponseDTO responseDTO = bankAccountMapper.toResponse(entity);
+        BankAccountResponseDto responseDTO = bankAccountMapper.toResponse(entity);
 
         // Then
         assertThat(responseDTO.getAccountNumber()).isEqualTo("UA987654321098765432109876543");
@@ -240,7 +240,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         List<BankAccount> accounts = Arrays.asList(account1, account2);
 
         // When
-        List<BankAccountResponseDTO> responseDTOs = bankAccountMapper.toResponseList(accounts);
+        List<BankAccountResponseDto> responseDTOs = bankAccountMapper.toResponseList(accounts);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -264,7 +264,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         List<BankAccount> accounts = List.of();
 
         // When
-        List<BankAccountResponseDTO> responseDTOs = bankAccountMapper.toResponseList(accounts);
+        List<BankAccountResponseDto> responseDTOs = bankAccountMapper.toResponseList(accounts);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -297,7 +297,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        BankAccountRequestDTO updateDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto updateDTO = new BankAccountRequestDto();
         updateDTO.setAccountNumber("UA999999999999999999999999999");
         updateDTO.setHolderType(AccountHolderType.COUNTERPARTY);
         updateDTO.setHolderId(99L);
@@ -349,7 +349,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         existingEntity.setStatus(AccountStatus.ACTIVE);
         existingEntity.setIsDefault(true);
 
-        BankAccountRequestDTO updateDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto updateDTO = new BankAccountRequestDto();
         updateDTO.setAccountNumber("UA999999999999999999999999999");
         updateDTO.setHolderType(AccountHolderType.COUNTERPARTY);
         updateDTO.setHolderId(20L);
@@ -376,7 +376,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentHolderTypes() {
         // Test ORGANIZATION
-        BankAccountRequestDTO orgDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto orgDTO = new BankAccountRequestDto();
         orgDTO.setAccountNumber("UA111111111111111111111111111");
         orgDTO.setHolderType(AccountHolderType.ORGANIZATION);
         orgDTO.setHolderId(1L);
@@ -387,7 +387,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         assertThat(orgEntity.getHolderType()).isEqualTo(AccountHolderType.ORGANIZATION);
 
         // Test COUNTERPARTY
-        BankAccountRequestDTO counterpartyDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto counterpartyDTO = new BankAccountRequestDto();
         counterpartyDTO.setAccountNumber("UA222222222222222222222222222");
         counterpartyDTO.setHolderType(AccountHolderType.COUNTERPARTY);
         counterpartyDTO.setHolderId(2L);
@@ -401,7 +401,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentStatuses() {
         // Test ACTIVE
-        BankAccountRequestDTO activeDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto activeDTO = new BankAccountRequestDto();
         activeDTO.setAccountNumber("UA111111111111111111111111111");
         activeDTO.setHolderType(AccountHolderType.ORGANIZATION);
         activeDTO.setHolderId(1L);
@@ -413,7 +413,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         assertThat(activeEntity.getStatus()).isEqualTo(AccountStatus.ACTIVE);
 
         // Test INACTIVE
-        BankAccountRequestDTO inactiveDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto inactiveDTO = new BankAccountRequestDto();
         inactiveDTO.setAccountNumber("UA222222222222222222222222222");
         inactiveDTO.setHolderType(AccountHolderType.ORGANIZATION);
         inactiveDTO.setHolderId(1L);
@@ -425,7 +425,7 @@ class BankAccountMapperTest extends BaseIntegrationTest {
         assertThat(inactiveEntity.getStatus()).isEqualTo(AccountStatus.INACTIVE);
 
         // Test CLOSED
-        BankAccountRequestDTO closedDTO = new BankAccountRequestDTO();
+        BankAccountRequestDto closedDTO = new BankAccountRequestDto();
         closedDTO.setAccountNumber("UA333333333333333333333333333");
         closedDTO.setHolderType(AccountHolderType.ORGANIZATION);
         closedDTO.setHolderId(1L);
@@ -440,15 +440,15 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullBankId() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA111111111111111111111111111");
-        requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(1L);
-        requestDTO.setBankId(null); // null bankId
-        requestDTO.setCurrencyId(1L);
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA111111111111111111111111111");
+        requestDto.setHolderType(AccountHolderType.ORGANIZATION);
+        requestDto.setHolderId(1L);
+        requestDto.setBankId(null); // null bankId
+        requestDto.setCurrencyId(1L);
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity.getBank()).isNull();
@@ -458,15 +458,15 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCurrencyId() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA111111111111111111111111111");
-        requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(1L);
-        requestDTO.setBankId(1L);
-        requestDTO.setCurrencyId(null); // null currencyId
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA111111111111111111111111111");
+        requestDto.setHolderType(AccountHolderType.ORGANIZATION);
+        requestDto.setHolderId(1L);
+        requestDto.setBankId(1L);
+        requestDto.setCurrencyId(null); // null currencyId
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity.getBank()).isNotNull();
@@ -476,15 +476,15 @@ class BankAccountMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullBankIdAndCurrencyId() {
         // Given
-        BankAccountRequestDTO requestDTO = new BankAccountRequestDTO();
-        requestDTO.setAccountNumber("UA111111111111111111111111111");
-        requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(1L);
-        requestDTO.setBankId(null); // null bankId
-        requestDTO.setCurrencyId(null); // null currencyId
+        BankAccountRequestDto requestDto = new BankAccountRequestDto();
+        requestDto.setAccountNumber("UA111111111111111111111111111");
+        requestDto.setHolderType(AccountHolderType.ORGANIZATION);
+        requestDto.setHolderId(1L);
+        requestDto.setBankId(null); // null bankId
+        requestDto.setCurrencyId(null); // null currencyId
 
         // When
-        BankAccount entity = bankAccountMapper.toEntity(requestDTO);
+        BankAccount entity = bankAccountMapper.toEntity(requestDto);
 
         // Then
         assertThat(entity.getBank()).isNull();

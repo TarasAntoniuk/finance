@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.core.currency.exeption;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.currency.controller.CurrencyController;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
@@ -17,7 +17,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Тести для помилкових сценаріїв Currency
@@ -71,13 +72,13 @@ class CurrencyErrorTest {
     @Test
     void createCurrency_WhenCodeExists_ShouldReturn409() throws Exception {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("840");
         requestDTO.setName("US Dollar");
         requestDTO.setMinorUnit(2);
 
-        when(currencyService.createCurrency(any(CurrencyRequestDTO.class)))
+        when(currencyService.createCurrency(any(CurrencyRequestDto.class)))
                 .thenThrow(CurrencyAlreadyExistsException.byCode("USD"));
 
         // When & Then
@@ -91,13 +92,13 @@ class CurrencyErrorTest {
     @Test
     void createCurrency_WhenNumericCodeExists_ShouldReturn409() throws Exception {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("XXX");
         requestDTO.setNumericCode("840");
         requestDTO.setName("Test Currency");
         requestDTO.setMinorUnit(2);
 
-        when(currencyService.createCurrency(any(CurrencyRequestDTO.class)))
+        when(currencyService.createCurrency(any(CurrencyRequestDto.class)))
                 .thenThrow(CurrencyAlreadyExistsException.byNumericCode("840"));
 
         // When & Then
@@ -110,7 +111,7 @@ class CurrencyErrorTest {
     @Test
     void createCurrency_WhenInvalidCodeFormat_ShouldReturn400() throws Exception {
         // Given - code must be 3 uppercase letters
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("us");
         requestDTO.setNumericCode("840");
         requestDTO.setName("US Dollar");
@@ -127,7 +128,7 @@ class CurrencyErrorTest {
     @Test
     void createCurrency_WhenInvalidNumericCodeFormat_ShouldReturn400() throws Exception {
         // Given - numeric code must be 3 digits
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("84");
         requestDTO.setName("US Dollar");
@@ -143,7 +144,7 @@ class CurrencyErrorTest {
     @Test
     void createCurrency_WhenMissingRequiredFields_ShouldReturn400() throws Exception {
         // Given - missing required fields
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/currencies")
@@ -156,13 +157,13 @@ class CurrencyErrorTest {
     @Test
     void updateCurrency_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        CurrencyRequestDTO requestDTO = new CurrencyRequestDTO();
+        CurrencyRequestDto requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("840");
         requestDTO.setName("US Dollar");
         requestDTO.setMinorUnit(2);
 
-        when(currencyService.updateCurrency(any(), any(CurrencyRequestDTO.class)))
+        when(currencyService.updateCurrency(any(), any(CurrencyRequestDto.class)))
                 .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then

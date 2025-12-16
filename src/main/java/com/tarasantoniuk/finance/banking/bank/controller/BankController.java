@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.banking.bank.controller;
 
-import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDTO;
-import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.service.BankService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/banks")
-@Tag(name = "Banking - Bank", description = "Bank management API")
+@Tag(name = "Banking - Banks", description = "Bank management API")
 public class BankController {
 
     private final BankService bankService;
@@ -29,8 +29,8 @@ public class BankController {
     @GetMapping
     @Operation(summary = "Get all banks", description = "Retrieve a list of all banks")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankResponseDTO>> getAllBanks() {
-        List<BankResponseDTO> banks = bankService.getAllBanks();
+    public ResponseEntity<List<BankResponseDto>> getAllBanks() {
+        List<BankResponseDto> banks = bankService.getAllBanks();
         return ResponseEntity.ok(banks);
     }
 
@@ -40,26 +40,26 @@ public class BankController {
             @ApiResponse(responseCode = "200", description = "Bank found"),
             @ApiResponse(responseCode = "404", description = "Bank not found")
     })
-    public ResponseEntity<BankResponseDTO> getBankById(
+    public ResponseEntity<BankResponseDto> getBankById(
             @Parameter(description = "Bank ID", required = true) @PathVariable Long id) {
-        BankResponseDTO bank = bankService.getBankById(id);
+        BankResponseDto bank = bankService.getBankById(id);
         return ResponseEntity.ok(bank);
     }
 
     @GetMapping("/country/{countryId}")
     @Operation(summary = "Get banks by country", description = "Retrieve all banks for a specific country")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankResponseDTO>> getBanksByCountry(
+    public ResponseEntity<List<BankResponseDto>> getBanksByCountry(
             @Parameter(description = "Country ID", required = true) @PathVariable Long countryId) {
-        List<BankResponseDTO> banks = bankService.getBanksByCountry(countryId);
+        List<BankResponseDto> banks = bankService.getBanksByCountry(countryId);
         return ResponseEntity.ok(banks);
     }
 
     @GetMapping("/active")
     @Operation(summary = "Get active banks", description = "Retrieve all active banks")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<BankResponseDTO>> getActiveBanks() {
-        List<BankResponseDTO> banks = bankService.getActiveBanks();
+    public ResponseEntity<List<BankResponseDto>> getActiveBanks() {
+        List<BankResponseDto> banks = bankService.getActiveBanks();
         return ResponseEntity.ok(banks);
     }
 
@@ -69,9 +69,9 @@ public class BankController {
             @ApiResponse(responseCode = "200", description = "Bank found"),
             @ApiResponse(responseCode = "404", description = "Bank not found")
     })
-    public ResponseEntity<BankResponseDTO> getBankBySwiftCode(
+    public ResponseEntity<BankResponseDto> getBankBySwiftCode(
             @Parameter(description = "SWIFT/BIC code", required = true) @PathVariable String swiftCode) {
-        BankResponseDTO bank = bankService.getBankBySwiftCode(swiftCode);
+        BankResponseDto bank = bankService.getBankBySwiftCode(swiftCode);
         return ResponseEntity.ok(bank);
     }
 
@@ -81,10 +81,10 @@ public class BankController {
             @ApiResponse(responseCode = "201", description = "Bank created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<BankResponseDTO> createBank(
+    public ResponseEntity<BankResponseDto> createBank(
             @Parameter(description = "Bank data", required = true)
-            @Valid @RequestBody BankRequestDTO requestDTO) {
-        BankResponseDTO bank = bankService.createBank(requestDTO);
+            @Valid @RequestBody BankRequestDto requestDTO) {
+        BankResponseDto bank = bankService.createBank(requestDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(bank);
     }
 
@@ -95,11 +95,11 @@ public class BankController {
             @ApiResponse(responseCode = "404", description = "Bank not found"),
             @ApiResponse(responseCode = "400", description = "Invalid input data")
     })
-    public ResponseEntity<BankResponseDTO> updateBank(
+    public ResponseEntity<BankResponseDto> updateBank(
             @Parameter(description = "Bank ID", required = true) @PathVariable Long id,
             @Parameter(description = "Updated bank data", required = true)
-            @Valid @RequestBody BankRequestDTO requestDTO) {
-        BankResponseDTO bank = bankService.updateBank(id, requestDTO);
+            @Valid @RequestBody BankRequestDto requestDTO) {
+        BankResponseDto bank = bankService.updateBank(id, requestDTO);
         return ResponseEntity.ok(bank);
     }
 
@@ -109,9 +109,9 @@ public class BankController {
             @ApiResponse(responseCode = "200", description = "Bank deactivated successfully"),
             @ApiResponse(responseCode = "404", description = "Bank not found")
     })
-    public ResponseEntity<BankResponseDTO> deactivateBank(
+    public ResponseEntity<BankResponseDto> deactivateBank(
             @Parameter(description = "Bank ID", required = true) @PathVariable Long id) {
-        BankResponseDTO bank = bankService.deactivateBank(id);
+        BankResponseDto bank = bankService.deactivateBank(id);
         return ResponseEntity.ok(bank);
     }
 
@@ -121,9 +121,9 @@ public class BankController {
             @ApiResponse(responseCode = "200", description = "Bank activated successfully"),
             @ApiResponse(responseCode = "404", description = "Bank not found")
     })
-    public ResponseEntity<BankResponseDTO> activateBank(
+    public ResponseEntity<BankResponseDto> activateBank(
             @Parameter(description = "Bank ID", required = true) @PathVariable Long id) {
-        BankResponseDTO bank = bankService.activateBank(id);
+        BankResponseDto bank = bankService.activateBank(id);
         return ResponseEntity.ok(bank);
     }
 

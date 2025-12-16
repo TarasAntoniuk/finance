@@ -3,9 +3,7 @@ package com.tarasantoniuk.finance.core.organization.exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.organization.controller.OrganizationController;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlreadyExistsException;
-import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +16,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Тести для помилкових сценаріїв Organization
@@ -50,11 +49,11 @@ class OrganizationErrorTest {
     @Test
     void createOrganization_WhenCountryNotExists_ShouldReturn404() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Org");
         requestDTO.setCountryId(999L);
 
-        when(organizationService.createOrganization(any(OrganizationRequestDTO.class)))
+        when(organizationService.createOrganization(any(OrganizationRequestDto.class)))
                 .thenThrow(CountryNotFoundException.byId(999L));
 
         // When & Then
@@ -68,12 +67,12 @@ class OrganizationErrorTest {
     @Test
     void createOrganization_WhenRegistrationNumberExists_ShouldReturn409() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Org");
         requestDTO.setRegistrationNumber("12345678");
         requestDTO.setCountryId(1L);
 
-        when(organizationService.createOrganization(any(OrganizationRequestDTO.class)))
+        when(organizationService.createOrganization(any(OrganizationRequestDto.class)))
                 .thenThrow(OrganizationAlreadyExistsException.byRegistrationNumber("12345678"));
 
         // When & Then
@@ -87,7 +86,7 @@ class OrganizationErrorTest {
     @Test
     void createOrganization_WhenInvalidEmail_ShouldReturn400() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Org");
         requestDTO.setEmail("invalid-email");
         requestDTO.setCountryId(1L);
@@ -103,7 +102,7 @@ class OrganizationErrorTest {
     @Test
     void createOrganization_WhenMissingRequiredFields_ShouldReturn400() throws Exception {
         // Given - missing name and countryId
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/organizations")
@@ -116,11 +115,11 @@ class OrganizationErrorTest {
     @Test
     void updateOrganization_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Updated Org");
         requestDTO.setCountryId(1L);
 
-        when(organizationService.updateOrganization(any(), any(OrganizationRequestDTO.class)))
+        when(organizationService.updateOrganization(any(), any(OrganizationRequestDto.class)))
                 .thenThrow(OrganizationNotFoundException.byId(999L));
 
         // When & Then

@@ -1,15 +1,14 @@
 package com.tarasantoniuk.finance.core.counterparty.dto;
 
 
-
-import com.tarasantoniuk.finance.core.country.dto.CountryResponseDTO;
+import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 
 import java.time.LocalDateTime;
 
 public class CounterpartyResponseDto extends BaseCounterpartyDto {
 
     private Long id;
-    private CountryResponseDTO country;
+    private CountryResponseDto country;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -25,11 +24,11 @@ public class CounterpartyResponseDto extends BaseCounterpartyDto {
         this.id = id;
     }
 
-    public CountryResponseDTO getCountry() {
+    public CountryResponseDto getCountry() {
         return country;
     }
 
-    public void setCountry(CountryResponseDTO country) {
+    public void setCountry(CountryResponseDto country) {
         this.country = country;
     }
 

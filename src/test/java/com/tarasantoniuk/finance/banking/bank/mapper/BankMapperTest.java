@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.banking.bank.mapper;
 
-import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDTO;
-import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
-import com.tarasantoniuk.finance.banking.bank.mapper.BankMapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.country.entity.Country;
@@ -24,7 +23,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("PrivatBank");
         requestDTO.setSwiftCode("PBANUA2X");
         requestDTO.setCountryId(1L);
@@ -57,7 +56,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullOptionalFields() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("Monobank");
         requestDTO.setSwiftCode("MBNKUA2X");
         requestDTO.setCountryId(2L);
@@ -85,7 +84,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateCountryAndCounterpartyWithOnlyIdSet() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("Test Bank");
         requestDTO.setSwiftCode("TESTUA2X");
         requestDTO.setCountryId(10L);
@@ -133,7 +132,7 @@ class BankMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now.minusDays(5));
 
         // When
-        BankResponseDTO responseDTO = bankMapper.toResponse(entity);
+        BankResponseDto responseDTO = bankMapper.toResponse(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -181,7 +180,7 @@ class BankMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null);
 
         // When
-        BankResponseDTO responseDTO = bankMapper.toResponse(entity);
+        BankResponseDto responseDTO = bankMapper.toResponse(entity);
 
         // Then
         assertThat(responseDTO.getName()).isEqualTo("Test Bank");
@@ -222,7 +221,7 @@ class BankMapperTest extends BaseIntegrationTest {
         List<Bank> banks = Arrays.asList(bank1, bank2);
 
         // When
-        List<BankResponseDTO> responseDTOs = bankMapper.toResponseList(banks);
+        List<BankResponseDto> responseDTOs = bankMapper.toResponseList(banks);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -244,7 +243,7 @@ class BankMapperTest extends BaseIntegrationTest {
         List<Bank> banks = List.of();
 
         // When
-        List<BankResponseDTO> responseDTOs = bankMapper.toResponseList(banks);
+        List<BankResponseDto> responseDTOs = bankMapper.toResponseList(banks);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -276,7 +275,7 @@ class BankMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        BankRequestDTO updateDTO = new BankRequestDTO();
+        BankRequestDto updateDTO = new BankRequestDto();
         updateDTO.setName("New Bank");
         updateDTO.setSwiftCode("NEWBANK2X");
         updateDTO.setCountryId(99L);
@@ -328,7 +327,7 @@ class BankMapperTest extends BaseIntegrationTest {
         existingEntity.setWebsite("www.existing.com");
         existingEntity.setIsActive(true);
 
-        BankRequestDTO updateDTO = new BankRequestDTO();
+        BankRequestDto updateDTO = new BankRequestDto();
         updateDTO.setName("Updated Bank");
         updateDTO.setSwiftCode(null); // ignore
         updateDTO.setCountryId(null); // ignore
@@ -368,7 +367,7 @@ class BankMapperTest extends BaseIntegrationTest {
         existingEntity.setCountry(oldCountry);
         existingEntity.setCounterparty(oldCounterparty);
 
-        BankRequestDTO updateDTO = new BankRequestDTO();
+        BankRequestDto updateDTO = new BankRequestDto();
         updateDTO.setName("Bank");
         updateDTO.setSwiftCode("BANKUA2X");
         updateDTO.setCountryId(10L); // change
@@ -385,7 +384,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentSwiftCodes() {
         // Test Ukrainian bank
-        BankRequestDTO ukrainian = new BankRequestDTO();
+        BankRequestDto ukrainian = new BankRequestDto();
         ukrainian.setName("Ukrainian Bank");
         ukrainian.setSwiftCode("PBANUA2X");
         ukrainian.setCountryId(1L);
@@ -394,7 +393,7 @@ class BankMapperTest extends BaseIntegrationTest {
         assertThat(ukrainianEntity.getSwiftCode()).isEqualTo("PBANUA2X");
 
         // Test US bank
-        BankRequestDTO us = new BankRequestDTO();
+        BankRequestDto us = new BankRequestDto();
         us.setName("US Bank");
         us.setSwiftCode("CHASUS33");
         us.setCountryId(2L);
@@ -403,7 +402,7 @@ class BankMapperTest extends BaseIntegrationTest {
         assertThat(usEntity.getSwiftCode()).isEqualTo("CHASUS33");
 
         // Test German bank
-        BankRequestDTO german = new BankRequestDTO();
+        BankRequestDto german = new BankRequestDto();
         german.setName("German Bank");
         german.setSwiftCode("DEUTDEFF");
         german.setCountryId(3L);
@@ -415,7 +414,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCountryId() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("Test Bank");
         requestDTO.setSwiftCode("TESTUA2X");
         requestDTO.setCountryId(null); // null countryId
@@ -433,7 +432,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCounterpartyId() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("Test Bank");
         requestDTO.setSwiftCode("TESTUA2X");
         requestDTO.setCountryId(1L);
@@ -451,7 +450,7 @@ class BankMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCountryIdAndCounterpartyId() {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("Test Bank");
         requestDTO.setSwiftCode("TESTUA2X");
         requestDTO.setCountryId(null); // null countryId

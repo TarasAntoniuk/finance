@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.banking.bank.mapper;
 
-import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDTO;
-import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.country.entity.Country;
@@ -20,18 +20,18 @@ public interface BankMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "country", source = "countryId", qualifiedByName = "idToCountry")
     @Mapping(target = "counterparty", source = "counterpartyId", qualifiedByName = "idToCounterparty")
-    Bank toEntity(BankRequestDTO request);
+    Bank toEntity(BankRequestDto request);
 
-    BankResponseDTO toResponse(Bank entity);
+    BankResponseDto toResponse(Bank entity);
 
-    List<BankResponseDTO> toResponseList(List<Bank> entities);
+    List<BankResponseDto> toResponseList(List<Bank> entities);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "country", source = "countryId", qualifiedByName = "idToCountry")
     @Mapping(target = "counterparty", source = "counterpartyId", qualifiedByName = "idToCounterparty")
-    void updateEntity(BankRequestDTO request, @MappingTarget Bank entity);
+    void updateEntity(BankRequestDto request, @MappingTarget Bank entity);
 
     @Named("idToCountry")
     default Country idToCountry(Long countryId) {

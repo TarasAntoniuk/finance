@@ -5,8 +5,8 @@ import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateAlreadyExistsException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateNotFoundException;
@@ -19,7 +19,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,8 +49,8 @@ class ExternalExchangeRateServiceTest {
     private ExternalExchangeRateService exchangeRateService;
 
     private ExternalExchangeRate exchangeRate;
-    private ExternalExchangeRateRequestDTO requestDTO;
-    private ExternalExchangeRateResponseDTO responseDTO;
+    private ExternalExchangeRateRequestDto requestDTO;
+    private ExternalExchangeRateResponseDto responseDTO;
     private Currency usd;
     private Currency eur;
 
@@ -70,14 +73,14 @@ class ExternalExchangeRateServiceTest {
         exchangeRate.setSource("ECB");
         exchangeRate.setIsActive(true);
 
-        requestDTO = new ExternalExchangeRateRequestDTO();
+        requestDTO = new ExternalExchangeRateRequestDto();
         requestDTO.setExchangeDate(LocalDate.now());
         requestDTO.setCurrencyFromId(1L);
         requestDTO.setCurrencyToId(2L);
         requestDTO.setRate(BigDecimal.valueOf(0.92));
         requestDTO.setSource("ECB");
 
-        responseDTO = new ExternalExchangeRateResponseDTO();
+        responseDTO = new ExternalExchangeRateResponseDto();
         responseDTO.setId(1L);
         responseDTO.setExchangeDate(LocalDate.now());
         responseDTO.setRate(BigDecimal.valueOf(0.92));
@@ -90,7 +93,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.findByIdWithCurrencies(1L)).thenReturn(Optional.of(exchangeRate));
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        ExternalExchangeRateResponseDTO result = exchangeRateService.getExchangeRateById(1L);
+        ExternalExchangeRateResponseDto result = exchangeRateService.getExchangeRateById(1L);
 
         assertNotNull(result);
         assertEquals(BigDecimal.valueOf(0.92), result.getRate());
@@ -116,7 +119,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.findAllWithCurrencies(any(Pageable.class))).thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        PageResponse<ExternalExchangeRateResponseDTO> result =
+        PageResponse<ExternalExchangeRateResponseDto> result =
                 exchangeRateService.getAllExchangeRates(page, size);
 
         assertNotNull(result);
@@ -146,7 +149,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.findAllWithCurrencies(any(Pageable.class))).thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        PageResponse<ExternalExchangeRateResponseDTO> result =
+        PageResponse<ExternalExchangeRateResponseDto> result =
                 exchangeRateService.getAllExchangeRates(page, size);
 
         assertNotNull(result);
@@ -172,7 +175,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        ExternalExchangeRateResponseDTO result = exchangeRateService.createExchangeRate(requestDTO);
+        ExternalExchangeRateResponseDto result = exchangeRateService.createExchangeRate(requestDTO);
 
         assertNotNull(result);
         verify(exchangeRateRepository, times(1)).save(any(ExternalExchangeRate.class));
@@ -227,7 +230,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        ExternalExchangeRateResponseDTO result = exchangeRateService.updateExchangeRate(1L, requestDTO);
+        ExternalExchangeRateResponseDto result = exchangeRateService.updateExchangeRate(1L, requestDTO);
 
         assertNotNull(result);
         verify(exchangeRateMapper).updateEntityFromDTO(requestDTO, exchangeRate);
@@ -325,7 +328,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        ExternalExchangeRateResponseDTO result = exchangeRateService.activateExchangeRate(1L);
+        ExternalExchangeRateResponseDto result = exchangeRateService.activateExchangeRate(1L);
 
         assertTrue(exchangeRate.getIsActive());
         verify(exchangeRateRepository, times(1)).save(exchangeRate);
@@ -346,7 +349,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateRepository.save(exchangeRate)).thenReturn(exchangeRate);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        ExternalExchangeRateResponseDTO result = exchangeRateService.deactivateExchangeRate(1L);
+        ExternalExchangeRateResponseDto result = exchangeRateService.deactivateExchangeRate(1L);
 
         assertFalse(exchangeRate.getIsActive());
         verify(exchangeRateRepository).save(exchangeRate);
@@ -367,12 +370,12 @@ class ExternalExchangeRateServiceTest {
     void getExchangeRatesByDate_ShouldReturnFilteredRates() {
         LocalDate date = LocalDate.of(2024, 1, 15);
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        List<ExternalExchangeRateResponseDto> responseDTOs = List.of(responseDTO);
 
         when(exchangeRateRepository.findByExchangeDateWithCurrencies(date)).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByDate(date);
+        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDate(date);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -384,12 +387,12 @@ class ExternalExchangeRateServiceTest {
         LocalDate date = LocalDate.of(2024, 1, 15);
         String source = "ECB";
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
-        List<ExternalExchangeRateResponseDTO> responseDTOs = List.of(responseDTO);
+        List<ExternalExchangeRateResponseDto> responseDTOs = List.of(responseDTO);
 
         when(exchangeRateRepository.findByExchangeDateAndSourceWithCurrencies(date, source)).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
-        List<ExternalExchangeRateResponseDTO> result = exchangeRateService.getExchangeRatesByDateAndSource(date, source);
+        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDateAndSource(date, source);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -409,7 +412,7 @@ class ExternalExchangeRateServiceTest {
                 .thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        PageResponse<ExternalExchangeRateResponseDTO> result =
+        PageResponse<ExternalExchangeRateResponseDto> result =
                 exchangeRateService.getExchangeRatesByCurrencyPair(1L, 2L, page, size);
 
         assertNotNull(result);
@@ -432,7 +435,7 @@ class ExternalExchangeRateServiceTest {
                 .thenReturn(ratePage);
         when(exchangeRateMapper.toResponseDTO(exchangeRate)).thenReturn(responseDTO);
 
-        PageResponse<ExternalExchangeRateResponseDTO> result =
+        PageResponse<ExternalExchangeRateResponseDto> result =
                 exchangeRateService.getExchangeRatesByDateRange(startDate, endDate, page, size);
 
         assertNotNull(result);
@@ -448,8 +451,8 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRate rate1 = new ExternalExchangeRate();
         ExternalExchangeRate rate2 = new ExternalExchangeRate();
 
-        ExternalExchangeRateResponseDTO responseDTO1 = new ExternalExchangeRateResponseDTO();
-        ExternalExchangeRateResponseDTO responseDTO2 = new ExternalExchangeRateResponseDTO();
+        ExternalExchangeRateResponseDto responseDTO1 = new ExternalExchangeRateResponseDto();
+        ExternalExchangeRateResponseDto responseDTO2 = new ExternalExchangeRateResponseDto();
 
         when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
         when(exchangeRateRepository.findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId))
@@ -457,7 +460,7 @@ class ExternalExchangeRateServiceTest {
         when(exchangeRateMapper.toResponseDTOList(List.of(rate1, rate2)))
                 .thenReturn(List.of(responseDTO1, responseDTO2));
 
-        List<ExternalExchangeRateResponseDTO> result =
+        List<ExternalExchangeRateResponseDto> result =
                 exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
 
         assertNotNull(result);

@@ -1,7 +1,7 @@
 package com.tarasantoniuk.finance.banking.bank.service;
 
-import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDTO;
-import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bank.exception.BankNotFoundException;
 import com.tarasantoniuk.finance.banking.bank.exception.DuplicateBankException;
@@ -28,7 +28,7 @@ public class BankService {
      * Get all banks with optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load country and counterparty in a single query.
      */
-    public List<BankResponseDTO> getAllBanks() {
+    public List<BankResponseDto> getAllBanks() {
         List<Bank> banks = bankRepository.findAllWithRelations();
         return bankMapper.toResponseList(banks);
     }
@@ -36,7 +36,7 @@ public class BankService {
     /**
      * Get bank by ID with optimized query.
      */
-    public BankResponseDTO getBankById(Long id) {
+    public BankResponseDto getBankById(Long id) {
         Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         return bankMapper.toResponse(bank);
@@ -45,7 +45,7 @@ public class BankService {
     /**
      * Get banks by country with optimized query.
      */
-    public List<BankResponseDTO> getBanksByCountry(Long countryId) {
+    public List<BankResponseDto> getBanksByCountry(Long countryId) {
         List<Bank> banks = bankRepository.findByCountryIdWithRelations(countryId);
         return bankMapper.toResponseList(banks);
     }
@@ -53,7 +53,7 @@ public class BankService {
     /**
      * Get active banks with optimized query.
      */
-    public List<BankResponseDTO> getActiveBanks() {
+    public List<BankResponseDto> getActiveBanks() {
         List<Bank> banks = bankRepository.findActiveWithRelations();
         return bankMapper.toResponseList(banks);
     }
@@ -61,14 +61,14 @@ public class BankService {
     /**
      * Get bank by SWIFT code with optimized query.
      */
-    public BankResponseDTO getBankBySwiftCode(String swiftCode) {
+    public BankResponseDto getBankBySwiftCode(String swiftCode) {
         Bank bank = bankRepository.findBySwiftCodeWithRelations(swiftCode)
                 .orElseThrow(() -> BankNotFoundException.bySwiftCode(swiftCode));
         return bankMapper.toResponse(bank);
     }
 
     @Transactional
-    public BankResponseDTO createBank(BankRequestDTO requestDTO) {
+    public BankResponseDto createBank(BankRequestDto requestDTO) {
         if (bankRepository.findBySwiftCodeWithRelations(requestDTO.getSwiftCode()).isPresent()) {
             throw DuplicateBankException.bySwiftCode(requestDTO.getSwiftCode());
         }
@@ -79,7 +79,7 @@ public class BankService {
     }
 
     @Transactional
-    public BankResponseDTO updateBank(Long id, BankRequestDTO requestDTO) {
+    public BankResponseDto updateBank(Long id, BankRequestDto requestDTO) {
         Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
 
@@ -96,7 +96,7 @@ public class BankService {
     }
 
     @Transactional
-    public BankResponseDTO deactivateBank(Long id) {
+    public BankResponseDto deactivateBank(Long id) {
         Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         bank.setIsActive(false);
@@ -105,7 +105,7 @@ public class BankService {
     }
 
     @Transactional
-    public BankResponseDTO activateBank(Long id) {
+    public BankResponseDto activateBank(Long id) {
         Bank bank = bankRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> BankNotFoundException.byId(id));
         bank.setIsActive(true);

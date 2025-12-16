@@ -39,7 +39,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
      * Find accounting policy by organization and year with relationships loaded.
      *
      * @param organizationId organization ID
-     * @param year year
+     * @param year           year
      * @return optional accounting policy with relationships
      */
     @Query("SELECT ap FROM AccountingPolicy ap " +
@@ -78,7 +78,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
      * Find accounting policies by organization and active status with relationships loaded.
      *
      * @param organizationId organization ID
-     * @param isActive active status
+     * @param isActive       active status
      * @return list of accounting policies with relationships
      */
     @Query("SELECT ap FROM AccountingPolicy ap " +
@@ -105,7 +105,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
      * Find accounting policies by year range with relationships loaded.
      *
      * @param startYear start year
-     * @param endYear end year
+     * @param endYear   end year
      * @return list of accounting policies with relationships
      */
     @Query("SELECT ap FROM AccountingPolicy ap " +

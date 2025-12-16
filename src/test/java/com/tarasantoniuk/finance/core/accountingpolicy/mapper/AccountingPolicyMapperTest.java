@@ -1,10 +1,9 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.mapper;
 
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDTO;
-import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
-import com.tarasantoniuk.finance.core.accountingpolicy.mapper.AccountingPolicyMapper;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
+import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
@@ -28,7 +27,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(2L);
@@ -65,7 +64,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullOptionalFields() {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(5L);
         requestDTO.setYear(2025);
         requestDTO.setCurrencyId(3L);
@@ -97,7 +96,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateOrganizationAndCurrencyWithOnlyIdSet() {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(10L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(20L);
@@ -118,7 +117,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentFiscalYearStartMonths() {
         // Test January (1)
-        AccountingPolicyRequestDTO jan = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto jan = new AccountingPolicyRequestDto();
         jan.setOrganizationId(1L);
         jan.setYear(2024);
         jan.setCurrencyId(1L);
@@ -128,7 +127,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(janEntity.getFiscalYearStartMonth()).isEqualTo(1);
 
         // Test July (7)
-        AccountingPolicyRequestDTO jul = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto jul = new AccountingPolicyRequestDto();
         jul.setOrganizationId(1L);
         jul.setYear(2024);
         jul.setCurrencyId(1L);
@@ -138,7 +137,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(julEntity.getFiscalYearStartMonth()).isEqualTo(7);
 
         // Test December (12)
-        AccountingPolicyRequestDTO dec = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto dec = new AccountingPolicyRequestDto();
         dec.setOrganizationId(1L);
         dec.setYear(2024);
         dec.setCurrencyId(1L);
@@ -151,7 +150,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentAccountingMethods() {
         // Test different depreciation methods
-        AccountingPolicyRequestDTO dto1 = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto dto1 = new AccountingPolicyRequestDto();
         dto1.setOrganizationId(1L);
         dto1.setYear(2024);
         dto1.setCurrencyId(1L);
@@ -161,7 +160,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(entity1.getDepreciationMethod()).isEqualTo("DECLINING_BALANCE");
 
         // Test different inventory methods
-        AccountingPolicyRequestDTO dto2 = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto dto2 = new AccountingPolicyRequestDto();
         dto2.setOrganizationId(1L);
         dto2.setYear(2024);
         dto2.setCurrencyId(1L);
@@ -171,7 +170,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(entity2.getInventoryValuationMethod()).isEqualTo("WEIGHTED_AVERAGE");
 
         // Test cash-based revenue recognition
-        AccountingPolicyRequestDTO dto3 = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto dto3 = new AccountingPolicyRequestDto();
         dto3.setOrganizationId(1L);
         dto3.setYear(2024);
         dto3.setCurrencyId(1L);
@@ -181,7 +180,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(entity3.getRevenueRecognitionMethod()).isEqualTo("CASH");
 
         // Test payment-based VAT
-        AccountingPolicyRequestDTO dto4 = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto dto4 = new AccountingPolicyRequestDto();
         dto4.setOrganizationId(1L);
         dto4.setYear(2024);
         dto4.setCurrencyId(1L);
@@ -236,7 +235,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now.minusDays(5));
 
         // When
-        AccountingPolicyResponseDTO responseDTO = accountingPolicyMapper.toResponseDTO(entity);
+        AccountingPolicyResponseDto responseDTO = accountingPolicyMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -298,7 +297,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null);
 
         // When
-        AccountingPolicyResponseDTO responseDTO = accountingPolicyMapper.toResponseDTO(entity);
+        AccountingPolicyResponseDto responseDTO = accountingPolicyMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getYear()).isEqualTo(2025);
@@ -348,7 +347,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         List<AccountingPolicy> policies = Arrays.asList(policy1, policy2);
 
         // When
-        List<AccountingPolicyResponseDTO> responseDTOs = accountingPolicyMapper.toResponseDTOList(policies);
+        List<AccountingPolicyResponseDto> responseDTOs = accountingPolicyMapper.toResponseDTOList(policies);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -370,7 +369,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         List<AccountingPolicy> policies = List.of();
 
         // When
-        List<AccountingPolicyResponseDTO> responseDTOs = accountingPolicyMapper.toResponseDTOList(policies);
+        List<AccountingPolicyResponseDto> responseDTOs = accountingPolicyMapper.toResponseDTOList(policies);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -405,7 +404,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        AccountingPolicyRequestDTO updateDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto updateDTO = new AccountingPolicyRequestDto();
         updateDTO.setOrganizationId(99L);
         updateDTO.setYear(2024);
         updateDTO.setCurrencyId(88L);
@@ -463,7 +462,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setIsActive(true);
         existingEntity.setNotes("Existing notes");
 
-        AccountingPolicyRequestDTO updateDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto updateDTO = new AccountingPolicyRequestDto();
         updateDTO.setOrganizationId(null); // ignore
         updateDTO.setYear(2025); // update
         updateDTO.setCurrencyId(null); // ignore
@@ -506,7 +505,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setYear(2024);
         existingEntity.setCurrency(oldCurrency);
 
-        AccountingPolicyRequestDTO updateDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto updateDTO = new AccountingPolicyRequestDto();
         updateDTO.setOrganizationId(10L); // change
         updateDTO.setYear(2024);
         updateDTO.setCurrencyId(20L); // change
@@ -541,7 +540,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setIsActive(true);
         existingEntity.setNotes("Old notes");
 
-        AccountingPolicyRequestDTO updateDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto updateDTO = new AccountingPolicyRequestDto();
         updateDTO.setOrganizationId(10L); // keep same
         updateDTO.setYear(2024); // update
         updateDTO.setCurrencyId(null); // ignore
@@ -572,7 +571,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleDifferentYears() {
         // Test past year
-        AccountingPolicyRequestDTO past = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto past = new AccountingPolicyRequestDto();
         past.setOrganizationId(1L);
         past.setYear(2020);
         past.setCurrencyId(1L);
@@ -581,7 +580,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(pastEntity.getYear()).isEqualTo(2020);
 
         // Test current year
-        AccountingPolicyRequestDTO current = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto current = new AccountingPolicyRequestDto();
         current.setOrganizationId(1L);
         current.setYear(2024);
         current.setCurrencyId(1L);
@@ -590,7 +589,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(currentEntity.getYear()).isEqualTo(2024);
 
         // Test future year
-        AccountingPolicyRequestDTO future = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto future = new AccountingPolicyRequestDto();
         future.setOrganizationId(1L);
         future.setYear(2030);
         future.setCurrencyId(1L);

@@ -1,9 +1,8 @@
 package com.tarasantoniuk.finance.banking.bank.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tarasantoniuk.finance.banking.bank.controller.BankController;
-import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDTO;
-import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDTO;
+import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
+import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.service.BankService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +35,17 @@ class BankControllerTest {
     @Test
     void getAllBanks_ShouldReturnListOfBanks() throws Exception {
         // Given
-        BankResponseDTO bank1 = new BankResponseDTO();
+        BankResponseDto bank1 = new BankResponseDto();
         bank1.setId(1L);
         bank1.setName("PrivatBank");
         bank1.setSwiftCode("PBANUA2X");
 
-        BankResponseDTO bank2 = new BankResponseDTO();
+        BankResponseDto bank2 = new BankResponseDto();
         bank2.setId(2L);
         bank2.setName("Monobank");
         bank2.setSwiftCode("MBNKUA2X");
 
-        List<BankResponseDTO> banks = Arrays.asList(bank1, bank2);
+        List<BankResponseDto> banks = Arrays.asList(bank1, bank2);
         when(bankService.getAllBanks()).thenReturn(banks);
 
         // When & Then
@@ -61,7 +60,7 @@ class BankControllerTest {
     @Test
     void getBankById_WhenExists_ShouldReturnBank() throws Exception {
         // Given
-        BankResponseDTO bank = new BankResponseDTO();
+        BankResponseDto bank = new BankResponseDto();
         bank.setId(1L);
         bank.setName("PrivatBank");
         bank.setSwiftCode("PBANUA2X");
@@ -79,7 +78,7 @@ class BankControllerTest {
     @Test
     void getBanksByCountry_ShouldReturnFilteredList() throws Exception {
         // Given
-        BankResponseDTO bank = new BankResponseDTO();
+        BankResponseDto bank = new BankResponseDto();
         bank.setId(1L);
         bank.setName("PrivatBank");
 
@@ -95,7 +94,7 @@ class BankControllerTest {
     @Test
     void getActiveBanks_ShouldReturnActiveBanksOnly() throws Exception {
         // Given
-        BankResponseDTO bank = new BankResponseDTO();
+        BankResponseDto bank = new BankResponseDto();
         bank.setId(1L);
         bank.setName("PrivatBank");
         bank.setIsActive(true);
@@ -112,7 +111,7 @@ class BankControllerTest {
     @Test
     void getBankBySwiftCode_WhenExists_ShouldReturnBank() throws Exception {
         // Given
-        BankResponseDTO bank = new BankResponseDTO();
+        BankResponseDto bank = new BankResponseDto();
         bank.setId(1L);
         bank.setName("PrivatBank");
         bank.setSwiftCode("PBANUA2X");
@@ -128,18 +127,18 @@ class BankControllerTest {
     @Test
     void createBank_WhenValid_ShouldReturnCreated() throws Exception {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("PrivatBank");
         requestDTO.setSwiftCode("PBANUA2X");
         requestDTO.setCountryId(1L);
         requestDTO.setIsActive(true);
 
-        BankResponseDTO responseDTO = new BankResponseDTO();
+        BankResponseDto responseDTO = new BankResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("PrivatBank");
         responseDTO.setSwiftCode("PBANUA2X");
 
-        when(bankService.createBank(any(BankRequestDTO.class))).thenReturn(responseDTO);
+        when(bankService.createBank(any(BankRequestDto.class))).thenReturn(responseDTO);
 
         // When & Then
         mockMvc.perform(post("/api/banks")
@@ -154,7 +153,7 @@ class BankControllerTest {
     @Test
     void createBank_WhenInvalid_ShouldReturnBadRequest() throws Exception {
         // Given - missing required fields
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
 
         // When & Then
         mockMvc.perform(post("/api/banks")
@@ -166,17 +165,17 @@ class BankControllerTest {
     @Test
     void updateBank_WhenValid_ShouldReturnUpdated() throws Exception {
         // Given
-        BankRequestDTO requestDTO = new BankRequestDTO();
+        BankRequestDto requestDTO = new BankRequestDto();
         requestDTO.setName("PrivatBank Updated");
         requestDTO.setSwiftCode("PBANUA2X");
         requestDTO.setCountryId(1L);
 
-        BankResponseDTO responseDTO = new BankResponseDTO();
+        BankResponseDto responseDTO = new BankResponseDto();
         responseDTO.setId(1L);
         responseDTO.setName("PrivatBank Updated");
         responseDTO.setSwiftCode("PBANUA2X");
 
-        when(bankService.updateBank(anyLong(), any(BankRequestDTO.class))).thenReturn(responseDTO);
+        when(bankService.updateBank(anyLong(), any(BankRequestDto.class))).thenReturn(responseDTO);
 
         // When & Then
         mockMvc.perform(put("/api/banks/1")
@@ -189,7 +188,7 @@ class BankControllerTest {
     @Test
     void activateBank_WhenExists_ShouldReturnActivated() throws Exception {
         // Given
-        BankResponseDTO responseDTO = new BankResponseDTO();
+        BankResponseDto responseDTO = new BankResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(true);
 
@@ -204,7 +203,7 @@ class BankControllerTest {
     @Test
     void deactivateBank_WhenExists_ShouldReturnDeactivated() throws Exception {
         // Given
-        BankResponseDTO responseDTO = new BankResponseDTO();
+        BankResponseDto responseDTO = new BankResponseDto();
         responseDTO.setId(1L);
         responseDTO.setIsActive(false);
 

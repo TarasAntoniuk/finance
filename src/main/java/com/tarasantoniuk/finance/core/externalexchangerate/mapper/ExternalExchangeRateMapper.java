@@ -2,8 +2,8 @@ package com.tarasantoniuk.finance.core.externalexchangerate.mapper;
 
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDTO;
-import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDTO;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
+import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
 import org.mapstruct.*;
 
@@ -19,18 +19,18 @@ public interface ExternalExchangeRateMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "currencyFrom", source = "currencyFromId", qualifiedByName = "idToCurrencyFrom")
     @Mapping(target = "currencyTo", source = "currencyToId", qualifiedByName = "idToCurrencyTo")
-    ExternalExchangeRate toEntity(ExternalExchangeRateRequestDTO requestDTO);
+    ExternalExchangeRate toEntity(ExternalExchangeRateRequestDto requestDTO);
 
-    ExternalExchangeRateResponseDTO toResponseDTO(ExternalExchangeRate exchangeRate);
+    ExternalExchangeRateResponseDto toResponseDTO(ExternalExchangeRate exchangeRate);
 
-    List<ExternalExchangeRateResponseDTO> toResponseDTOList(List<ExternalExchangeRate> exchangeRates);
+    List<ExternalExchangeRateResponseDto> toResponseDTOList(List<ExternalExchangeRate> exchangeRates);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "currencyFrom", source = "currencyFromId", qualifiedByName = "idToCurrencyFrom")
     @Mapping(target = "currencyTo", source = "currencyToId", qualifiedByName = "idToCurrencyTo")
-    void updateEntityFromDTO(ExternalExchangeRateRequestDTO requestDTO,
+    void updateEntityFromDTO(ExternalExchangeRateRequestDto requestDTO,
                              @MappingTarget ExternalExchangeRate exchangeRate);
 
     @Named("idToCurrencyFrom")

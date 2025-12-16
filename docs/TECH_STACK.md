@@ -213,16 +213,14 @@ jacoco-maven-plugin (0.8.10)
 
 ## Planned Technology Additions
 
-See [FUTURE_PLANS.md](FUTURE_PLANS.md) for:
 - Spring Security
 - Spring Scheduler
 - Redis (caching)
 - Liquibase/Flyway (database migrations)
-- Frontend framework
 - Kubernetes
 - Monitoring tools (Prometheus, Grafana)
 
 ---
 
-**Document Version**: 0.0.1  
-**Last Updated**: October 2025
+**Document Version**: 0.0.4  
+**Last Updated**: November 2025

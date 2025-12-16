@@ -1,13 +1,12 @@
 package com.tarasantoniuk.finance.core.currency.service;
 
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDTO;
-import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDTO;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
+import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,8 +33,8 @@ class CurrencyServiceTest {
     private CurrencyService currencyService;
 
     private Currency currency;
-    private CurrencyRequestDTO requestDTO;
-    private CurrencyResponseDTO responseDTO;
+    private CurrencyRequestDto requestDTO;
+    private CurrencyResponseDto responseDTO;
 
     @BeforeEach
     void setUp() {
@@ -48,14 +47,14 @@ class CurrencyServiceTest {
         currency.setMinorUnit(2);
         currency.setIsActive(true);
 
-        requestDTO = new CurrencyRequestDTO();
+        requestDTO = new CurrencyRequestDto();
         requestDTO.setCode("USD");
         requestDTO.setNumericCode("840");
         requestDTO.setName("US Dollar");
         requestDTO.setSymbol("$");
         requestDTO.setMinorUnit(2);
 
-        responseDTO = new CurrencyResponseDTO();
+        responseDTO = new CurrencyResponseDto();
         responseDTO.setId(1L);
         responseDTO.setCode("USD");
         responseDTO.setNumericCode("840");
@@ -68,7 +67,7 @@ class CurrencyServiceTest {
         when(currencyRepository.findById(1L)).thenReturn(Optional.of(currency));
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.getCurrencyById(1L);
+        CurrencyResponseDto result = currencyService.getCurrencyById(1L);
 
         assertNotNull(result);
         assertEquals("USD", result.getCode());
@@ -87,7 +86,7 @@ class CurrencyServiceTest {
         when(currencyRepository.findByCode("USD")).thenReturn(Optional.of(currency));
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.getCurrencyByCode("USD");
+        CurrencyResponseDto result = currencyService.getCurrencyByCode("USD");
 
         assertNotNull(result);
         assertEquals("USD", result.getCode());
@@ -101,7 +100,7 @@ class CurrencyServiceTest {
         when(currencyRepository.save(any(Currency.class))).thenReturn(currency);
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.createCurrency(requestDTO);
+        CurrencyResponseDto result = currencyService.createCurrency(requestDTO);
 
         assertNotNull(result);
         verify(currencyRepository, times(1)).save(any(Currency.class));
@@ -156,12 +155,12 @@ class CurrencyServiceTest {
     @Test
     void getAllCurrencies_ShouldReturnAllCurrencies() {
         List<Currency> currencies = List.of(currency);
-        List<CurrencyResponseDTO> responseDTOs = List.of(responseDTO);
+        List<CurrencyResponseDto> responseDTOs = List.of(responseDTO);
 
         when(currencyRepository.findAll()).thenReturn(currencies);
         when(currencyMapper.toResponseDTOList(currencies)).thenReturn(responseDTOs);
 
-        List<CurrencyResponseDTO> result = currencyService.getAllCurrencies();
+        List<CurrencyResponseDto> result = currencyService.getAllCurrencies();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -172,12 +171,12 @@ class CurrencyServiceTest {
     @Test
     void getActiveCurrencies_ShouldReturnOnlyActiveCurrencies() {
         List<Currency> activeCurrencies = List.of(currency);
-        List<CurrencyResponseDTO> responseDTOs = List.of(responseDTO);
+        List<CurrencyResponseDto> responseDTOs = List.of(responseDTO);
 
         when(currencyRepository.findByIsActive(true)).thenReturn(activeCurrencies);
         when(currencyMapper.toResponseDTOList(activeCurrencies)).thenReturn(responseDTOs);
 
-        List<CurrencyResponseDTO> result = currencyService.getActiveCurrencies();
+        List<CurrencyResponseDto> result = currencyService.getActiveCurrencies();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -198,7 +197,7 @@ class CurrencyServiceTest {
         when(currencyRepository.findByCode("USD")).thenReturn(Optional.of(currency));
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.getCurrencyByCode("usd");
+        CurrencyResponseDto result = currencyService.getCurrencyByCode("usd");
 
         assertNotNull(result);
         verify(currencyRepository).findByCode("USD");
@@ -209,7 +208,7 @@ class CurrencyServiceTest {
         when(currencyRepository.findByNumericCode("840")).thenReturn(Optional.of(currency));
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.getCurrencyByNumericCode("840");
+        CurrencyResponseDto result = currencyService.getCurrencyByNumericCode("840");
 
         assertNotNull(result);
         assertEquals("840", result.getNumericCode());
@@ -227,12 +226,12 @@ class CurrencyServiceTest {
     @Test
     void searchCurrenciesByName_ShouldReturnMatchingCurrencies() {
         List<Currency> currencies = List.of(currency);
-        List<CurrencyResponseDTO> responseDTOs = List.of(responseDTO);
+        List<CurrencyResponseDto> responseDTOs = List.of(responseDTO);
 
         when(currencyRepository.findByNameContainingIgnoreCase("Dollar")).thenReturn(currencies);
         when(currencyMapper.toResponseDTOList(currencies)).thenReturn(responseDTOs);
 
-        List<CurrencyResponseDTO> result = currencyService.searchCurrenciesByName("Dollar");
+        List<CurrencyResponseDto> result = currencyService.searchCurrenciesByName("Dollar");
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -244,7 +243,7 @@ class CurrencyServiceTest {
         when(currencyRepository.findByNameContainingIgnoreCase("NonExistent")).thenReturn(List.of());
         when(currencyMapper.toResponseDTOList(List.of())).thenReturn(List.of());
 
-        List<CurrencyResponseDTO> result = currencyService.searchCurrenciesByName("NonExistent");
+        List<CurrencyResponseDto> result = currencyService.searchCurrenciesByName("NonExistent");
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -259,7 +258,7 @@ class CurrencyServiceTest {
         when(currencyRepository.save(any(Currency.class))).thenReturn(currency);
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.createCurrency(requestDTO);
+        CurrencyResponseDto result = currencyService.createCurrency(requestDTO);
 
         assertNotNull(result);
         verify(currencyRepository).existsByCode("USD");
@@ -271,7 +270,7 @@ class CurrencyServiceTest {
         when(currencyRepository.save(currency)).thenReturn(currency);
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.updateCurrency(1L, requestDTO);
+        CurrencyResponseDto result = currencyService.updateCurrency(1L, requestDTO);
 
         assertNotNull(result);
         verify(currencyMapper).updateEntityFromDTO(requestDTO, currency);
@@ -319,7 +318,7 @@ class CurrencyServiceTest {
         when(currencyRepository.save(currency)).thenReturn(currency);
         when(currencyMapper.toResponseDTO(currency)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.updateCurrency(1L, requestDTO);
+        CurrencyResponseDto result = currencyService.updateCurrency(1L, requestDTO);
 
         assertNotNull(result);
         verify(currencyRepository, never()).existsByCode(anyString());
@@ -339,7 +338,7 @@ class CurrencyServiceTest {
         when(currencyRepository.save(currency2)).thenReturn(currency2);
         when(currencyMapper.toResponseDTO(currency2)).thenReturn(responseDTO);
 
-        CurrencyResponseDTO result = currencyService.updateCurrency(1L, requestDTO);
+        CurrencyResponseDto result = currencyService.updateCurrency(1L, requestDTO);
 
         assertNotNull(result);
         verify(currencyRepository).existsByCode("EUR");

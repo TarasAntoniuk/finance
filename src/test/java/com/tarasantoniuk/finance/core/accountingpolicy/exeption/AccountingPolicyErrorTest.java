@@ -1,14 +1,13 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.exeption;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.accountingpolicy.controller.AccountingPolicyController;
-import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDTO;
-
+import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyNotFoundException;
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -21,7 +20,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Тести для помилкових сценаріїв AccountingPolicy
@@ -67,12 +67,12 @@ class AccountingPolicyErrorTest {
     @Test
     void createAccountingPolicy_WhenOrganizationNotExists_ShouldReturn404() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(999L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
 
-        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDto.class)))
                 .thenThrow(OrganizationNotFoundException.byId(999L));
 
         // When & Then
@@ -86,12 +86,12 @@ class AccountingPolicyErrorTest {
     @Test
     void createAccountingPolicy_WhenCurrencyNotExists_ShouldReturn404() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(999L);
 
-        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDto.class)))
                 .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then
@@ -105,12 +105,12 @@ class AccountingPolicyErrorTest {
     @Test
     void createAccountingPolicy_WhenAlreadyExists_ShouldReturn409() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
 
-        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.createAccountingPolicy(any(AccountingPolicyRequestDto.class)))
                 .thenThrow(AccountingPolicyAlreadyExistsException.forOrganizationAndYear(1L, 2024));
 
         // When & Then
@@ -126,7 +126,7 @@ class AccountingPolicyErrorTest {
     @Test
     void createAccountingPolicy_WhenInvalidYear_ShouldReturn400() throws Exception {
         // Given - year must be between 1900 and 2100
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(1800);
         requestDTO.setCurrencyId(1L);
@@ -142,7 +142,7 @@ class AccountingPolicyErrorTest {
     @Test
     void createAccountingPolicy_WhenInvalidFiscalMonth_ShouldReturn400() throws Exception {
         // Given - fiscal month must be 1-12
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
@@ -158,12 +158,12 @@ class AccountingPolicyErrorTest {
     @Test
     void updateAccountingPolicy_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        AccountingPolicyRequestDTO requestDTO = new AccountingPolicyRequestDTO();
+        AccountingPolicyRequestDto requestDTO = new AccountingPolicyRequestDto();
         requestDTO.setOrganizationId(1L);
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
 
-        when(accountingPolicyService.updateAccountingPolicy(anyLong(), any(AccountingPolicyRequestDTO.class)))
+        when(accountingPolicyService.updateAccountingPolicy(anyLong(), any(AccountingPolicyRequestDto.class)))
                 .thenThrow(AccountingPolicyNotFoundException.byId(999L));
 
         // When & Then

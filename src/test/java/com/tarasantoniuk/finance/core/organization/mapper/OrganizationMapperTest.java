@@ -3,10 +3,9 @@ package com.tarasantoniuk.finance.core.organization.mapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDTO;
-import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDTO;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
+import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
-import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -25,7 +24,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldMapAllFieldsFromRequestDTO() {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Tech Corp Ltd");
         requestDTO.setRegistrationNumber("12345678");
         requestDTO.setVatNumber("UA123456789");
@@ -55,7 +54,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullOptionalFields() {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Minimal Organization");
         requestDTO.setRegistrationNumber(null);
         requestDTO.setVatNumber(null);
@@ -82,7 +81,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldCreateCountryWithOnlyIdSet() {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Org");
         requestDTO.setCountryId(10L);
 
@@ -133,7 +132,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(now.minusDays(2));
 
         // When
-        OrganizationResponseDTO responseDTO = organizationMapper.toResponseDTO(entity);
+        OrganizationResponseDto responseDTO = organizationMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO).isNotNull();
@@ -185,7 +184,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         entity.setUpdatedAt(null);
 
         // When
-        OrganizationResponseDTO responseDTO = organizationMapper.toResponseDTO(entity);
+        OrganizationResponseDto responseDTO = organizationMapper.toResponseDTO(entity);
 
         // Then
         assertThat(responseDTO.getName()).isEqualTo("Sparse Organization");
@@ -229,7 +228,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         List<Organization> organizations = Arrays.asList(org1, org2);
 
         // When
-        List<OrganizationResponseDTO> responseDTOs = organizationMapper.toResponseDTOList(organizations);
+        List<OrganizationResponseDto> responseDTOs = organizationMapper.toResponseDTOList(organizations);
 
         // Then
         assertThat(responseDTOs).hasSize(2);
@@ -253,7 +252,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         List<Organization> organizations = Arrays.asList();
 
         // When
-        List<OrganizationResponseDTO> responseDTOs = organizationMapper.toResponseDTOList(organizations);
+        List<OrganizationResponseDto> responseDTOs = organizationMapper.toResponseDTOList(organizations);
 
         // Then
         assertThat(responseDTOs).isEmpty();
@@ -281,7 +280,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         existingEntity.setCreatedAt(originalCreatedAt);
         existingEntity.setUpdatedAt(originalUpdatedAt);
 
-        OrganizationRequestDTO updateDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto updateDTO = new OrganizationRequestDto();
         updateDTO.setName("New Organization Name");
         updateDTO.setRegistrationNumber("NEW-REG-999");
         updateDTO.setVatNumber("NEW-VAT-888");
@@ -326,7 +325,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         existingEntity.setPhone("+380111111111");
         existingEntity.setCountry(existingCountry);
 
-        OrganizationRequestDTO updateDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto updateDTO = new OrganizationRequestDto();
         updateDTO.setName("Updated Name Only"); // update this
         updateDTO.setRegistrationNumber(null); // should be ignored
         updateDTO.setVatNumber(null); // should be ignored
@@ -362,7 +361,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         existingEntity.setRegistrationNumber("MIG-123");
         existingEntity.setCountry(oldCountry);
 
-        OrganizationRequestDTO updateDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto updateDTO = new OrganizationRequestDto();
         updateDTO.setName("Migration Corp");
         updateDTO.setRegistrationNumber("MIG-123");
         updateDTO.setCountryId(2L); // change country
@@ -391,7 +390,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
         existingEntity.setPhone("+380999999999");
         existingEntity.setCountry(existingCountry);
 
-        OrganizationRequestDTO updateDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto updateDTO = new OrganizationRequestDto();
         updateDTO.setName("Partially Updated Org"); // update
         updateDTO.setRegistrationNumber("PART-999"); // update
         updateDTO.setVatNumber(null); // ignore
@@ -416,7 +415,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleMinimalRequiredFields() {
         // Given - only required fields
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Minimal Org");
         requestDTO.setCountryId(7L);
 
@@ -437,7 +436,7 @@ class OrganizationMapperTest extends BaseIntegrationTest {
     @Test
     void toEntity_shouldHandleNullCountryId() {
         // Given
-        OrganizationRequestDTO requestDTO = new OrganizationRequestDTO();
+        OrganizationRequestDto requestDTO = new OrganizationRequestDto();
         requestDTO.setName("Test Org");
         requestDTO.setCountryId(null); // ← null!
 
