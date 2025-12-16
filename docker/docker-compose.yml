@@ -7,7 +7,6 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: stable
-      # Connect to shared PostgreSQL
       SPRING_DATASOURCE_URL: jdbc:postgresql://shared-postgres:5432/finance
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: ${FINANCE_DB_PASSWORD}
@@ -16,7 +15,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--header=Host: localhost", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
