@@ -207,6 +207,17 @@ public class BankAccountTransactionService {
     }
 
     /**
+     * Find active (non-reversed) transaction event for document
+     * Returns only the most recent event that is not marked as reversed
+     */
+    @Transactional(readOnly = true)
+    public BankAccountTransactionEvent findActiveByDocument(String documentType, Long documentId) {
+        return transactionEventRepository.findActiveByDocumentTypeAndDocumentId(documentType, documentId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active transaction event not found for document: " + documentType + " #" + documentId));
+    }
+
+    /**
      * Check if event exists for document (only non-reversed)
      */
     @Transactional(readOnly = true)
@@ -215,15 +226,25 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Reverse transaction (mark as reversed)
+     * Reverse transaction and mark it as reversed.
+     * Establishes bidirectional links between the original event and its reversal event
+     * to maintain a complete audit trail of transaction reversals.
      */
-    public void reverseTransaction(Long eventId, Long reversedByEventId) {
-        BankAccountTransactionEvent event = transactionEventRepository.findById(eventId)
+    public void reverseTransaction(Long eventId, Long reversalEventId) {
+        BankAccountTransactionEvent originalEvent = transactionEventRepository.findById(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction event not found with id: " + eventId));
 
-        event.setIsReversed(true);
-        event.setReversedByEventId(reversedByEventId);
-        transactionEventRepository.save(event);
+        BankAccountTransactionEvent reversalEvent = transactionEventRepository.findById(reversalEventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Reversal event not found with id: " + reversalEventId));
+
+        // Mark original event as reversed
+        originalEvent.setIsReversed(true);
+        originalEvent.setReversedByEventId(reversalEventId);
+
+        // Reversal event теж знає про оригінальний event (опціонально, для tracking)
+        reversalEvent.setReversedByEventId(eventId);
+
+        transactionEventRepository.saveAll(List.of(originalEvent, reversalEvent));
     }
 
     /**

@@ -80,6 +80,23 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
     );
 
     /**
+     * Find active (non-reversed) transaction event by document type and ID
+     * Uses explicit query to ensure only one event is returned
+     */
+    @Query("""
+    SELECT te FROM BankAccountTransactionEvent te
+    WHERE te.documentType = :documentType
+    AND te.documentId = :documentId
+    AND te.isReversed = false
+    ORDER BY te.createdAt DESC
+    LIMIT 1
+    """)
+    Optional<BankAccountTransactionEvent> findActiveByDocumentTypeAndDocumentId(
+            @Param("documentType") String documentType,
+            @Param("documentId") Long documentId);
+
+
+    /**
      * Find all events by document type and document ID (for transfers there might be 2 events)
      */
     @Query("""

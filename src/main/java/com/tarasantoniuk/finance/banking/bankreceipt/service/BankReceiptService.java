@@ -243,10 +243,16 @@ public class BankReceiptService {
             );
         }
 
-        // Find and reverse the transaction event
-        var event = transactionService.findByDocument("BankReceipt", id);
+        // Find the active (non-reversed) transaction event
+        var originalEvent = transactionService.findActiveByDocument("BankReceipt", id);
 
         // Create reversal event (CREDIT - reverse the DEBIT)
+        // Use safe description: if receipt description is null, use a generic message
+        String reversalDescription = "Reversal of receipt #" + receipt.getId();
+        if (receipt.getDescription() != null && !receipt.getDescription().isBlank()) {
+            reversalDescription = "Reversal of: " + receipt.getDescription();
+        }
+
         var reversalEvent = transactionService.createPaymentEvent(
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
@@ -255,11 +261,11 @@ public class BankReceiptService {
                 receipt.getAmount(),
                 "BankReceiptReversal",
                 receipt.getId(),
-                "Reversal of: " + receipt.getDescription()
+                reversalDescription
         );
 
-        // Mark original event as reversed
-        transactionService.reverseTransaction(event.getId(), reversalEvent.getId());
+        // Mark original event as reversed and create bidirectional link
+        transactionService.reverseTransaction(originalEvent.getId(), reversalEvent.getId());
 
         // Update document status
         receipt.setStatus(DocumentStatus.DRAFT);
