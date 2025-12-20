@@ -327,9 +327,7 @@ class BankReceiptServiceTest {
         when(bankReceiptRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(receipt));
 
         // When & Then
-        assertThrows(InvalidDocumentStatusException.class, () -> {
-            bankReceiptService.delete(1L);
-        });
+        assertThrows(InvalidDocumentStatusException.class, () -> bankReceiptService.delete(1L));
 
         verify(bankReceiptRepository, never()).delete(any());
     }
@@ -420,7 +418,8 @@ class BankReceiptServiceTest {
 
         BankAccountTransactionEvent originalEvent = new BankAccountTransactionEvent();
         originalEvent.setId(1L);
-        when(transactionService.findByDocument("BankReceipt", receipt.getId()))
+        // Change from findByDocument to findActiveByDocument
+        when(transactionService.findActiveByDocument("BankReceipt", receipt.getId()))
                 .thenReturn(originalEvent);
 
         BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
@@ -441,7 +440,7 @@ class BankReceiptServiceTest {
 
         // Then
         assertNotNull(result);
-        verify(transactionService).findByDocument("BankReceipt", receipt.getId());
+        verify(transactionService).findActiveByDocument("BankReceipt", receipt.getId());
         verify(transactionService).createPaymentEvent(
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
