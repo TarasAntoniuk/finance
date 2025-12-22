@@ -1,9 +1,16 @@
 package com.tarasantoniuk.finance.common.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.List;
 
+@Schema(description = "Paginated response wrapper containing a list of items and pagination metadata")
 public class PageResponse<T> {
+
+    @Schema(description = "List of items on the current page")
     private List<T> content;
+
+    @Schema(description = "Pagination metadata")
     private PageMetadata metadata;
 
     public PageResponse() {
