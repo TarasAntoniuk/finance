@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,12 +22,12 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
             LEFT JOIN FETCH e.organization
             LEFT JOIN FETCH e.currency
             WHERE e.bankAccount.id = :bankAccountId
-            ORDER BY e.transactionDate ASC, e.createdAt ASC
+            ORDER BY e.transactionDateTime ASC, e.createdAt ASC
             """)
     List<BankAccountTransactionEvent> findByBankAccountIdWithRelations(@Param("bankAccountId") Long bankAccountId);
 
     /**
-     * Find events for a bank account within date range with all relations loaded
+     * Find events for a bank account within datetime range with all relations loaded
      */
     @Query("""
             SELECT e FROM BankAccountTransactionEvent e
@@ -35,18 +35,18 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
             LEFT JOIN FETCH e.organization
             LEFT JOIN FETCH e.currency
             WHERE e.bankAccount.id = :bankAccountId
-            AND e.transactionDate BETWEEN :startDate AND :endDate
+            AND e.transactionDateTime BETWEEN :startDateTime AND :endDateTime
             AND e.isReversed = false
-            ORDER BY e.transactionDate ASC, e.createdAt ASC
+            ORDER BY e.transactionDateTime ASC, e.createdAt ASC
             """)
-    List<BankAccountTransactionEvent> findByBankAccountIdAndDateRangeWithRelations(
+    List<BankAccountTransactionEvent> findByBankAccountIdAndDateTimeRangeWithRelations(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
     );
 
     /**
-     * Find events for a bank account after specific date with all relations loaded
+     * Find events for a bank account up to specific datetime (inclusive)
      */
     @Query("""
             SELECT e FROM BankAccountTransactionEvent e
@@ -54,13 +54,31 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
             LEFT JOIN FETCH e.organization
             LEFT JOIN FETCH e.currency
             WHERE e.bankAccount.id = :bankAccountId
-            AND e.transactionDate >= :afterDate
+            AND e.transactionDateTime <= :untilDateTime
             AND e.isReversed = false
-            ORDER BY e.transactionDate ASC, e.createdAt ASC
+            ORDER BY e.transactionDateTime ASC, e.createdAt ASC
             """)
-    List<BankAccountTransactionEvent> findByBankAccountIdAfterDateWithRelations(
+    List<BankAccountTransactionEvent> findByBankAccountIdUntilDateTimeWithRelations(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("afterDate") LocalDate afterDate
+            @Param("untilDateTime") LocalDateTime untilDateTime
+    );
+
+    /**
+     * Find events for a bank account after specific datetime with all relations loaded
+     */
+    @Query("""
+            SELECT e FROM BankAccountTransactionEvent e
+            LEFT JOIN FETCH e.bankAccount
+            LEFT JOIN FETCH e.organization
+            LEFT JOIN FETCH e.currency
+            WHERE e.bankAccount.id = :bankAccountId
+            AND e.transactionDateTime > :afterDateTime
+            AND e.isReversed = false
+            ORDER BY e.transactionDateTime ASC, e.createdAt ASC
+            """)
+    List<BankAccountTransactionEvent> findByBankAccountIdAfterDateTimeWithRelations(
+            @Param("bankAccountId") Long bankAccountId,
+            @Param("afterDateTime") LocalDateTime afterDateTime
     );
 
     /**
@@ -114,7 +132,7 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
     );
 
     /**
-     * Find events for organization within date range
+     * Find events for organization within datetime range
      */
     @Query("""
             SELECT e FROM BankAccountTransactionEvent e
@@ -122,14 +140,14 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
             LEFT JOIN FETCH e.organization
             LEFT JOIN FETCH e.currency
             WHERE e.organization.id = :organizationId
-            AND e.transactionDate BETWEEN :startDate AND :endDate
+            AND e.transactionDateTime BETWEEN :startDateTime AND :endDateTime
             AND e.isReversed = false
-            ORDER BY e.transactionDate ASC, e.createdAt ASC
+            ORDER BY e.transactionDateTime ASC, e.createdAt ASC
             """)
-    List<BankAccountTransactionEvent> findByOrganizationIdAndDateRangeWithRelations(
+    List<BankAccountTransactionEvent> findByOrganizationIdAndDateTimeRangeWithRelations(
             @Param("organizationId") Long organizationId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
     );
 
     /**
