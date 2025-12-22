@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/bank-payments")
@@ -131,7 +132,7 @@ public class BankPaymentController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of bank payments")
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getAllBankPayments(
             @ParameterObject
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findAll(pageable);
         return ResponseEntity.ok(response);
@@ -148,7 +149,7 @@ public class BankPaymentController {
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByAccountId(
             @Parameter(description = "Bank account ID") @PathVariable Long accountId,
             @ParameterObject
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByAccountId(accountId, pageable);
         return ResponseEntity.ok(response);
@@ -165,7 +166,7 @@ public class BankPaymentController {
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByCounterpartyId(
             @Parameter(description = "Counterparty ID") @PathVariable Long counterpartyId,
             @ParameterObject
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByCounterpartyId(counterpartyId, pageable);
         return ResponseEntity.ok(response);
@@ -178,7 +179,7 @@ public class BankPaymentController {
     public ResponseEntity<PageResponse<BankPaymentResponseDto>> getBankPaymentsByStatus(
             @Parameter(description = "Document status", example = "DRAFT") @PathVariable DocumentStatus status,
             @ParameterObject
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByStatus(status, pageable);
         return ResponseEntity.ok(response);
@@ -198,9 +199,12 @@ public class BankPaymentController {
             @Parameter(description = "End date (inclusive)", example = "2025-12-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @ParameterObject
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByDateRange(startDate, endDate, pageable);
+        // Convert dates to datetime range (start of startDate to end of endDate)
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        PageResponse<BankPaymentResponseDto> response = bankPaymentService.findByDateTimeRange(startDateTime, endDateTime, pageable);
         return ResponseEntity.ok(response);
     }
 
