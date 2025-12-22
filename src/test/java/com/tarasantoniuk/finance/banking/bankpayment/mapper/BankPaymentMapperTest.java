@@ -37,18 +37,14 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         assertNull(entity.getId(), "ID should not be mapped");
 
         // Verify base fields from BaseBankPaymentDto
-        assertEquals(dto.getDocumentDate(), entity.getDocumentDate());
+        assertEquals(dto.getTransactionDateTime(), entity.getTransactionDateTime());
         assertEquals(dto.getPaymentType(), entity.getPaymentType());
         assertEquals(dto.getAmount(), entity.getAmount());
         assertEquals(dto.getBankCommission(), entity.getBankCommission());
         assertEquals(dto.getDescription(), entity.getDescription());
         assertEquals(dto.getPaymentPurpose(), entity.getPaymentPurpose());
         assertEquals(dto.getPaymentReference(), entity.getPaymentReference());
-        assertEquals(dto.getOutgoingDocumentNumber(), entity.getOutgoingDocumentNumber());
-        assertEquals(dto.getOutgoingDocumentDate(), entity.getOutgoingDocumentDate());
-        assertEquals(dto.getTransactionDate(), entity.getTransactionDate());
         assertEquals(dto.getValueDate(), entity.getValueDate());
-        assertEquals(dto.getBankProcessedAt(), entity.getBankProcessedAt());
         assertEquals(dto.getExternalTransactionId(), entity.getExternalTransactionId());
         assertEquals(dto.getBankReference(), entity.getBankReference());
 
@@ -71,7 +67,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
     void shouldMapRequestDtoToEntity_WithNullOptionalFields() {
         // Given
         BankPaymentRequestDto dto = new BankPaymentRequestDto();
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         dto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         dto.setAmount(new BigDecimal("10000.00"));
         dto.setAccountId(1L);
@@ -89,11 +85,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         assertNull(entity.getDescription());
         assertNull(entity.getPaymentPurpose());
         assertNull(entity.getPaymentReference());
-        assertNull(entity.getOutgoingDocumentNumber());
-        assertNull(entity.getOutgoingDocumentDate());
-        assertNull(entity.getTransactionDate());
         assertNull(entity.getValueDate());
-        assertNull(entity.getBankProcessedAt());
         assertNull(entity.getExternalTransactionId());
         assertNull(entity.getBankReference());
         assertNull(entity.getCounterpartyBankAccount());
@@ -112,18 +104,14 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         assertEquals(entity.getId(), dto.getId());
 
         // Verify base fields
-        assertEquals(entity.getDocumentDate(), dto.getDocumentDate());
+        assertEquals(entity.getTransactionDateTime(), dto.getTransactionDateTime());
         assertEquals(entity.getPaymentType(), dto.getPaymentType());
         assertEquals(entity.getAmount(), dto.getAmount());
         assertEquals(entity.getBankCommission(), dto.getBankCommission());
         assertEquals(entity.getDescription(), dto.getDescription());
         assertEquals(entity.getPaymentPurpose(), dto.getPaymentPurpose());
         assertEquals(entity.getPaymentReference(), dto.getPaymentReference());
-        assertEquals(entity.getOutgoingDocumentNumber(), dto.getOutgoingDocumentNumber());
-        assertEquals(entity.getOutgoingDocumentDate(), dto.getOutgoingDocumentDate());
-        assertEquals(entity.getTransactionDate(), dto.getTransactionDate());
         assertEquals(entity.getValueDate(), dto.getValueDate());
-        assertEquals(entity.getBankProcessedAt(), dto.getBankProcessedAt());
         assertEquals(entity.getExternalTransactionId(), dto.getExternalTransactionId());
         assertEquals(entity.getBankReference(), dto.getBankReference());
 
@@ -167,7 +155,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         // Given
         BankPayment entity = new BankPayment();
         entity.setId(1L);
-        entity.setDocumentDate(LocalDate.of(2024, 1, 15));
+        entity.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         entity.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         entity.setAmount(new BigDecimal("1000.00"));
         entity.setStatus(DocumentStatus.DRAFT);
@@ -202,7 +190,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         Organization originalOrganization = existingEntity.getOrganization();
 
         BankPaymentRequestDto updateDto = new BankPaymentRequestDto();
-        updateDto.setDocumentDate(LocalDate.of(2024, 2, 20));
+        updateDto.setTransactionDateTime(LocalDateTime.of(2024, 2, 20, 14, 30, 0));
         updateDto.setPaymentType(PaymentType.TAX_PAYMENT);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setBankCommission(new BigDecimal("25.00"));
@@ -214,11 +202,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         updateDto.setDescription("Updated description");
         updateDto.setPaymentPurpose("Updated purpose");
         updateDto.setPaymentReference("NEW-REF-001");
-        updateDto.setOutgoingDocumentNumber("OUT-2024-002");
-        updateDto.setOutgoingDocumentDate(LocalDate.of(2024, 2, 19));
-        updateDto.setTransactionDate(LocalDate.of(2024, 2, 20));
         updateDto.setValueDate(LocalDate.of(2024, 2, 21));
-        updateDto.setBankProcessedAt(LocalDateTime.of(2024, 2, 20, 14, 30));
         updateDto.setExternalTransactionId("EXT-NEW-456");
         updateDto.setBankReference("BANK-NEW-REF");
 
@@ -239,18 +223,14 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         assertSame(originalOrganization, existingEntity.getOrganization(), "Organization should not be updated by mapper");
 
         // Verify mutable fields ARE changed
-        assertEquals(updateDto.getDocumentDate(), existingEntity.getDocumentDate());
+        assertEquals(updateDto.getTransactionDateTime(), existingEntity.getTransactionDateTime());
         assertEquals(updateDto.getPaymentType(), existingEntity.getPaymentType());
         assertEquals(updateDto.getAmount(), existingEntity.getAmount());
         assertEquals(updateDto.getBankCommission(), existingEntity.getBankCommission());
         assertEquals(updateDto.getDescription(), existingEntity.getDescription());
         assertEquals(updateDto.getPaymentPurpose(), existingEntity.getPaymentPurpose());
         assertEquals(updateDto.getPaymentReference(), existingEntity.getPaymentReference());
-        assertEquals(updateDto.getOutgoingDocumentNumber(), existingEntity.getOutgoingDocumentNumber());
-        assertEquals(updateDto.getOutgoingDocumentDate(), existingEntity.getOutgoingDocumentDate());
-        assertEquals(updateDto.getTransactionDate(), existingEntity.getTransactionDate());
         assertEquals(updateDto.getValueDate(), existingEntity.getValueDate());
-        assertEquals(updateDto.getBankProcessedAt(), existingEntity.getBankProcessedAt());
         assertEquals(updateDto.getExternalTransactionId(), existingEntity.getExternalTransactionId());
         assertEquals(updateDto.getBankReference(), existingEntity.getBankReference());
     }
@@ -263,7 +243,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         String originalPaymentPurpose = existingEntity.getPaymentPurpose();
 
         BankPaymentRequestDto updateDto = new BankPaymentRequestDto();
-        updateDto.setDocumentDate(LocalDate.of(2024, 2, 20));
+        updateDto.setTransactionDateTime(LocalDateTime.of(2024, 2, 20, 14, 30, 0));
         updateDto.setPaymentType(PaymentType.TAX_PAYMENT);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setAccountId(1L);
@@ -304,7 +284,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
     // Helper method to create full request DTO
     private BankPaymentRequestDto createFullRequestDto() {
         BankPaymentRequestDto dto = new BankPaymentRequestDto();
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 14, 30, 0));
         dto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         dto.setAmount(new BigDecimal("10000.00"));
         dto.setBankCommission(new BigDecimal("50.00"));
@@ -316,11 +296,7 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
         dto.setDescription("Payment for goods");
         dto.setPaymentPurpose("Invoice #INV-2024-001");
         dto.setPaymentReference("INV-2024-001");
-        dto.setOutgoingDocumentNumber("OUT-2024-001");
-        dto.setOutgoingDocumentDate(LocalDate.of(2024, 1, 14));
-        dto.setTransactionDate(LocalDate.of(2024, 1, 15));
         dto.setValueDate(LocalDate.of(2024, 1, 16));
-        dto.setBankProcessedAt(LocalDateTime.of(2024, 1, 15, 14, 30, 0));
         dto.setExternalTransactionId("BANK-TXN-12345");
         dto.setBankReference("BANK-REF-001");
         return dto;
@@ -330,18 +306,14 @@ class BankPaymentMapperTest extends BaseIntegrationTest {
     private BankPayment createFullBankPaymentEntity() {
         BankPayment payment = new BankPayment();
         payment.setId(100L);
-        payment.setDocumentDate(LocalDate.of(2024, 1, 15));
+        payment.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 14, 30, 0));
         payment.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         payment.setAmount(new BigDecimal("10000.00"));
         payment.setBankCommission(new BigDecimal("50.00"));
         payment.setDescription("Test payment");
         payment.setPaymentPurpose("Test purpose");
         payment.setPaymentReference("REF-001");
-        payment.setOutgoingDocumentNumber("OUT-2024-001");
-        payment.setOutgoingDocumentDate(LocalDate.of(2024, 1, 14));
-        payment.setTransactionDate(LocalDate.of(2024, 1, 15));
         payment.setValueDate(LocalDate.of(2024, 1, 16));
-        payment.setBankProcessedAt(LocalDateTime.of(2024, 1, 15, 14, 30, 0));
         payment.setExternalTransactionId("EXT-12345");
         payment.setBankReference("BANK-REF-001");
         payment.setStatus(DocumentStatus.DRAFT);

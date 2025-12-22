@@ -21,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -303,7 +303,7 @@ public class TestDataFactoryBanking {
             BigDecimal amount
     ) {
         BankReceipt receipt = new BankReceipt();
-        receipt.setDocumentDate(LocalDate.now());
+        receipt.setTransactionDateTime(LocalDateTime.now());
         receipt.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         receipt.setAmount(amount);
         receipt.setAccount(organizationAccount);
@@ -375,7 +375,7 @@ public class TestDataFactoryBanking {
             BigDecimal amount
     ) {
         BankPayment payment = new BankPayment();
-        payment.setDocumentDate(LocalDate.now());
+        payment.setTransactionDateTime(LocalDateTime.now());
         payment.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         payment.setAmount(amount);
         payment.setAccount(organizationAccount);

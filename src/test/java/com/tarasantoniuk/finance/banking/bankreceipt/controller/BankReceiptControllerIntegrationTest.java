@@ -27,7 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,7 +93,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnCreated_WhenValidRequest() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("10000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -111,7 +111,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.documentDate").value("2024-01-15"))
+                .andExpect(jsonPath("$.transactionDateTime").value("2024-01-15T09:00:00"))
                 .andExpect(jsonPath("$.receiptType").value("CUSTOMER_PAYMENT"))
                 .andExpect(jsonPath("$.amount").value(10000.00))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
@@ -139,7 +139,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnBadRequest_WhenAmountIsNull() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -158,7 +158,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnBadRequest_WhenAmountIsZero() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(BigDecimal.ZERO);
         requestDto.setAccountId(bankAccount.getId());
@@ -178,7 +178,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnBadRequest_WhenAmountIsNegative() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("-100.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -202,7 +202,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
         bankReceiptRepository.save(existing);
 
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -223,7 +223,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnNotFound_WhenAccountNotExists() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(99999L);
@@ -243,7 +243,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void createBankReceipt_ShouldReturnNotFound_WhenCounterpartyNotExists() throws Exception {
         // Given
         BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -330,7 +330,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
         bankReceiptRepository.save(receipt);
 
         BankReceiptRequestDto updateDto = new BankReceiptRequestDto();
-        updateDto.setDocumentDate(LocalDate.now());
+        updateDto.setTransactionDateTime(LocalDateTime.now());
         updateDto.setReceiptType(ReceiptType.REFUND);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setDescription("Updated description");
@@ -361,7 +361,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
         bankReceiptRepository.save(receipt);
 
         BankReceiptRequestDto updateDto = new BankReceiptRequestDto();
-        updateDto.setDocumentDate(LocalDate.now());
+        updateDto.setTransactionDateTime(LocalDateTime.now());
         updateDto.setReceiptType(ReceiptType.REFUND);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setExternalTransactionId("EXT-CONFLICT-001");
@@ -383,7 +383,7 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void updateBankReceipt_ShouldReturnNotFound_WhenReceiptNotExists() throws Exception {
         // Given
         BankReceiptRequestDto updateDto = new BankReceiptRequestDto();
-        updateDto.setDocumentDate(LocalDate.now());
+        updateDto.setTransactionDateTime(LocalDateTime.now());
         updateDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setAccountId(bankAccount.getId());

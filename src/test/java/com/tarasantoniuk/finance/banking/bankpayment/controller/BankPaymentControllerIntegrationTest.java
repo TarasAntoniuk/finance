@@ -25,7 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -96,7 +96,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnCreated_WhenValidRequest() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("10000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -112,7 +112,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.documentDate").value("2024-01-15"))
+                .andExpect(jsonPath("$.transactionDateTime").value("2024-01-15T10:00:00"))
                 .andExpect(jsonPath("$.paymentType").value("SUPPLIER_PAYMENT"))
                 .andExpect(jsonPath("$.amount").value(10000.00))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
@@ -123,7 +123,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnCreated_WhenWithoutCounterpartyBankAccount() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("5000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -154,7 +154,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsNull() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAccountId(bankAccount.getId());
         requestDto.setCounterpartyId(counterparty.getId());
@@ -170,7 +170,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsZero() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(BigDecimal.ZERO);
         requestDto.setAccountId(bankAccount.getId());
@@ -187,7 +187,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnBadRequest_WhenAmountIsNegative() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("-100.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -209,7 +209,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
 
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -227,7 +227,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnNotFound_WhenAccountNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(99999L);
@@ -244,7 +244,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnNotFound_WhenCounterpartyNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -261,7 +261,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnNotFound_WhenCurrencyNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -278,7 +278,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void createBankPayment_ShouldReturnNotFound_WhenOrganizationNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -316,7 +316,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
         BankPayment payment = createBankPayment("EXT-002");
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 20));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 20, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("15000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -338,7 +338,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void updateBankPayment_ShouldReturnNotFound_WhenPaymentNotExists() throws Exception {
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -359,7 +359,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
         bankPaymentRepository.save(payment);
 
         BankPaymentRequestDto requestDto = new BankPaymentRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
         requestDto.setAmount(new BigDecimal("1000.00"));
         requestDto.setAccountId(bankAccount.getId());
@@ -493,15 +493,15 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void getBankPaymentsByDateRange_ShouldReturnPayments() throws Exception {
         BankPayment payment1 = createBankPayment("EXT-700");
-        payment1.setDocumentDate(LocalDate.of(2024, 1, 10));
+        payment1.setTransactionDateTime(LocalDateTime.of(2024, 1, 10, 10, 0, 0));
         bankPaymentRepository.save(payment1);
 
         BankPayment payment2 = createBankPayment("EXT-701");
-        payment2.setDocumentDate(LocalDate.of(2024, 1, 20));
+        payment2.setTransactionDateTime(LocalDateTime.of(2024, 1, 20, 10, 0, 0));
         bankPaymentRepository.save(payment2);
 
         BankPayment payment3 = createBankPayment("EXT-702");
-        payment3.setDocumentDate(LocalDate.of(2024, 1, 30));
+        payment3.setTransactionDateTime(LocalDateTime.of(2024, 1, 30, 10, 0, 0));
         bankPaymentRepository.save(payment3);
 
         mockMvc.perform(get("/api/v1/bank-payments/date-range")
@@ -514,7 +514,7 @@ class BankPaymentControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     void getBankPaymentsByDateRange_ShouldReturnEmptyPage_WhenNoPaymentsInRange() throws Exception {
         BankPayment payment = createBankPayment("EXT-800");
-        payment.setDocumentDate(LocalDate.of(2024, 1, 10));
+        payment.setTransactionDateTime(LocalDateTime.of(2024, 1, 10, 10, 0, 0));
         bankPaymentRepository.save(payment);
 
         mockMvc.perform(get("/api/v1/bank-payments/date-range")

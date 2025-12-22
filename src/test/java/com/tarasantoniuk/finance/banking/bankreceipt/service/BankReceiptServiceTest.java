@@ -34,7 +34,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,7 +77,7 @@ class BankReceiptServiceTest {
     void setUp() {
         // Create request DTO
         requestDto = new BankReceiptRequestDto();
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         requestDto.setAmount(new BigDecimal("10000.00"));
         requestDto.setAccountId(1L);
@@ -102,8 +102,7 @@ class BankReceiptServiceTest {
     private BankReceipt createTestBankReceipt() {
         BankReceipt receipt = new BankReceipt();
         receipt.setId(1L);
-        receipt.setIncomingDocumentNumber("BR-001");
-        receipt.setDocumentDate(LocalDate.of(2024, 1, 15));
+        receipt.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         receipt.setAmount(new BigDecimal("1000.00"));
         receipt.setDescription("Test receipt");
 
@@ -132,7 +131,7 @@ class BankReceiptServiceTest {
     private BankReceiptResponseDto createBankReceiptResponseDto() {
         BankReceiptResponseDto dto = new BankReceiptResponseDto();
         dto.setId(1L);
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
         dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         dto.setAmount(new BigDecimal("1000.00"));
         dto.setDescription("Test bank receipt");
@@ -344,7 +343,7 @@ class BankReceiptServiceTest {
         BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
         mockEvent.setId(1L);
         when(transactionService.createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                 any(BigDecimal.class), anyString(), anyLong(), anyString()))
                 .thenReturn(mockEvent);
 
@@ -364,7 +363,7 @@ class BankReceiptServiceTest {
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
-                receipt.getDocumentDate(),
+                receipt.getTransactionDateTime(),
                 receipt.getAmount(),
                 "BankReceipt",
                 receipt.getId(),
@@ -425,7 +424,7 @@ class BankReceiptServiceTest {
         BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
         reversalEvent.setId(2L);
         when(transactionService.createPaymentEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDate.class),
+                anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                 any(BigDecimal.class), anyString(), anyLong(), anyString()))
                 .thenReturn(reversalEvent);
 
@@ -445,7 +444,7 @@ class BankReceiptServiceTest {
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
-                receipt.getDocumentDate(),
+                receipt.getTransactionDateTime(),
                 receipt.getAmount(),
                 "BankReceiptReversal",
                 receipt.getId(),
@@ -488,26 +487,26 @@ class BankReceiptServiceTest {
     @DisplayName("Should find receipts by date range")
     void shouldFindReceiptsByDateRange() {
         // Given
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
-        LocalDate endDate = LocalDate.of(2024, 1, 31);
+        LocalDateTime startDateTime = LocalDateTime.of(2024, 1, 1, 0, 0, 0);
+        LocalDateTime endDateTime = LocalDateTime.of(2024, 1, 31, 23, 59, 59);
         Pageable pageable = PageRequest.of(0, 10);
 
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findByDocumentDateBetween(startDate, endDate, pageable))
+        when(bankReceiptRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable))
                 .thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
                 .thenReturn(responseDto);
 
         // When
         PageResponse<BankReceiptResponseDto> result =
-                bankReceiptService.findByDateRange(startDate, endDate, pageable);
+                bankReceiptService.findByDateTimeRange(startDateTime, endDateTime, pageable);
 
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByDocumentDateBetween(startDate, endDate, pageable);
+        verify(bankReceiptRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable);
     }
 
     @Test

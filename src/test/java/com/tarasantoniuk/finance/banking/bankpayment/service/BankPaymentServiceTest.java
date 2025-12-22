@@ -35,7 +35,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,7 +90,7 @@ class BankPaymentServiceTest {
         requestDto.setCounterpartyBankAccountId(3L);
         requestDto.setCurrencyId(4L);
         requestDto.setOrganizationId(5L);
-        requestDto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 30, 0));
         requestDto.setAmount(BigDecimal.valueOf(1000.00));
         requestDto.setDescription("Test payment");
         requestDto.setExternalTransactionId("EXT-12345");
@@ -118,7 +118,7 @@ class BankPaymentServiceTest {
         payment.setCounterpartyBankAccount(counterpartyAccount);
         payment.setCurrency(currency);
         payment.setOrganization(organization);
-        payment.setDocumentDate(LocalDate.of(2024, 1, 15));
+        payment.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 30, 0));
         payment.setAmount(BigDecimal.valueOf(1000.00));
         payment.setDescription("Test payment");
         payment.setStatus(DocumentStatus.DRAFT);
@@ -509,23 +509,23 @@ class BankPaymentServiceTest {
         void shouldFindPaymentsByDateRange() {
             // Arrange
             Pageable pageable = PageRequest.of(0, 10);
-            LocalDate startDate = LocalDate.of(2024, 1, 1);
-            LocalDate endDate = LocalDate.of(2024, 1, 31);
+            LocalDateTime startDateTime = LocalDateTime.of(2024, 1, 1, 0, 0, 0);
+            LocalDateTime endDateTime = LocalDateTime.of(2024, 1, 31, 23, 59, 59);
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findByDocumentDateBetween(startDate, endDate, pageable))
+            when(bankPaymentRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable))
                     .thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act
-            PageResponse<BankPaymentResponseDto> result = bankPaymentService.findByDateRange(
-                    startDate, endDate, pageable);
+            PageResponse<BankPaymentResponseDto> result = bankPaymentService.findByDateTimeRange(
+                    startDateTime, endDateTime, pageable);
 
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            verify(bankPaymentRepository).findByDocumentDateBetween(startDate, endDate, pageable);
+            verify(bankPaymentRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable);
         }
 
         @Test
@@ -624,7 +624,7 @@ class BankPaymentServiceTest {
             when(transactionService.existsByDocument("BankPayment", 10L)).thenReturn(false);
             when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.createPaymentEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDate.class),
+                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
                     eq(BigDecimal.valueOf(1000.00)), eq("BankPayment"),
                     eq(10L), anyString()
             )).thenReturn(mockEvent);
@@ -637,7 +637,7 @@ class BankPaymentServiceTest {
             // Assert
             assertThat(result).isNotNull();
             verify(transactionService).createPaymentEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDate.class),
+                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
                     eq(BigDecimal.valueOf(1000.00)), eq("BankPayment"),
                     eq(10L), anyString()
             );
@@ -758,7 +758,7 @@ class BankPaymentServiceTest {
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
             when(transactionService.findByDocument("BankPayment", 10L)).thenReturn(originalEvent);
             when(transactionService.createReceiptEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDate.class),
+                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
                     eq(BigDecimal.valueOf(1000.00)), eq("BankPaymentReversal"),
                     eq(10L), anyString()
             )).thenReturn(reversalEvent);
@@ -772,7 +772,7 @@ class BankPaymentServiceTest {
             assertThat(result).isNotNull();
             verify(transactionService).findByDocument("BankPayment", 10L);
             verify(transactionService).createReceiptEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDate.class),
+                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
                     eq(BigDecimal.valueOf(1000.00)), eq("BankPaymentReversal"),
                     eq(10L), anyString()
             );
@@ -882,11 +882,11 @@ class BankPaymentServiceTest {
 
         @Test
         @DisplayName("Should handle payment with future date")
-        void shouldHandlePaymentWithFutureDate() {
+        void shouldHandlePaymentWithFutureDateTime() {
             // Arrange
-            LocalDate futureDate = LocalDate.now().plusDays(30);
-            requestDto.setDocumentDate(futureDate);
-            payment.setDocumentDate(futureDate);
+            LocalDateTime futureDateTime = LocalDateTime.now().plusDays(30);
+            requestDto.setTransactionDateTime(futureDateTime);
+            payment.setTransactionDateTime(futureDateTime);
 
             when(bankPaymentRepository.existsByExternalTransactionId(anyString())).thenReturn(false);
             when(bankPaymentMapper.toEntity(requestDto)).thenReturn(payment);
