@@ -25,7 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -162,15 +162,15 @@ public class BankReceiptService {
     }
 
     /**
-     * Find receipts by date range
+     * Find receipts by datetime range
      */
     @Transactional(readOnly = true)
-    public PageResponse<BankReceiptResponseDto> findByDateRange(
-            LocalDate startDate,
-            LocalDate endDate,
+    public PageResponse<BankReceiptResponseDto> findByDateTimeRange(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
             Pageable pageable) {
-        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByDocumentDateBetween(
-                startDate, endDate, pageable);
+        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByTransactionDateTimeBetween(
+                startDateTime, endDateTime, pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -216,7 +216,7 @@ public class BankReceiptService {
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
-                receipt.getDocumentDate(),
+                receipt.getTransactionDateTime(),
                 receipt.getAmount(),
                 "BankReceipt",
                 receipt.getId(),
@@ -257,7 +257,7 @@ public class BankReceiptService {
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
-                receipt.getDocumentDate(),
+                receipt.getTransactionDateTime(),
                 receipt.getAmount(),
                 "BankReceiptReversal",
                 receipt.getId(),
