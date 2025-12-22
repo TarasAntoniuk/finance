@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/bank-receipts")
@@ -148,7 +149,7 @@ public class BankReceiptController {
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getAll(
             //@Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findAll(pageable);
         return ResponseEntity.ok(response);
@@ -166,7 +167,7 @@ public class BankReceiptController {
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByAccountId(
             @Parameter(description = "Bank account ID", required = true)
             @PathVariable Long accountId,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByAccountId(accountId, pageable);
         return ResponseEntity.ok(response);
@@ -184,7 +185,7 @@ public class BankReceiptController {
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByCounterpartyId(
             @Parameter(description = "Counterparty ID", required = true)
             @PathVariable Long counterpartyId,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByCounterpartyId(counterpartyId, pageable);
         return ResponseEntity.ok(response);
@@ -206,7 +207,7 @@ public class BankReceiptController {
                     example = "DRAFT"
             )
             @PathVariable DocumentStatus status,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByStatus(status, pageable);
         return ResponseEntity.ok(response);
@@ -234,9 +235,12 @@ public class BankReceiptController {
                     example = "2025-12-31"
             )
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByDateRange(startDate, endDate, pageable);
+        // Convert dates to datetime range (start of startDate to end of endDate)
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByDateTimeRange(startDateTime, endDateTime, pageable);
         return ResponseEntity.ok(response);
     }
 
