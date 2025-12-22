@@ -8,7 +8,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -27,7 +26,7 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_bank_account_transaction_account_id", columnList = "bank_account_id"),
                 @Index(name = "idx_bank_account_transaction_document", columnList = "document_type, document_id"),
-                @Index(name = "idx_bank_account_transaction_date", columnList = "transaction_date"),
+                @Index(name = "idx_bank_account_transaction_datetime", columnList = "transaction_date_time"),
                 @Index(name = "idx_bank_account_transaction_created", columnList = "created_at")
         }
 )
@@ -62,11 +61,12 @@ public class BankAccountTransactionEvent {
     private Currency currency;
 
     /**
-     * Transaction date (for sorting and balance calculation)
+     * Transaction date and time (for sorting and balance calculation).
+     * This is the point-in-time when the transaction occurred.
      */
     @NotNull
-    @Column(name = "transaction_date", nullable = false)
-    private LocalDate transactionDate;
+    @Column(name = "transaction_date_time", nullable = false)
+    private LocalDateTime transactionDateTime;
 
     /**
      * Transaction type (DEBIT - receipt, CREDIT - payment)
@@ -171,12 +171,12 @@ public class BankAccountTransactionEvent {
         this.currency = currency;
     }
 
-    public LocalDate getTransactionDate() {
-        return transactionDate;
+    public LocalDateTime getTransactionDateTime() {
+        return transactionDateTime;
     }
 
-    public void setTransactionDate(LocalDate transactionDate) {
-        this.transactionDate = transactionDate;
+    public void setTransactionDateTime(LocalDateTime transactionDateTime) {
+        this.transactionDateTime = transactionDateTime;
     }
 
     public TransactionType getTransactionType() {
