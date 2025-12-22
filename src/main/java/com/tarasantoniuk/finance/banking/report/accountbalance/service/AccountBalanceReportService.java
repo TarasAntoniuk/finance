@@ -105,8 +105,9 @@ public class AccountBalanceReportService {
      * Build balance item for single account
      */
     private AccountBalanceItemDto buildBalanceItem(BankAccount account, LocalDate asOfDate) {
-        // Calculate balance using transaction service
-        BigDecimal balance = transactionService.calculateBalance(account.getId(), asOfDate);
+        // Calculate balance using transaction service (end of day)
+        LocalDateTime endOfDay = asOfDate.plusDays(1).atStartOfDay();
+        BigDecimal balance = transactionService.calculateBalance(account.getId(), endOfDay);
 
         // Get organization name
         String organizationName = getOrganizationName(account.getHolderId());
@@ -152,9 +153,10 @@ public class AccountBalanceReportService {
      * Get last transaction date for account up to specified date
      */
     private LocalDate getLastTransactionDate(Long accountId, LocalDate upToDate) {
+        LocalDateTime endOfDay = upToDate.plusDays(1).atStartOfDay();
         return transactionService.getAccountEvents(accountId).stream()
-                .filter(event -> !event.getTransactionDate().isAfter(upToDate))
-                .map(BankAccountTransactionEvent::getTransactionDate)
+                .filter(event -> event.getTransactionDateTime().isBefore(endOfDay))
+                .map(event -> event.getTransactionDateTime().toLocalDate())
                 .max(LocalDate::compareTo)
                 .orElse(null);
     }
