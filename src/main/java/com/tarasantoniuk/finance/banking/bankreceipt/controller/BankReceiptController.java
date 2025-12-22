@@ -60,7 +60,7 @@ public class BankReceiptController {
                             name = "Customer Payment",
                             value = """
                                     {
-                                      "documentDate": "2025-12-02",
+                                      "transactionDateTime": "2025-12-02T10:30:00",
                                       "receiptType": "CUSTOMER_PAYMENT",
                                       "amount": 10000.00,
                                       "bankCommission": 50.00,
@@ -73,8 +73,6 @@ public class BankReceiptController {
                                       "paymentPurpose": "Invoice #INV-2025-125, December services",
                                       "paymentReference": "INV-2025-125",
                                       "incomingDocumentNumber": "PAY-DEC-12345",
-                                      "incomingDocumentDate": "2025-12-01",
-                                      "transactionDate": "2025-12-02",
                                       "valueDate": "2025-12-02",
                                       "externalTransactionId": "BANK-TXN-2025-DEC-001"
                                     }
