@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -164,15 +164,15 @@ public class BankPaymentService {
     }
 
     /**
-     * Find payments by date range
+     * Find payments by datetime range
      */
     @Transactional(readOnly = true)
-    public PageResponse<BankPaymentResponseDto> findByDateRange(
-            LocalDate startDate,
-            LocalDate endDate,
+    public PageResponse<BankPaymentResponseDto> findByDateTimeRange(
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime,
             Pageable pageable) {
-        Page<BankPayment> paymentsPage = bankPaymentRepository.findByDocumentDateBetween(
-                startDate, endDate, pageable);
+        Page<BankPayment> paymentsPage = bankPaymentRepository.findByTransactionDateTimeBetween(
+                startDateTime, endDateTime, pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -227,7 +227,7 @@ public class BankPaymentService {
                 payment.getAccount().getId(),
                 payment.getOrganization().getId(),
                 payment.getCurrency().getId(),
-                payment.getDocumentDate(),
+                payment.getTransactionDateTime(),
                 payment.getAmount(),
                 "BankPayment",
                 payment.getId(),
@@ -262,7 +262,7 @@ public class BankPaymentService {
                 payment.getAccount().getId(),
                 payment.getOrganization().getId(),
                 payment.getCurrency().getId(),
-                payment.getDocumentDate(),
+                payment.getTransactionDateTime(),
                 payment.getAmount(),
                 "BankPaymentReversal",
                 payment.getId(),
