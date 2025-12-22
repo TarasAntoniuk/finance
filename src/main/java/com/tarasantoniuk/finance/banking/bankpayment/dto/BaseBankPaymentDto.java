@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
  */
 public abstract class BaseBankPaymentDto {
 
-    @NotNull(message = "Document date is required")
-    private LocalDate documentDate;
+    @NotNull(message = "Transaction date and time is required")
+    private LocalDateTime transactionDateTime;
 
     @NotNull(message = "Payment type is required")
     private PaymentType paymentType;
@@ -33,13 +33,7 @@ public abstract class BaseBankPaymentDto {
 
     private String outgoingDocumentNumber;
 
-    private LocalDate outgoingDocumentDate;
-
-    private LocalDate transactionDate;
-
     private LocalDate valueDate;
-
-    private LocalDateTime bankProcessedAt;
 
     private String externalTransactionId;
 
@@ -47,12 +41,12 @@ public abstract class BaseBankPaymentDto {
 
     // Getters and Setters
 
-    public LocalDate getDocumentDate() {
-        return documentDate;
+    public LocalDateTime getTransactionDateTime() {
+        return transactionDateTime;
     }
 
-    public void setDocumentDate(LocalDate documentDate) {
-        this.documentDate = documentDate;
+    public void setTransactionDateTime(LocalDateTime transactionDateTime) {
+        this.transactionDateTime = transactionDateTime;
     }
 
     public PaymentType getPaymentType() {
@@ -111,36 +105,12 @@ public abstract class BaseBankPaymentDto {
         this.outgoingDocumentNumber = outgoingDocumentNumber;
     }
 
-    public LocalDate getOutgoingDocumentDate() {
-        return outgoingDocumentDate;
-    }
-
-    public void setOutgoingDocumentDate(LocalDate outgoingDocumentDate) {
-        this.outgoingDocumentDate = outgoingDocumentDate;
-    }
-
-    public LocalDate getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDate transactionDate) {
-        this.transactionDate = transactionDate;
-    }
-
     public LocalDate getValueDate() {
         return valueDate;
     }
 
     public void setValueDate(LocalDate valueDate) {
         this.valueDate = valueDate;
-    }
-
-    public LocalDateTime getBankProcessedAt() {
-        return bankProcessedAt;
-    }
-
-    public void setBankProcessedAt(LocalDateTime bankProcessedAt) {
-        this.bankProcessedAt = bankProcessedAt;
     }
 
     public String getExternalTransactionId() {
