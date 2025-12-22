@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
  */
 public abstract class BaseBankReceiptDto {
 
-    @NotNull(message = "Document date is required")
-    private LocalDate documentDate;
+    @NotNull(message = "Transaction date and time is required")
+    private LocalDateTime transactionDateTime;
 
     @NotNull(message = "Receipt type is required")
     private ReceiptType receiptType;
@@ -22,7 +22,6 @@ public abstract class BaseBankReceiptDto {
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
-
 
     private BigDecimal bankCommission;
 
@@ -34,13 +33,7 @@ public abstract class BaseBankReceiptDto {
 
     private String incomingDocumentNumber;
 
-    private LocalDate incomingDocumentDate;
-
-    private LocalDate transactionDate;
-
     private LocalDate valueDate;
-
-    private LocalDateTime bankProcessedAt;
 
     private String externalTransactionId;
 
@@ -48,12 +41,12 @@ public abstract class BaseBankReceiptDto {
 
     // Getters and Setters
 
-    public LocalDate getDocumentDate() {
-        return documentDate;
+    public LocalDateTime getTransactionDateTime() {
+        return transactionDateTime;
     }
 
-    public void setDocumentDate(LocalDate documentDate) {
-        this.documentDate = documentDate;
+    public void setTransactionDateTime(LocalDateTime transactionDateTime) {
+        this.transactionDateTime = transactionDateTime;
     }
 
     public ReceiptType getReceiptType() {
@@ -112,36 +105,12 @@ public abstract class BaseBankReceiptDto {
         this.incomingDocumentNumber = incomingDocumentNumber;
     }
 
-    public LocalDate getIncomingDocumentDate() {
-        return incomingDocumentDate;
-    }
-
-    public void setIncomingDocumentDate(LocalDate incomingDocumentDate) {
-        this.incomingDocumentDate = incomingDocumentDate;
-    }
-
-    public LocalDate getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDate transactionDate) {
-        this.transactionDate = transactionDate;
-    }
-
     public LocalDate getValueDate() {
         return valueDate;
     }
 
     public void setValueDate(LocalDate valueDate) {
         this.valueDate = valueDate;
-    }
-
-    public LocalDateTime getBankProcessedAt() {
-        return bankProcessedAt;
-    }
-
-    public void setBankProcessedAt(LocalDateTime bankProcessedAt) {
-        this.bankProcessedAt = bankProcessedAt;
     }
 
     public String getExternalTransactionId() {
