@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Base class for all monetary documents (bank receipts, payments, cash operations).
@@ -95,26 +94,13 @@ public abstract class MonetaryDocument extends BaseDocument {
     private String bankReference;
 
     /**
-     * Date when transaction was booked in the bank.
-     * Can differ from documentDate (when we received/created document).
-     */
-    @Column
-    private LocalDate transactionDate;
-
-    /**
      * Value date - when money is actually available.
      * For receipts: when money can be used.
      * For payments: when money is debited.
+     * Optional field, mainly used for bank statement imports.
      */
     @Column
     private LocalDate valueDate;
-
-    /**
-     * When bank processed the transaction (with time).
-     * Used for audit and reconciliation.
-     */
-    @Column
-    private LocalDateTime bankProcessedAt;
 
     // Getters and Setters
 
@@ -198,28 +184,12 @@ public abstract class MonetaryDocument extends BaseDocument {
         this.bankReference = bankReference;
     }
 
-    public LocalDate getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDate transactionDate) {
-        this.transactionDate = transactionDate;
-    }
-
     public LocalDate getValueDate() {
         return valueDate;
     }
 
     public void setValueDate(LocalDate valueDate) {
         this.valueDate = valueDate;
-    }
-
-    public LocalDateTime getBankProcessedAt() {
-        return bankProcessedAt;
-    }
-
-    public void setBankProcessedAt(LocalDateTime bankProcessedAt) {
-        this.bankProcessedAt = bankProcessedAt;
     }
 
     // Business methods
