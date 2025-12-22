@@ -7,33 +7,26 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Bank account balance snapshot for a specific date.
+ * Bank account balance snapshot for a specific point in time.
  * Used to optimize balance calculation:
  * instead of recalculating all events from the beginning of time,
  * we take the last snapshot and add events after it.
  * <p>
  * Example:
- * - Snapshot for 2024-01-01: balance = 10000
- * - Events from 2024-01-02 to 2024-01-15: +5000
+ * - Snapshot for 2024-01-01 23:59:59: balance = 10000
+ * - Events from 2024-01-02 00:00:00 to now: +5000
  * - Current balance = 10000 + 5000 = 15000
  */
 @Entity
 @Table(
         name = "bank_account_balance_snapshots",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_bank_account_balance_snapshot",
-                        columnNames = {"bank_account_id", "snapshot_date"}
-                )
-        },
         indexes = {
                 @Index(name = "idx_bank_account_balance_account_id", columnList = "bank_account_id"),
-                @Index(name = "idx_bank_account_balance_date", columnList = "snapshot_date"),
-                @Index(name = "idx_bank_account_balance_organization", columnList = "organization_id, snapshot_date")
+                @Index(name = "idx_bank_account_balance_datetime", columnList = "snapshot_date_time"),
+                @Index(name = "idx_bank_account_balance_organization", columnList = "organization_id, snapshot_date_time")
         }
 )
 public class BankAccountBalanceSnapshot {
@@ -67,35 +60,35 @@ public class BankAccountBalanceSnapshot {
     private Currency currency;
 
     /**
-     * Snapshot date
+     * Snapshot point in time
      */
     @NotNull
-    @Column(name = "snapshot_date", nullable = false)
-    private LocalDate snapshotDate;
+    @Column(name = "snapshot_date_time", nullable = false)
+    private LocalDateTime snapshotDateTime;
 
     /**
-     * Opening balance (balance at the beginning of the day)
+     * Opening balance (balance at the beginning of the period)
      */
     @NotNull
     @Column(name = "opening_balance", nullable = false, precision = 19, scale = 4)
     private BigDecimal openingBalance;
 
     /**
-     * Debit turnover for the day (total receipts)
+     * Debit turnover for the period (total receipts)
      */
     @NotNull
     @Column(name = "debit_turnover", nullable = false, precision = 19, scale = 4)
     private BigDecimal debitTurnover;
 
     /**
-     * Credit turnover for the day (total payments)
+     * Credit turnover for the period (total payments)
      */
     @NotNull
     @Column(name = "credit_turnover", nullable = false, precision = 19, scale = 4)
     private BigDecimal creditTurnover;
 
     /**
-     * Closing balance (balance at the end of the day)
+     * Closing balance at snapshot point in time
      * closingBalance = openingBalance + debitTurnover - creditTurnover
      */
     @NotNull
@@ -174,12 +167,12 @@ public class BankAccountBalanceSnapshot {
         this.currency = currency;
     }
 
-    public LocalDate getSnapshotDate() {
-        return snapshotDate;
+    public LocalDateTime getSnapshotDateTime() {
+        return snapshotDateTime;
     }
 
-    public void setSnapshotDate(LocalDate snapshotDate) {
-        this.snapshotDate = snapshotDate;
+    public void setSnapshotDateTime(LocalDateTime snapshotDateTime) {
+        this.snapshotDateTime = snapshotDateTime;
     }
 
     public BigDecimal getOpeningBalance() {
