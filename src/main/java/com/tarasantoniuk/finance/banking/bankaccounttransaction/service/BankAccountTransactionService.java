@@ -77,7 +77,9 @@ public class BankAccountTransactionService {
         event.setDescription(description);
 
         // Calculate balance after transaction
-        BigDecimal currentBalance = calculateBalance(bankAccountId, transactionDateTime);
+        // Use current time to ensure we include all previously created events,
+        // including those at the same transactionDateTime (e.g., reversals)
+        BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
         BigDecimal balanceAfter = currentBalance.add(amount);
         event.setBalanceAfter(balanceAfter);
 
@@ -118,7 +120,9 @@ public class BankAccountTransactionService {
         event.setDescription(description);
 
         // Calculate balance after transaction
-        BigDecimal currentBalance = calculateBalance(bankAccountId, transactionDateTime);
+        // Use current time to ensure we include all previously created events,
+        // including those at the same transactionDateTime (e.g., original transactions being reversed)
+        BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
         BigDecimal balanceAfter = currentBalance.subtract(amount);
         event.setBalanceAfter(balanceAfter);
 

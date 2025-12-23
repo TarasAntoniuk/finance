@@ -211,6 +211,15 @@ public class BankReceiptService {
             );
         }
 
+        // If reposting after unpost, mark the reversal event as reversed
+        // This effectively cancels the reversal without creating additional events
+        if (transactionService.existsByDocument("BankReceiptReversal", id)) {
+            var reversalEvent = transactionService.findActiveByDocument("BankReceiptReversal", id);
+            // Mark the reversal as reversed (excludes it from balance calculations)
+            reversalEvent.setIsReversed(true);
+            // Note: We don't create a counter-event; marking it as reversed is sufficient
+        }
+
         // Create transaction event (DEBIT - money in)
         transactionService.createReceiptEvent(
                 receipt.getAccount().getId(),
