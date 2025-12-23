@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankpayment.dto;
 
 import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -11,48 +12,93 @@ import java.time.LocalDateTime;
 /**
  * Base DTO containing common fields for bank payment operations
  */
+@Schema(description = "Base bank payment information")
 public abstract class BaseBankPaymentDto {
 
-    @NotNull(message = "Document date is required")
-    private LocalDate documentDate;
+    @Schema(
+            description = "Transaction date and time when the payment occurred",
+            example = "2025-12-02T10:30:00",
+            required = true
+    )
+    @NotNull(message = "Transaction date and time is required")
+    private LocalDateTime transactionDateTime;
 
+    @Schema(
+            description = "Type of payment indicating the nature of the transaction",
+            example = "SUPPLIER_PAYMENT",
+            required = true,
+            allowableValues = {"SUPPLIER_PAYMENT", "SALARY_PAYMENT", "TAX_PAYMENT", "LOAN_REPAYMENT", "OTHER_EXPENSE"}
+    )
     @NotNull(message = "Payment type is required")
     private PaymentType paymentType;
 
+    @Schema(
+            description = "Payment amount in the specified currency",
+            example = "5000.00",
+            required = true,
+            minimum = "0.01"
+    )
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
 
+    @Schema(
+            description = "Bank commission charged for the transaction (if any)",
+            example = "25.00",
+            minimum = "0"
+    )
     private BigDecimal bankCommission;
 
+    @Schema(
+            description = "General description of the payment",
+            example = "Payment for consulting services"
+    )
     private String description;
 
+    @Schema(
+            description = "Purpose of the payment as specified in the bank statement",
+            example = "Invoice #SUP-2025-100, November services"
+    )
     private String paymentPurpose;
 
+    @Schema(
+            description = "Reference number for the payment (e.g., invoice number)",
+            example = "SUP-2025-100"
+    )
     private String paymentReference;
 
+    @Schema(
+            description = "Document number for the outgoing payment order",
+            example = "PAY-OUT-12345"
+    )
     private String outgoingDocumentNumber;
 
-    private LocalDate outgoingDocumentDate;
-
-    private LocalDate transactionDate;
-
+    @Schema(
+            description = "Value date when the funds were actually debited",
+            example = "2025-12-02"
+    )
     private LocalDate valueDate;
 
-    private LocalDateTime bankProcessedAt;
-
+    @Schema(
+            description = "External transaction identifier from the bank",
+            example = "BANK-TXN-OUT-2025-001"
+    )
     private String externalTransactionId;
 
+    @Schema(
+            description = "Bank's reference number for the transaction",
+            example = "BANK-REF-654321"
+    )
     private String bankReference;
 
     // Getters and Setters
 
-    public LocalDate getDocumentDate() {
-        return documentDate;
+    public LocalDateTime getTransactionDateTime() {
+        return transactionDateTime;
     }
 
-    public void setDocumentDate(LocalDate documentDate) {
-        this.documentDate = documentDate;
+    public void setTransactionDateTime(LocalDateTime transactionDateTime) {
+        this.transactionDateTime = transactionDateTime;
     }
 
     public PaymentType getPaymentType() {
@@ -111,36 +157,12 @@ public abstract class BaseBankPaymentDto {
         this.outgoingDocumentNumber = outgoingDocumentNumber;
     }
 
-    public LocalDate getOutgoingDocumentDate() {
-        return outgoingDocumentDate;
-    }
-
-    public void setOutgoingDocumentDate(LocalDate outgoingDocumentDate) {
-        this.outgoingDocumentDate = outgoingDocumentDate;
-    }
-
-    public LocalDate getTransactionDate() {
-        return transactionDate;
-    }
-
-    public void setTransactionDate(LocalDate transactionDate) {
-        this.transactionDate = transactionDate;
-    }
-
     public LocalDate getValueDate() {
         return valueDate;
     }
 
     public void setValueDate(LocalDate valueDate) {
         this.valueDate = valueDate;
-    }
-
-    public LocalDateTime getBankProcessedAt() {
-        return bankProcessedAt;
-    }
-
-    public void setBankProcessedAt(LocalDateTime bankProcessedAt) {
-        this.bankProcessedAt = bankProcessedAt;
     }
 
     public String getExternalTransactionId() {

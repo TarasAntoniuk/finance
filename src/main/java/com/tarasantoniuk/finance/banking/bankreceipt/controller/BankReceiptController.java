@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/bank-receipts")
@@ -59,7 +60,7 @@ public class BankReceiptController {
                             name = "Customer Payment",
                             value = """
                                     {
-                                      "documentDate": "2025-12-02",
+                                      "transactionDateTime": "2025-12-02T10:30:00",
                                       "receiptType": "CUSTOMER_PAYMENT",
                                       "amount": 10000.00,
                                       "bankCommission": 50.00,
@@ -72,8 +73,6 @@ public class BankReceiptController {
                                       "paymentPurpose": "Invoice #INV-2025-125, December services",
                                       "paymentReference": "INV-2025-125",
                                       "incomingDocumentNumber": "PAY-DEC-12345",
-                                      "incomingDocumentDate": "2025-12-01",
-                                      "transactionDate": "2025-12-02",
                                       "valueDate": "2025-12-02",
                                       "externalTransactionId": "BANK-TXN-2025-DEC-001"
                                     }
@@ -119,7 +118,46 @@ public class BankReceiptController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Bank receipt found",
-                    content = @Content(schema = @Schema(implementation = BankReceiptResponseDto.class))
+                    content = @Content(
+                            schema = @Schema(implementation = BankReceiptResponseDto.class),
+                            examples = @ExampleObject(
+                                    name = "Bank Receipt Example",
+                                    value = """
+                                            {
+                                              "id": 1,
+                                              "transactionDateTime": "2025-12-02T10:30:00",
+                                              "receiptType": "CUSTOMER_PAYMENT",
+                                              "amount": 10000.00,
+                                              "bankCommission": 50.00,
+                                              "status": "POSTED",
+                                              "account": {
+                                                "id": 1,
+                                                "accountNumber": "ES1234567890123456789012",
+                                                "accountName": "Main Business Account"
+                                              },
+                                              "counterparty": {
+                                                "id": 7,
+                                                "name": "ACME Corporation"
+                                              },
+                                              "currency": {
+                                                "id": 2,
+                                                "code": "EUR",
+                                                "name": "Euro"
+                                              },
+                                              "organization": {
+                                                "id": 1,
+                                                "name": "My Company Ltd"
+                                              },
+                                              "description": "Payment for software development services",
+                                              "paymentPurpose": "Invoice #INV-2025-125, December services",
+                                              "paymentReference": "INV-2025-125",
+                                              "createdAt": "2025-12-02T10:30:00",
+                                              "updatedAt": "2025-12-02T10:35:00",
+                                              "postedAt": "2025-12-02T10:35:00"
+                                            }
+                                            """
+                            )
+                    )
             ),
             @ApiResponse(responseCode = "404", description = "Bank receipt not found")
     })
@@ -137,18 +175,78 @@ public class BankReceiptController {
                     Retrieves all bank receipts with pagination and sorting.
                     
                     Sort examples:
-                    - sort=documentDate,desc
+                    - sort=transactionDateTime,desc (default)
                     - sort=amount,asc
                     - sort=id,desc
+                    
+                    Pagination examples:
+                    - page=0&size=20 (default)
+                    - page=2&size=50
                     """
     )
     @ApiResponse(
             responseCode = "200",
-            description = "List of bank receipts retrieved successfully"
+            description = "List of bank receipts retrieved successfully",
+            content = @Content(
+                    schema = @Schema(implementation = PageResponse.class),
+                    examples = @ExampleObject(
+                            name = "Paginated Bank Receipts",
+                            value = """
+                                    {
+                                      "content": [
+                                        {
+                                          "id": 1,
+                                          "transactionDateTime": "2025-12-02T10:30:00",
+                                          "receiptType": "CUSTOMER_PAYMENT",
+                                          "amount": 10000.00,
+                                          "bankCommission": 50.00,
+                                          "status": "POSTED",
+                                          "account": {
+                                            "id": 1,
+                                            "accountNumber": "ES1234567890123456789012",
+                                            "accountName": "Main Business Account"
+                                          },
+                                          "counterparty": {
+                                            "id": 7,
+                                            "name": "ACME Corporation"
+                                          },
+                                          "currency": {
+                                            "id": 2,
+                                            "code": "EUR",
+                                            "name": "Euro"
+                                          },
+                                          "organization": {
+                                            "id": 1,
+                                            "name": "My Company Ltd"
+                                          },
+                                          "description": "Payment for software development services",
+                                          "createdAt": "2025-12-02T10:30:00",
+                                          "updatedAt": "2025-12-02T10:35:00",
+                                          "postedAt": "2025-12-02T10:35:00"
+                                        }
+                                      ],
+                                      "metadata": {
+                                        "currentPage": 0,
+                                        "pageSize": 20,
+                                        "totalElements": 150,
+                                        "totalPages": 8,
+                                        "hasNext": true,
+                                        "hasPrevious": false
+                                      }
+                                    }
+                                    """
+                    )
+            )
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getAll(
-            //@Parameter(description = "Pagination and sorting parameters")
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @Parameter(
+                    description = "Pagination and sorting parameters",
+                    examples = {
+                            @ExampleObject(name = "Default", value = "page=0&size=20&sort=transactionDateTime,desc"),
+                            @ExampleObject(name = "Custom", value = "page=1&size=50&sort=amount,asc")
+                    }
+            )
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findAll(pageable);
         return ResponseEntity.ok(response);
@@ -157,16 +255,18 @@ public class BankReceiptController {
     @GetMapping("/account/{accountId}")
     @Operation(
             summary = "Get bank receipts by account",
-            description = "Retrieves all bank receipts for a specific bank account"
+            description = "Retrieves all bank receipts for a specific bank account with pagination"
     )
     @ApiResponse(
             responseCode = "200",
-            description = "List of bank receipts for account retrieved successfully"
+            description = "List of bank receipts for account retrieved successfully",
+            content = @Content(schema = @Schema(implementation = PageResponse.class))
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByAccountId(
-            @Parameter(description = "Bank account ID", required = true)
+            @Parameter(description = "Bank account ID", required = true, example = "1")
             @PathVariable Long accountId,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @Parameter(description = "Pagination and sorting parameters")
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByAccountId(accountId, pageable);
         return ResponseEntity.ok(response);
@@ -175,16 +275,18 @@ public class BankReceiptController {
     @GetMapping("/counterparty/{counterpartyId}")
     @Operation(
             summary = "Get bank receipts by counterparty",
-            description = "Retrieves all bank receipts from a specific counterparty"
+            description = "Retrieves all bank receipts from a specific counterparty with pagination"
     )
     @ApiResponse(
             responseCode = "200",
-            description = "List of bank receipts for counterparty retrieved successfully"
+            description = "List of bank receipts for counterparty retrieved successfully",
+            content = @Content(schema = @Schema(implementation = PageResponse.class))
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByCounterpartyId(
-            @Parameter(description = "Counterparty ID", required = true)
+            @Parameter(description = "Counterparty ID", required = true, example = "7")
             @PathVariable Long counterpartyId,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @Parameter(description = "Pagination and sorting parameters")
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByCounterpartyId(counterpartyId, pageable);
         return ResponseEntity.ok(response);
@@ -193,20 +295,25 @@ public class BankReceiptController {
     @GetMapping("/status/{status}")
     @Operation(
             summary = "Get bank receipts by status",
-            description = "Retrieves all bank receipts with a specific status (DRAFT, POSTED, CANCELLED)"
+            description = "Retrieves all bank receipts with a specific status (DRAFT, POSTED, CANCELLED) with pagination"
     )
     @ApiResponse(
             responseCode = "200",
-            description = "List of bank receipts with specified status retrieved successfully"
+            description = "List of bank receipts with specified status retrieved successfully",
+            content = @Content(schema = @Schema(implementation = PageResponse.class))
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByStatus(
             @Parameter(
                     description = "Document status",
                     required = true,
-                    example = "DRAFT"
+                    schema = @Schema(
+                            allowableValues = {"DRAFT", "POSTED", "CANCELLED"},
+                            example = "DRAFT"
+                    )
             )
             @PathVariable DocumentStatus status,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @Parameter(description = "Pagination and sorting parameters")
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
         PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByStatus(status, pageable);
         return ResponseEntity.ok(response);
@@ -215,11 +322,16 @@ public class BankReceiptController {
     @GetMapping("/date-range")
     @Operation(
             summary = "Get bank receipts by date range",
-            description = "Retrieves all bank receipts within a specified date range"
+            description = """
+                    Retrieves all bank receipts within a specified date range with pagination.
+                    The range is inclusive for both start and end dates.
+                    Date format: YYYY-MM-DD (ISO 8601)
+                    """
     )
     @ApiResponse(
             responseCode = "200",
-            description = "List of bank receipts in date range retrieved successfully"
+            description = "List of bank receipts in date range retrieved successfully",
+            content = @Content(schema = @Schema(implementation = PageResponse.class))
     )
     public ResponseEntity<PageResponse<BankReceiptResponseDto>> getByDateRange(
             @Parameter(
@@ -234,9 +346,13 @@ public class BankReceiptController {
                     example = "2025-12-31"
             )
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @PageableDefault(size = 20, sort = "documentDate", direction = Sort.Direction.DESC)
+            @Parameter(description = "Pagination and sorting parameters")
+            @PageableDefault(size = 20, sort = "transactionDateTime", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByDateRange(startDate, endDate, pageable);
+        // Convert dates to datetime range (start of startDate to end of endDate)
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        PageResponse<BankReceiptResponseDto> response = bankReceiptService.findByDateTimeRange(startDateTime, endDateTime, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -248,10 +364,10 @@ public class BankReceiptController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Bank receipt deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Bank receipt not found"),
-            @ApiResponse(responseCode = "409", description = "Cannot delete receipt in current status")
+            @ApiResponse(responseCode = "409", description = "Cannot delete receipt in current status (only DRAFT receipts can be deleted)")
     })
     public ResponseEntity<Void> delete(
-            @Parameter(description = "Bank receipt ID", required = true)
+            @Parameter(description = "Bank receipt ID", required = true, example = "1")
             @PathVariable Long id) {
         bankReceiptService.delete(id);
         return ResponseEntity.noContent().build();
@@ -260,7 +376,14 @@ public class BankReceiptController {
     @PostMapping("/{id}/post")
     @Operation(
             summary = "Post bank receipt",
-            description = "Posts the bank receipt (changes status from DRAFT to POSTED) and creates corresponding accounting entries"
+            description = """
+                    Posts the bank receipt (changes status from DRAFT to POSTED) and creates corresponding accounting entries.
+                    This operation:
+                    - Changes document status from DRAFT to POSTED
+                    - Creates accounting entries (debiting bank account, crediting income/liability accounts)
+                    - Updates bank account balance
+                    - Records posting timestamp
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -269,10 +392,12 @@ public class BankReceiptController {
                     content = @Content(schema = @Schema(implementation = BankReceiptResponseDto.class))
             ),
             @ApiResponse(responseCode = "400", description = "Document already posted or cannot be posted"),
-            @ApiResponse(responseCode = "404", description = "Bank receipt not found")
+            @ApiResponse(responseCode = "404", description = "Bank receipt not found"),
+            @ApiResponse(responseCode = "409", description = "Business rule violation (e.g., insufficient balance, closed period)")
     })
     public ResponseEntity<BankReceiptResponseDto> post(
-            @Parameter(description = "Bank receipt ID") @PathVariable Long id) {
+            @Parameter(description = "Bank receipt ID", required = true, example = "1")
+            @PathVariable Long id) {
         BankReceiptResponseDto responseDto = bankReceiptService.post(id);
         return ResponseEntity.ok(responseDto);
     }
@@ -280,7 +405,14 @@ public class BankReceiptController {
     @PostMapping("/{id}/unpost")
     @Operation(
             summary = "Unpost bank receipt",
-            description = "Unposts the bank receipt (changes status from POSTED to DRAFT) and removes corresponding accounting entries"
+            description = """
+                    Unposts the bank receipt (changes status from POSTED to DRAFT) and removes corresponding accounting entries.
+                    This operation:
+                    - Changes document status from POSTED to DRAFT
+                    - Removes all related accounting entries
+                    - Reverses bank account balance changes
+                    - Clears posting timestamp
+                    """
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -289,10 +421,12 @@ public class BankReceiptController {
                     content = @Content(schema = @Schema(implementation = BankReceiptResponseDto.class))
             ),
             @ApiResponse(responseCode = "400", description = "Document not posted or cannot be unposted"),
-            @ApiResponse(responseCode = "404", description = "Bank receipt not found")
+            @ApiResponse(responseCode = "404", description = "Bank receipt not found"),
+            @ApiResponse(responseCode = "409", description = "Business rule violation (e.g., closed period, dependent documents exist)")
     })
     public ResponseEntity<BankReceiptResponseDto> unpost(
-            @Parameter(description = "Bank receipt ID") @PathVariable Long id) {
+            @Parameter(description = "Bank receipt ID", required = true, example = "1")
+            @PathVariable Long id) {
         BankReceiptResponseDto responseDto = bankReceiptService.unpost(id);
         return ResponseEntity.ok(responseDto);
     }

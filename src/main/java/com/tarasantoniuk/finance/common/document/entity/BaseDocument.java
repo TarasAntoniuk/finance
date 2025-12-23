@@ -5,7 +5,6 @@ import com.tarasantoniuk.finance.common.entity.BaseEntity;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -18,8 +17,12 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 public abstract class BaseDocument extends BaseEntity {
 
-    @Column(nullable = false)
-    private LocalDate documentDate;
+    /**
+     * Date and time when the transaction occurred.
+     * This is the primary timestamp for balance calculations and reporting.
+     */
+    @Column(name = "transaction_date_time", nullable = false)
+    private LocalDateTime transactionDateTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = false)
@@ -40,12 +43,12 @@ public abstract class BaseDocument extends BaseEntity {
 
     // Getters and Setters
 
-    public LocalDate getDocumentDate() {
-        return documentDate;
+    public LocalDateTime getTransactionDateTime() {
+        return transactionDateTime;
     }
 
-    public void setDocumentDate(LocalDate documentDate) {
-        this.documentDate = documentDate;
+    public void setTransactionDateTime(LocalDateTime transactionDateTime) {
+        this.transactionDateTime = transactionDateTime;
     }
 
     public Organization getOrganization() {

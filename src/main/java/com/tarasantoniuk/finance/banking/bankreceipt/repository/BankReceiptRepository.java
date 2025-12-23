@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -86,18 +86,18 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     Page<BankReceipt> findByStatus(@Param("status") DocumentStatus status, Pageable pageable);
 
     /**
-     * Find receipts by document date range
+     * Find receipts by transaction datetime range
      */
     @Query("""
                 SELECT DISTINCT br FROM BankReceipt br
                 LEFT JOIN FETCH br.account
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
-                WHERE br.documentDate BETWEEN :startDate AND :endDate
+                WHERE br.transactionDateTime BETWEEN :startDateTime AND :endDateTime
             """)
-    Page<BankReceipt> findByDocumentDateBetween(
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
+    Page<BankReceipt> findByTransactionDateTimeBetween(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
             Pageable pageable
     );
 

@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -85,7 +85,7 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
     Page<BankPayment> findByStatus(@Param("status") DocumentStatus status, Pageable pageable);
 
     /**
-     * Find payments by document date range
+     * Find payments by transaction datetime range
      */
     @Query("""
             SELECT p FROM BankPayment p
@@ -94,11 +94,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
             LEFT JOIN FETCH p.organization
-            WHERE p.documentDate BETWEEN :startDate AND :endDate
+            WHERE p.transactionDateTime BETWEEN :startDateTime AND :endDateTime
             """)
-    Page<BankPayment> findByDocumentDateBetween(
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
+    Page<BankPayment> findByTransactionDateTimeBetween(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime,
             Pageable pageable
     );
 

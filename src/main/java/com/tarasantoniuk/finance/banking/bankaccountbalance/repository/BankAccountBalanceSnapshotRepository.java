@@ -2,11 +2,12 @@ package com.tarasantoniuk.finance.banking.bankaccountbalance.repository;
 
 import com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ import java.util.Optional;
 public interface BankAccountBalanceSnapshotRepository extends JpaRepository<BankAccountBalanceSnapshot, Long> {
 
     /**
-     * Find snapshot for specific bank account and date with all relations loaded (N+1 optimization)
+     * Find snapshot for specific bank account and datetime with all relations loaded (N+1 optimization)
      */
     @Query("""
             SELECT s FROM BankAccountBalanceSnapshot s
@@ -22,15 +23,15 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.bankAccount.id = :bankAccountId
-            AND s.snapshotDate = :snapshotDate
+            AND s.snapshotDateTime = :snapshotDateTime
             """)
-    Optional<BankAccountBalanceSnapshot> findByBankAccountIdAndSnapshotDateWithRelations(
+    Optional<BankAccountBalanceSnapshot> findByBankAccountIdAndSnapshotDateTimeWithRelations(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("snapshotDate") LocalDate snapshotDate
+            @Param("snapshotDateTime") LocalDateTime snapshotDateTime
     );
 
     /**
-     * Find latest snapshot for bank account before or on specific date
+     * Find latest snapshot for bank account before or at specific datetime
      */
     @Query("""
             SELECT s FROM BankAccountBalanceSnapshot s
@@ -38,17 +39,17 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.bankAccount.id = :bankAccountId
-            AND s.snapshotDate <= :beforeDate
-            ORDER BY s.snapshotDate DESC
+            AND s.snapshotDateTime <= :beforeDateTime
+            ORDER BY s.snapshotDateTime DESC
             LIMIT 1
             """)
-    Optional<BankAccountBalanceSnapshot> findLatestByBankAccountIdBeforeDateWithRelations(
+    Optional<BankAccountBalanceSnapshot> findLatestByBankAccountIdBeforeDateTimeWithRelations(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("beforeDate") LocalDate beforeDate
+            @Param("beforeDateTime") LocalDateTime beforeDateTime
     );
 
     /**
-     * Find all snapshots for bank account within date range
+     * Find all snapshots for bank account within datetime range
      */
     @Query("""
             SELECT s FROM BankAccountBalanceSnapshot s
@@ -56,17 +57,17 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.bankAccount.id = :bankAccountId
-            AND s.snapshotDate BETWEEN :startDate AND :endDate
-            ORDER BY s.snapshotDate ASC
+            AND s.snapshotDateTime BETWEEN :startDateTime AND :endDateTime
+            ORDER BY s.snapshotDateTime ASC
             """)
-    List<BankAccountBalanceSnapshot> findByBankAccountIdAndDateRangeWithRelations(
+    List<BankAccountBalanceSnapshot> findByBankAccountIdAndDateTimeRangeWithRelations(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
     );
 
     /**
-     * Find all snapshots for organization within date range
+     * Find all snapshots for organization within datetime range
      */
     @Query("""
             SELECT s FROM BankAccountBalanceSnapshot s
@@ -74,13 +75,13 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.organization.id = :organizationId
-            AND s.snapshotDate BETWEEN :startDate AND :endDate
-            ORDER BY s.snapshotDate ASC
+            AND s.snapshotDateTime BETWEEN :startDateTime AND :endDateTime
+            ORDER BY s.snapshotDateTime ASC
             """)
-    List<BankAccountBalanceSnapshot> findByOrganizationIdAndDateRangeWithRelations(
+    List<BankAccountBalanceSnapshot> findByOrganizationIdAndDateTimeRangeWithRelations(
             @Param("organizationId") Long organizationId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
     );
 
     /**
@@ -92,25 +93,26 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.bankAccount.id = :bankAccountId
-            ORDER BY s.snapshotDate ASC
+            ORDER BY s.snapshotDateTime ASC
             """)
     List<BankAccountBalanceSnapshot> findByBankAccountIdWithRelations(@Param("bankAccountId") Long bankAccountId);
 
     /**
-     * Check if snapshot exists for bank account and date
+     * Check if snapshot exists for bank account and datetime
      */
-    boolean existsByBankAccountIdAndSnapshotDate(Long bankAccountId, LocalDate snapshotDate);
+    boolean existsByBankAccountIdAndSnapshotDateTime(Long bankAccountId, LocalDateTime snapshotDateTime);
 
     /**
-     * Delete all snapshots for bank account after specific date (for recalculation)
+     * Delete all snapshots for bank account after specific datetime (for recalculation)
      */
+    @Modifying
     @Query("""
             DELETE FROM BankAccountBalanceSnapshot s
             WHERE s.bankAccount.id = :bankAccountId
-            AND s.snapshotDate > :afterDate
+            AND s.snapshotDateTime > :afterDateTime
             """)
-    void deleteByBankAccountIdAfterDate(
+    void deleteByBankAccountIdAfterDateTime(
             @Param("bankAccountId") Long bankAccountId,
-            @Param("afterDate") LocalDate afterDate
+            @Param("afterDateTime") LocalDateTime afterDateTime
     );
 }

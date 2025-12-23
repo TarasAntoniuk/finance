@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,7 +27,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
     void shouldMapRequestDtoToEntity() {
         // Given
         BankReceiptRequestDto dto = new BankReceiptRequestDto();
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9, 0,0));
         dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         dto.setAmount(new BigDecimal("10000.00"));
         dto.setBankCommission(new BigDecimal("50.00"));
@@ -48,7 +47,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
         // Then
         assertNotNull(entity);
         assertNull(entity.getId(), "ID should not be mapped");
-        assertEquals(dto.getDocumentDate(), entity.getDocumentDate());
+        assertEquals(dto.getTransactionDateTime(), entity.getTransactionDateTime());
         assertEquals(dto.getReceiptType(), entity.getReceiptType());
         assertEquals(dto.getAmount(), entity.getAmount());
         assertEquals(dto.getBankCommission(), entity.getBankCommission());
@@ -74,7 +73,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
     void shouldMapRequestDtoToEntity_WithNullCounterpartyBankAccount() {
         // Given
         BankReceiptRequestDto dto = new BankReceiptRequestDto();
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9, 0, 0));
         dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         dto.setAmount(new BigDecimal("10000.00"));
         dto.setAccountId(1L);
@@ -106,14 +105,14 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
         // Then
         assertNotNull(dto);
         assertEquals(entity.getId(), dto.getId());
-        assertEquals(entity.getDocumentDate(), dto.getDocumentDate());
+        assertEquals(entity.getTransactionDateTime(), dto.getTransactionDateTime());
         assertEquals(entity.getReceiptType(), dto.getReceiptType());
         assertEquals(entity.getAmount(), dto.getAmount());
         assertEquals(entity.getBankCommission(), dto.getBankCommission());
         assertEquals(entity.getDescription(), dto.getDescription());
         assertEquals(entity.getPaymentPurpose(), dto.getPaymentPurpose());
         assertEquals(entity.getPaymentReference(), dto.getPaymentReference());
-        assertEquals(entity.getExternalTransactionId(), entity.getExternalTransactionId());
+        assertEquals(entity.getExternalTransactionId(), dto.getExternalTransactionId());
         assertEquals(entity.getStatus(), dto.getStatus());
         assertEquals(entity.getPostedAt(), dto.getPostedAt());
         assertEquals(entity.getCancelledAt(), dto.getCancelledAt());
@@ -152,7 +151,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
         LocalDateTime originalPostedAt = existingEntity.getPostedAt();
 
         BankReceiptRequestDto updateDto = new BankReceiptRequestDto();
-        updateDto.setDocumentDate(LocalDate.of(2024, 2, 20));
+        updateDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9, 0, 0));
         updateDto.setReceiptType(ReceiptType.REFUND);
         updateDto.setAmount(new BigDecimal("5000.00"));
         updateDto.setBankCommission(new BigDecimal("25.00"));
@@ -174,7 +173,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
         assertEquals(originalPostedAt, existingEntity.getPostedAt(), "PostedAt should not be updated");
 
         // Verify mutable fields ARE changed
-        assertEquals(updateDto.getDocumentDate(), existingEntity.getDocumentDate());
+        assertEquals(updateDto.getTransactionDateTime(), existingEntity.getTransactionDateTime());
         assertEquals(updateDto.getReceiptType(), existingEntity.getReceiptType());
         assertEquals(updateDto.getAmount(), existingEntity.getAmount());
         assertEquals(updateDto.getBankCommission(), existingEntity.getBankCommission());
@@ -191,7 +190,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
     void shouldHandleNullValuesInRequestDto() {
         // Given
         BankReceiptRequestDto dto = new BankReceiptRequestDto();
-        dto.setDocumentDate(LocalDate.of(2024, 1, 15));
+        dto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9, 0,0));
         dto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         dto.setAmount(new BigDecimal("10000.00"));
         dto.setAccountId(1L);
@@ -217,7 +216,7 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
     private BankReceipt createFullBankReceiptEntity() {
         BankReceipt receipt = new BankReceipt();
         receipt.setId(100L);
-        receipt.setDocumentDate(LocalDate.of(2024, 1, 15));
+        receipt.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9, 0,0));
         receipt.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
         receipt.setAmount(new BigDecimal("10000.00"));
         receipt.setBankCommission(new BigDecimal("50.00"));

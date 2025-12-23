@@ -142,18 +142,19 @@ public class AccountTurnoverReportService {
      * Build turnover item for single account
      */
     private AccountTurnoverSummaryDto buildTurnoverItem(BankAccount account, LocalDate startDate, LocalDate endDate) {
-        // Calculate opening balance (day before start date)
-        LocalDate dayBeforeStart = startDate.minusDays(1);
-        BigDecimal openingBalance = transactionService.calculateBalance(account.getId(), dayBeforeStart);
+        // Calculate opening balance (start of startDate)
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        BigDecimal openingBalance = transactionService.calculateBalance(account.getId(), startDateTime);
 
         // Handle null opening balance
         if (openingBalance == null) {
             openingBalance = BigDecimal.ZERO;
         }
 
-        // Get events in period
+        // Get events in period (from start of startDate to end of endDate)
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
         List<BankAccountTransactionEvent> eventsInPeriod = transactionService
-                .getAccountEventsInDateRange(account.getId(), startDate, endDate);
+                .getAccountEventsInDateTimeRange(account.getId(), startDateTime, endDateTime);
 
         // Calculate turnovers
         BigDecimal debitTurnover = calculateTurnover(eventsInPeriod, TransactionType.DEBIT);

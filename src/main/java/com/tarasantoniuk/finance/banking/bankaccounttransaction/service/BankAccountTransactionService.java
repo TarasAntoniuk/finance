@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -49,7 +50,7 @@ public class BankAccountTransactionService {
             Long bankAccountId,
             Long organizationId,
             Long currencyId,
-            LocalDate transactionDate,
+            LocalDateTime transactionDateTime,
             BigDecimal amount,
             String documentType,
             Long documentId,
@@ -68,18 +69,17 @@ public class BankAccountTransactionService {
         event.setBankAccount(bankAccount);
         event.setOrganization(organization);
         event.setCurrency(currency);
-        event.setTransactionDate(transactionDate);
+        event.setTransactionDateTime(transactionDateTime);
         event.setTransactionType(TransactionType.DEBIT);
         event.setAmount(amount);
         event.setDocumentType(documentType);
         event.setDocumentId(documentId);
         event.setDescription(description);
 
-//        event.setDocumentDate(transactionDate);      // Заповнюємо NOT NULL поле з BaseDocument
-//        event.setStatus(DocumentStatus.POSTED);
-
         // Calculate balance after transaction
-        BigDecimal currentBalance = calculateBalance(bankAccountId, transactionDate);
+        // Use current time to ensure we include all previously created events,
+        // including those at the same transactionDateTime (e.g., reversals)
+        BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
         BigDecimal balanceAfter = currentBalance.add(amount);
         event.setBalanceAfter(balanceAfter);
 
@@ -93,7 +93,7 @@ public class BankAccountTransactionService {
             Long bankAccountId,
             Long organizationId,
             Long currencyId,
-            LocalDate transactionDate,
+            LocalDateTime transactionDateTime,
             BigDecimal amount,
             String documentType,
             Long documentId,
@@ -112,18 +112,17 @@ public class BankAccountTransactionService {
         event.setBankAccount(bankAccount);
         event.setOrganization(organization);
         event.setCurrency(currency);
-        event.setTransactionDate(transactionDate);
+        event.setTransactionDateTime(transactionDateTime);
         event.setTransactionType(TransactionType.CREDIT);
         event.setAmount(amount);
         event.setDocumentType(documentType);
         event.setDocumentId(documentId);
         event.setDescription(description);
 
-//        event.setDocumentDate(transactionDate);      // Заповнюємо NOT NULL поле з BaseDocument
-//        event.setStatus(DocumentStatus.POSTED);
-
         // Calculate balance after transaction
-        BigDecimal currentBalance = calculateBalance(bankAccountId, transactionDate);
+        // Use current time to ensure we include all previously created events,
+        // including those at the same transactionDateTime (e.g., original transactions being reversed)
+        BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
         BigDecimal balanceAfter = currentBalance.subtract(amount);
         event.setBalanceAfter(balanceAfter);
 
@@ -131,32 +130,37 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Calculate current balance for bank account on specific date
-     * Uses snapshot optimization: finds latest snapshot and adds events after it
+     * Calculate balance for bank account at specific point in time.
+     * Uses snapshot optimization: finds latest snapshot and adds events after it.
+     *
+     * @param bankAccountId bank account ID
+     * @param atDateTime    point in time to calculate balance (exclusive - balance BEFORE this moment)
+     * @return balance at the specified point in time
      */
     @Transactional(readOnly = true)
-    public BigDecimal calculateBalance(Long bankAccountId, LocalDate onDate) {
-        // Try to find latest snapshot before or on the date
-        var snapshotOpt = balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateWithRelations(
-                bankAccountId, onDate);
+    public BigDecimal calculateBalance(Long bankAccountId, LocalDateTime atDateTime) {
+        // Try to find latest snapshot before the datetime
+        var snapshotOpt = balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                bankAccountId, atDateTime);
 
         BigDecimal balance;
-        LocalDate startDate;
+        LocalDateTime startDateTime;
 
         if (snapshotOpt.isPresent()) {
             // Start from snapshot
             BankAccountBalanceSnapshot snapshot = snapshotOpt.get();
             balance = snapshot.getClosingBalance();
-            startDate = snapshot.getSnapshotDate().plusDays(1);
+            // FIX: Start AFTER snapshot datetime to avoid duplicating events already included in snapshot
+            startDateTime = snapshot.getSnapshotDateTime().plusNanos(1);
         } else {
             // No snapshot, start from zero
             balance = BigDecimal.ZERO;
-            startDate = LocalDate.of(1900, 1, 1); // Far past
+            startDateTime = LocalDateTime.of(1900, 1, 1, 0, 0, 0);
         }
 
-        // Get all events after snapshot up to the date
+        // Get all events after snapshot up to (but not including) the specified datetime
         List<BankAccountTransactionEvent> events = transactionEventRepository
-                .findByBankAccountIdAndDateRangeWithRelations(bankAccountId, startDate, onDate);
+                .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime.minusNanos(1));
 
         // Apply events to balance
         for (BankAccountTransactionEvent event : events) {
@@ -171,11 +175,11 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Get current balance for bank account (as of today)
+     * Get current balance for bank account (as of now)
      */
     @Transactional(readOnly = true)
     public BigDecimal getCurrentBalance(Long bankAccountId) {
-        return calculateBalance(bankAccountId, LocalDate.now());
+        return calculateBalance(bankAccountId, LocalDateTime.now());
     }
 
     /**
@@ -187,13 +191,13 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Get events for bank account within date range
+     * Get events for bank account within datetime range
      */
     @Transactional(readOnly = true)
-    public List<BankAccountTransactionEvent> getAccountEventsInDateRange(
-            Long bankAccountId, LocalDate startDate, LocalDate endDate) {
-        return transactionEventRepository.findByBankAccountIdAndDateRangeWithRelations(
-                bankAccountId, startDate, endDate);
+    public List<BankAccountTransactionEvent> getAccountEventsInDateTimeRange(
+            Long bankAccountId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                bankAccountId, startDateTime, endDateTime);
     }
 
     /**
@@ -241,22 +245,31 @@ public class BankAccountTransactionService {
         originalEvent.setIsReversed(true);
         originalEvent.setReversedByEventId(reversalEventId);
 
-        // Reversal event теж знає про оригінальний event (опціонально, для tracking)
+        // Reversal event also knows about original event (for tracking)
         reversalEvent.setReversedByEventId(eventId);
 
         transactionEventRepository.saveAll(List.of(originalEvent, reversalEvent));
     }
 
     /**
-     * Create balance snapshot for specific date
-     * This is used for optimization - to avoid recalculating from all events
+     * Create balance snapshot for end of day.
+     * Snapshot is always created for the start of the next day (which represents end of current day).
+     * This is used for optimization - to avoid recalculating from all events.
+     *
+     * @param bankAccountId bank account ID
+     * @param snapshotDateTime datetime for snapshot (will be normalized to start of next day)
+     * @return created snapshot
      */
-    public BankAccountBalanceSnapshot createSnapshot(Long bankAccountId, LocalDate snapshotDate) {
+    public BankAccountBalanceSnapshot createSnapshot(Long bankAccountId, LocalDateTime snapshotDateTime) {
         BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(bankAccountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank account not found with id: " + bankAccountId));
 
-        // Check if snapshot already exists
-        if (balanceSnapshotRepository.existsByBankAccountIdAndSnapshotDate(bankAccountId, snapshotDate)) {
+        // Normalize to start of next day (represents end of current day)
+        LocalDate snapshotDate = snapshotDateTime.toLocalDate();
+        LocalDateTime endOfDay = snapshotDate.plusDays(1).atStartOfDay();
+
+        // Check if snapshot already exists for this day
+        if (balanceSnapshotRepository.existsByBankAccountIdAndSnapshotDateTime(bankAccountId, endOfDay)) {
             throw new IllegalStateException("Snapshot already exists for date: " + snapshotDate);
         }
 
@@ -264,13 +277,16 @@ public class BankAccountTransactionService {
         Organization organization = organizationRepository.findById(bankAccount.getHolderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id: " + bankAccount.getHolderId()));
 
-        // Calculate opening balance (closing balance of previous day)
-        LocalDate previousDay = snapshotDate.minusDays(1);
-        BigDecimal openingBalance = calculateBalance(bankAccountId, previousDay);
+        // Calculate opening balance (balance at start of this day)
+        LocalDateTime startOfDay = snapshotDate.atStartOfDay();
+        BigDecimal openingBalance = calculateBalance(bankAccountId, startOfDay);
 
-        // Get events for this day
+        // Get events for this day (from start to end of day - exclusive end)
         List<BankAccountTransactionEvent> events = transactionEventRepository
-                .findByBankAccountIdAndDateRangeWithRelations(bankAccountId, snapshotDate, snapshotDate);
+                .findByBankAccountIdAndDateTimeRangeWithRelations(
+                        bankAccountId,
+                        startOfDay,
+                        endOfDay.minusNanos(1));
 
         // Calculate turnovers
         BigDecimal debitTurnover = BigDecimal.ZERO;
@@ -289,12 +305,12 @@ public class BankAccountTransactionService {
         // Calculate closing balance
         BigDecimal closingBalance = openingBalance.add(debitTurnover).subtract(creditTurnover);
 
-        // Create snapshot
+        // Create snapshot with normalized datetime (start of next day)
         BankAccountBalanceSnapshot snapshot = new BankAccountBalanceSnapshot();
         snapshot.setBankAccount(bankAccount);
         snapshot.setOrganization(organization);
         snapshot.setCurrency(bankAccount.getCurrency());
-        snapshot.setSnapshotDate(snapshotDate);
+        snapshot.setSnapshotDateTime(endOfDay);  // Start of next day
         snapshot.setOpeningBalance(openingBalance);
         snapshot.setDebitTurnover(debitTurnover);
         snapshot.setCreditTurnover(creditTurnover);
@@ -306,22 +322,22 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Get balance snapshot for specific date
+     * Get balance snapshot for specific datetime
      */
     @Transactional(readOnly = true)
-    public BankAccountBalanceSnapshot getSnapshot(Long bankAccountId, LocalDate snapshotDate) {
-        return balanceSnapshotRepository.findByBankAccountIdAndSnapshotDateWithRelations(bankAccountId, snapshotDate)
+    public BankAccountBalanceSnapshot getSnapshot(Long bankAccountId, LocalDateTime snapshotDateTime) {
+        return balanceSnapshotRepository.findByBankAccountIdAndSnapshotDateTimeWithRelations(bankAccountId, snapshotDateTime)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Snapshot not found for account " + bankAccountId + " on date " + snapshotDate));
+                        "Snapshot not found for account " + bankAccountId + " at datetime " + snapshotDateTime));
     }
 
     /**
-     * Get all snapshots for bank account within date range
+     * Get all snapshots for bank account within datetime range
      */
     @Transactional(readOnly = true)
-    public List<BankAccountBalanceSnapshot> getSnapshotsInDateRange(
-            Long bankAccountId, LocalDate startDate, LocalDate endDate) {
-        return balanceSnapshotRepository.findByBankAccountIdAndDateRangeWithRelations(
-                bankAccountId, startDate, endDate);
+    public List<BankAccountBalanceSnapshot> getSnapshotsInDateTimeRange(
+            Long bankAccountId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return balanceSnapshotRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                bankAccountId, startDateTime, endDateTime);
     }
 }

@@ -1,11 +1,26 @@
 package com.tarasantoniuk.finance.common.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Pagination metadata information")
 public class PageMetadata {
+
+    @Schema(description = "Current page number (0-indexed)", example = "0")
     private int currentPage;
+
+    @Schema(description = "Total number of pages", example = "8")
     private int totalPages;
+
+    @Schema(description = "Number of items per page", example = "20")
     private int pageSize;
+
+    @Schema(description = "Total number of items across all pages", example = "150")
     private long totalElements;
+
+    @Schema(description = "Whether there are more pages after this one", example = "true")
     private boolean hasNext;
+
+    @Schema(description = "Whether there are pages before this one", example = "false")
     private boolean hasPrevious;
 
     public PageMetadata() {

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,27 +42,16 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
     @Autowired
     private TestDataCleanerBanking cleanerBanking;
 
-
     private Country country;
     private Currency currency;
     private Organization organization;
     private Bank bank;
     private BankAccount bankAccount;
-    private LocalDate testDate;
-
-//    @BeforeAll
-//    static void cleanDatabase(@Autowired TestDataCleanerBanking cleanerBanking,
-//                              @Autowired TestDataCleanerCore cleanerCore) {
-//        cleanerBanking.cleanAll();
-//        cleanerCore.cleanAll();
-//    }
+    private LocalDateTime testDateTime;
 
     @BeforeEach
     void setUp() {
-        testDate = LocalDate.of(2024, 1, 15);
-
-
-        System.out.println("=== Currencies in DB BEFORE setUp: " + factoryCore.getCurrencyRepository().findAll().size());
+        testDateTime = LocalDateTime.of(2024, 1, 15, 10, 0, 0);
 
         // Create core entities
         country = factoryCore.createUkraine();
@@ -76,7 +65,6 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        // Clean up in correct order (most dependent first)
         cleanerBanking.cleanAll();
         cleanerCore.cleanAll();
     }
@@ -89,12 +77,14 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should calculate balance from zero when no snapshot exists")
         void shouldCalculateBalanceFromZero() {
             // Given: Create events directly
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("1000.00"), "TEST_DOCUMENT", 1L, "Receipt 1");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime, new BigDecimal("1000.00"), "TEST_DOCUMENT", 1L, "Receipt 1");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("300.00"), "TEST_DOCUMENT", 2L, "Payment 1");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("300.00"), "TEST_DOCUMENT", 2L, "Payment 1");
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(2));
 
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("700.00"));
@@ -104,21 +94,24 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should calculate balance starting from snapshot")
         void shouldCalculateBalanceFromSnapshot() {
             // Given: Create snapshot first
-            LocalDate snapshotDate = testDate.minusDays(5);
+            LocalDateTime snapshotDateTime = testDateTime.minusDays(5);
 
             // Create some events before snapshot
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), snapshotDate, new BigDecimal("5000.00"), "TEST_DOCUMENT", 1L, "Initial receipt");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    snapshotDateTime, new BigDecimal("5000.00"), "TEST_DOCUMENT", 1L, "Initial receipt");
 
             // Create snapshot
-            service.createSnapshot(bankAccount.getId(), snapshotDate);
+            service.createSnapshot(bankAccount.getId(), snapshotDateTime);
 
             // Create events after snapshot
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("2000.00"), "TEST_DOCUMENT", 2L, "Receipt after snapshot");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime, new BigDecimal("2000.00"), "TEST_DOCUMENT", 2L, "Receipt after snapshot");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("500.00"), "TEST_DOCUMENT", 3L, "Payment after snapshot");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("500.00"), "TEST_DOCUMENT", 3L, "Payment after snapshot");
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(2));
 
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("6500.00")); // 5000 + 2000 - 500
@@ -130,7 +123,7 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             // Given: No events created
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime);
 
             // Then
             assertThat(balance).isEqualByComparingTo(BigDecimal.ZERO);
@@ -140,16 +133,17 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should return snapshot balance when no events after snapshot")
         void shouldReturnSnapshotBalanceWhenNoEventsAfter() {
             // Given: Create snapshot with balance
-            LocalDate snapshotDate = testDate.minusDays(1);
+            LocalDateTime snapshotDateTime = testDateTime.minusDays(1);
 
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), snapshotDate, new BigDecimal("3000.00"), "TEST_DOCUMENT", 1L, "Initial receipt");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    snapshotDateTime, new BigDecimal("3000.00"), "TEST_DOCUMENT", 1L, "Initial receipt");
 
-            service.createSnapshot(bankAccount.getId(), snapshotDate);
+            service.createSnapshot(bankAccount.getId(), snapshotDateTime);
 
             // No events after snapshot
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime);
 
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("3000.00"));
@@ -159,14 +153,17 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should handle multiple debit transactions")
         void shouldHandleMultipleDebits() {
             // Given
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("100.00"), "TEST", 1L, "Debit 1");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime, new BigDecimal("100.00"), "TEST", 1L, "Debit 1");
 
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("200.00"), "TEST", 2L, "Debit 2");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("200.00"), "TEST", 2L, "Debit 2");
 
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("300.00"), "TEST", 3L, "Debit 3");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(2), new BigDecimal("300.00"), "TEST", 3L, "Debit 3");
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(3));
 
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("600.00"));
@@ -176,14 +173,17 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should handle multiple credit transactions")
         void shouldHandleMultipleCredits() {
             // Given
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("100.00"), "TEST", 1L, "Credit 1");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime, new BigDecimal("100.00"), "TEST", 1L, "Credit 1");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("200.00"), "TEST", 2L, "Credit 2");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("200.00"), "TEST", 2L, "Credit 2");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("300.00"), "TEST", 3L, "Credit 3");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(2), new BigDecimal("300.00"), "TEST", 3L, "Credit 3");
 
             // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDate);
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(3));
 
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("-600.00"));
@@ -195,12 +195,13 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
     class GetCurrentBalanceTests {
 
         @Test
-        @DisplayName("Should return current balance as of today")
+        @DisplayName("Should return current balance as of now")
         void shouldReturnCurrentBalance() {
             // Given: Create events for today
-            LocalDate today = LocalDate.now();
+            LocalDateTime now = LocalDateTime.now();
 
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), today, new BigDecimal("1000.00"), "TEST", 1L, "Receipt");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    now.minusHours(1), new BigDecimal("1000.00"), "TEST", 1L, "Receipt");
 
             // When
             BigDecimal balance = service.getCurrentBalance(bankAccount.getId());
@@ -218,17 +219,26 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should create snapshot successfully with events")
         void shouldCreateSnapshotWithEvents() {
             // Given: Create events for the day
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("1000.00"), "TEST", 1L, "Receipt 1");
+            LocalDateTime dayStart = testDateTime.toLocalDate().atStartOfDay();
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("300.00"), "TEST", 2L, "Payment 1");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    dayStart.plusHours(8), new BigDecimal("1000.00"), "TEST", 1L, "Receipt 1");
+
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    dayStart.plusHours(10), new BigDecimal("300.00"), "TEST", 2L, "Payment 1");
+
+            LocalDateTime snapshotDateTime = dayStart.plusHours(23).plusMinutes(59);
+
+            // Snapshot will be normalized to start of next day
+            LocalDateTime expectedSnapshotDateTime = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
 
             // When
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDate);
+            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), snapshotDateTime);
 
             // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isNotNull();
-            assertThat(result.getSnapshotDate()).isEqualTo(testDate);
+            assertThat(result.getSnapshotDateTime()).isEqualTo(expectedSnapshotDateTime);
             assertThat(result.getOpeningBalance()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(result.getDebitTurnover()).isEqualByComparingTo(new BigDecimal("1000.00"));
             assertThat(result.getCreditTurnover()).isEqualByComparingTo(new BigDecimal("300.00"));
@@ -241,12 +251,14 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should create snapshot with no events")
         void shouldCreateSnapshotWithNoEvents() {
             // Given: No events for the day
+            LocalDateTime expectedSnapshotDateTime = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
 
             // When
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDate);
+            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDateTime);
 
             // Then
             assertThat(result).isNotNull();
+            assertThat(result.getSnapshotDateTime()).isEqualTo(expectedSnapshotDateTime);
             assertThat(result.getOpeningBalance()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(result.getDebitTurnover()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(result.getCreditTurnover()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -259,10 +271,12 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should throw exception when snapshot already exists")
         void shouldThrowExceptionWhenSnapshotExists() {
             // Given: Create snapshot first time
-            service.createSnapshot(bankAccount.getId(), testDate);
+            service.createSnapshot(bankAccount.getId(), testDateTime);
 
-            // When/Then: Try to create again
-            assertThatThrownBy(() -> service.createSnapshot(bankAccount.getId(), testDate)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Snapshot already exists for date: " + testDate);
+            // When/Then: Try to create again for same day
+            assertThatThrownBy(() -> service.createSnapshot(bankAccount.getId(), testDateTime))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Snapshot already exists for date: " + testDateTime.toLocalDate());
         }
 
         @Test
@@ -272,24 +286,30 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             Long nonExistentId = 999999L;
 
             // When/Then
-            assertThatThrownBy(() -> service.createSnapshot(nonExistentId, testDate)).isInstanceOf(ResourceNotFoundException.class).hasMessageContaining("Bank account not found with id: 999999");
+            assertThatThrownBy(() -> service.createSnapshot(nonExistentId, testDateTime))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Bank account not found with id: 999999");
         }
 
         @Test
         @DisplayName("Should create snapshot with opening balance from previous day")
         void shouldCreateSnapshotWithOpeningBalance() {
             // Given: Create events and snapshot for previous day
-            LocalDate previousDay = testDate.minusDays(1);
+            LocalDateTime previousDay = testDateTime.minusDays(1);
 
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), previousDay, new BigDecimal("5000.00"), "TEST", 1L, "Previous day receipt");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    previousDay, new BigDecimal("5000.00"), "TEST", 1L, "Previous day receipt");
 
+            // Create snapshot for previous day (will be normalized to end of day)
             service.createSnapshot(bankAccount.getId(), previousDay);
 
             // Create event for current day
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("1000.00"), "TEST", 2L, "Current day receipt");
+            LocalDateTime currentDayStart = testDateTime.toLocalDate().atStartOfDay();
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    currentDayStart.plusHours(10), new BigDecimal("1000.00"), "TEST", 2L, "Current day receipt");
 
-            // When
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDate);
+            // When: Create snapshot for current day
+            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDateTime);
 
             // Then
             assertThat(result.getOpeningBalance()).isEqualByComparingTo(new BigDecimal("5000.00"));
@@ -305,14 +325,17 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should return snapshot when it exists")
         void shouldReturnSnapshot() {
             // Given: Create snapshot first
-            service.createSnapshot(bankAccount.getId(), testDate);
+            service.createSnapshot(bankAccount.getId(), testDateTime);
+
+            // Snapshot is stored at start of next day
+            LocalDateTime endOfDay = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
 
             // When
-            BankAccountBalanceSnapshot result = service.getSnapshot(bankAccount.getId(), testDate);
+            BankAccountBalanceSnapshot result = service.getSnapshot(bankAccount.getId(), endOfDay);
 
             // Then
             assertThat(result).isNotNull();
-            assertThat(result.getSnapshotDate()).isEqualTo(testDate);
+            assertThat(result.getSnapshotDateTime()).isEqualTo(endOfDay);
         }
 
         @Test
@@ -321,7 +344,9 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             // Given: No snapshot created
 
             // When/Then
-            assertThatThrownBy(() -> service.getSnapshot(bankAccount.getId(), testDate)).isInstanceOf(ResourceNotFoundException.class).hasMessageContaining("Snapshot not found for account " + bankAccount.getId() + " on date " + testDate);
+            assertThatThrownBy(() -> service.getSnapshot(bankAccount.getId(), testDateTime))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Snapshot not found for account " + bankAccount.getId() + " at datetime " + testDateTime);
         }
     }
 
@@ -333,16 +358,19 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         @DisplayName("Should return all events for account")
         void shouldReturnAllEvents() {
             // Given: Create multiple events
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("1000.00"), "TEST", 1L, "Receipt 1");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime, new BigDecimal("1000.00"), "TEST", 1L, "Receipt 1");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), testDate, new BigDecimal("500.00"), "TEST", 2L, "Payment 1");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("500.00"), "TEST", 2L, "Payment 1");
 
             // When
             List<BankAccountTransactionEvent> result = service.getAccountEvents(bankAccount.getId());
 
             // Then
             assertThat(result).hasSize(2);
-            assertThat(result).extracting(BankAccountTransactionEvent::getTransactionType).containsExactlyInAnyOrder(TransactionType.DEBIT, TransactionType.CREDIT);
+            assertThat(result).extracting(BankAccountTransactionEvent::getTransactionType)
+                    .containsExactlyInAnyOrder(TransactionType.DEBIT, TransactionType.CREDIT);
         }
 
         @Test
@@ -359,45 +387,53 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("getAccountEventsInDateRange Tests")
-    class GetAccountEventsInDateRangeTests {
+    @DisplayName("getAccountEventsInDateTimeRange Tests")
+    class GetAccountEventsInDateTimeRangeTests {
 
         @Test
-        @DisplayName("Should return events within date range")
-        void shouldReturnEventsInDateRange() {
+        @DisplayName("Should return events within datetime range")
+        void shouldReturnEventsInDateTimeRange() {
             // Given
-            LocalDate startDate = testDate;
-            LocalDate endDate = testDate.plusDays(5);
-            LocalDate middleDate = testDate.plusDays(2);
+            LocalDateTime startDateTime = testDateTime;
+            LocalDateTime endDateTime = testDateTime.plusDays(5);
+            LocalDateTime middleDateTime = testDateTime.plusDays(2);
 
             // Events within range
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), startDate, new BigDecimal("1000.00"), "TEST", 1L, "Receipt in range");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    startDateTime, new BigDecimal("1000.00"), "TEST", 1L, "Receipt in range");
 
-            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(), middleDate, new BigDecimal("500.00"), "TEST", 2L, "Payment in range");
+            service.createPaymentEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    middleDateTime, new BigDecimal("500.00"), "TEST", 2L, "Payment in range");
 
             // Event outside range
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), endDate.plusDays(10), new BigDecimal("2000.00"), "TEST", 3L, "Receipt outside range");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    endDateTime.plusDays(10), new BigDecimal("2000.00"), "TEST", 3L, "Receipt outside range");
 
             // When
-            List<BankAccountTransactionEvent> result = service.getAccountEventsInDateRange(bankAccount.getId(), startDate, endDate);
+            List<BankAccountTransactionEvent> result = service.getAccountEventsInDateTimeRange(
+                    bankAccount.getId(), startDateTime, endDateTime);
 
             // Then
             assertThat(result).hasSize(2);
-            assertThat(result).allMatch(event -> !event.getTransactionDate().isBefore(startDate) && !event.getTransactionDate().isAfter(endDate));
+            assertThat(result).allMatch(event ->
+                    !event.getTransactionDateTime().isBefore(startDateTime) &&
+                            !event.getTransactionDateTime().isAfter(endDateTime));
         }
 
         @Test
         @DisplayName("Should return empty list when no events in range")
         void shouldReturnEmptyListWhenNoEventsInRange() {
             // Given
-            LocalDate startDate = testDate;
-            LocalDate endDate = testDate.plusDays(5);
+            LocalDateTime startDateTime = testDateTime;
+            LocalDateTime endDateTime = testDateTime.plusDays(5);
 
             // Create event outside range
-            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(), endDate.plusDays(10), new BigDecimal("1000.00"), "TEST", 1L, "Receipt");
+            service.createReceiptEvent(bankAccount.getId(), organization.getId(), currency.getId(),
+                    endDateTime.plusDays(10), new BigDecimal("1000.00"), "TEST", 1L, "Receipt");
 
             // When
-            List<BankAccountTransactionEvent> result = service.getAccountEventsInDateRange(bankAccount.getId(), startDate, endDate);
+            List<BankAccountTransactionEvent> result = service.getAccountEventsInDateTimeRange(
+                    bankAccount.getId(), startDateTime, endDateTime);
 
             // Then
             assertThat(result).isEmpty();
@@ -405,44 +441,55 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("getSnapshotsInDateRange Tests")
-    class GetSnapshotsInDateRangeTests {
+    @DisplayName("getSnapshotsInDateTimeRange Tests")
+    class GetSnapshotsInDateTimeRangeTests {
 
         @Test
-        @DisplayName("Should return snapshots within date range")
-        void shouldReturnSnapshotsInDateRange() {
+        @DisplayName("Should return snapshots within datetime range")
+        void shouldReturnSnapshotsInDateTimeRange() {
             // Given
-            LocalDate startDate = testDate;
-            LocalDate endDate = testDate.plusDays(5);
-            LocalDate middleDate = testDate.plusDays(3);
+            LocalDateTime startDateTime = testDateTime; // 2024-01-15T10:00
+            LocalDateTime endDateTime = testDateTime.plusDays(5); // 2024-01-20T10:00
+            LocalDateTime middleDateTime = testDateTime.plusDays(3); // 2024-01-18T10:00
 
             // Create snapshots within range
-            service.createSnapshot(bankAccount.getId(), startDate);
-            service.createSnapshot(bankAccount.getId(), middleDate);
+            service.createSnapshot(bankAccount.getId(), startDateTime);
+            service.createSnapshot(bankAccount.getId(), middleDateTime);
 
             // Create snapshot outside range
-            service.createSnapshot(bankAccount.getId(), endDate.plusDays(10));
+            service.createSnapshot(bankAccount.getId(), endDateTime.plusDays(10));
 
-            // When
-            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateRange(bankAccount.getId(), startDate, endDate);
+            // Expected normalized datetimes (start of next day)
+            // 2024-01-15 -> 2024-01-16T00:00
+            // 2024-01-18 -> 2024-01-19T00:00
+            LocalDateTime expectedStart = startDateTime.toLocalDate().plusDays(1).atStartOfDay();
+            LocalDateTime expectedMiddle = middleDateTime.toLocalDate().plusDays(1).atStartOfDay();
+
+            // When: Search using inclusive range
+            LocalDateTime searchEndDateTime = endDateTime.toLocalDate().plusDays(1).atStartOfDay();
+            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateTimeRange(
+                    bankAccount.getId(), startDateTime.toLocalDate().atStartOfDay(), searchEndDateTime);
 
             // Then
             assertThat(result).hasSize(2);
-            assertThat(result).extracting(BankAccountBalanceSnapshot::getSnapshotDate).containsExactlyInAnyOrder(startDate, middleDate);
+            assertThat(result).extracting(BankAccountBalanceSnapshot::getSnapshotDateTime)
+                    .containsExactlyInAnyOrder(expectedStart, expectedMiddle);
         }
 
         @Test
         @DisplayName("Should return empty list when no snapshots in range")
         void shouldReturnEmptyListWhenNoSnapshotsInRange() {
             // Given
-            LocalDate startDate = testDate;
-            LocalDate endDate = testDate.plusDays(5);
+            LocalDateTime startDateTime = testDateTime;
+            LocalDateTime endDateTime = testDateTime.plusDays(5);
 
             // Create snapshot outside range
-            service.createSnapshot(bankAccount.getId(), endDate.plusDays(10));
+            service.createSnapshot(bankAccount.getId(), endDateTime.plusDays(10));
 
             // When
-            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateRange(bankAccount.getId(), startDate, endDate);
+            LocalDateTime searchEndDateTime = endDateTime.toLocalDate().atTime(23, 59, 59, 999999999);
+            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateTimeRange(
+                    bankAccount.getId(), startDateTime.toLocalDate().atStartOfDay(), searchEndDateTime);
 
             // Then
             assertThat(result).isEmpty();

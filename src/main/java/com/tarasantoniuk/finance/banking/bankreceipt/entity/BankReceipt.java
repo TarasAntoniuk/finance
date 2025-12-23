@@ -22,7 +22,7 @@ import jakarta.persistence.*;
         @Index(name = "idx_bank_receipt_counterparty", columnList = "counterparty_id"),
         @Index(name = "idx_bank_receipt_external_id", columnList = "externalTransactionId"),
         @Index(name = "idx_bank_receipt_status", columnList = "status"),
-        @Index(name = "idx_bank_receipt_doc_date", columnList = "documentDate")
+        @Index(name = "idx_bank_receipt_transaction_dt", columnList = "transaction_date_time")
 })
 public class BankReceipt extends MonetaryDocument {
 
@@ -48,12 +48,6 @@ public class BankReceipt extends MonetaryDocument {
     @Column(length = 100)
     private String incomingDocumentNumber;
 
-    /**
-     * Date of incoming document from counterparty
-     */
-    @Column
-    private java.time.LocalDate incomingDocumentDate;
-
     // Getters and Setters
 
     public Long getId() {
@@ -78,14 +72,6 @@ public class BankReceipt extends MonetaryDocument {
 
     public void setIncomingDocumentNumber(String incomingDocumentNumber) {
         this.incomingDocumentNumber = incomingDocumentNumber;
-    }
-
-    public java.time.LocalDate getIncomingDocumentDate() {
-        return incomingDocumentDate;
-    }
-
-    public void setIncomingDocumentDate(java.time.LocalDate incomingDocumentDate) {
-        this.incomingDocumentDate = incomingDocumentDate;
     }
 
     @Override
