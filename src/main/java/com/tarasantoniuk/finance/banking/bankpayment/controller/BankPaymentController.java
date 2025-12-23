@@ -57,7 +57,7 @@ public class BankPaymentController {
                             name = "Supplier Payment",
                             value = """
                                     {
-                                      "documentDate": "2025-12-02",
+                                      "transactionDateTime": "2025-12-02T10:30:00",
                                       "paymentType": "SUPPLIER_PAYMENT",
                                       "amount": 5000.00,
                                       "accountId": 1,
@@ -69,8 +69,6 @@ public class BankPaymentController {
                                       "paymentPurpose": "Invoice #SUP-2025-100, November services",
                                       "paymentReference": "SUP-2025-100",
                                       "outgoingDocumentNumber": "PAY-OUT-12345",
-                                      "outgoingDocumentDate": "2025-12-01",
-                                      "transactionDate": "2025-12-02",
                                       "valueDate": "2025-12-02",
                                       "externalTransactionId": "BANK-TXN-OUT-2025-001"
                                     }

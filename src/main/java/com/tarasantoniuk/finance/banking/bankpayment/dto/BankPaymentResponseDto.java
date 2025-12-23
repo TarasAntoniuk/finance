@@ -5,34 +5,51 @@ import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 
 /**
  * DTO for bank payment responses
  */
+@Schema(description = "Bank payment response with full details and related entities")
 public class BankPaymentResponseDto extends BaseBankPaymentDto {
 
+    @Schema(description = "Unique identifier of the bank payment", example = "1")
     private Long id;
 
+    @Schema(description = "Bank account from which the payment is made")
     private BankAccountResponseDto account;
 
+    @Schema(description = "Counterparty (payee) information")
     private CounterpartyResponseDto counterparty;
 
+    @Schema(description = "Counterparty's bank account information (if available)")
     private BankAccountResponseDto counterpartyBankAccount;
 
+    @Schema(description = "Currency information")
     private CurrencyResponseDto currency;
 
+    @Schema(description = "Organization making the payment")
     private OrganizationResponseDto organization;
 
+    @Schema(
+            description = "Current status of the document",
+            example = "POSTED",
+            allowableValues = {"DRAFT", "POSTED", "CANCELLED"}
+    )
     private DocumentStatus status;
 
+    @Schema(description = "Timestamp when the document was posted", example = "2025-12-02T10:35:00")
     private LocalDateTime postedAt;
 
+    @Schema(description = "Timestamp when the document was cancelled (if applicable)", example = "2025-12-02T15:20:00")
     private LocalDateTime cancelledAt;
 
+    @Schema(description = "Timestamp when the record was created", example = "2025-12-02T10:30:00")
     private LocalDateTime createdAt;
 
+    @Schema(description = "Timestamp when the record was last updated", example = "2025-12-02T10:35:00")
     private LocalDateTime updatedAt;
 
     // Getters and Setters
