@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.report.accountturnover.service;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
@@ -48,25 +49,21 @@ public class AccountTurnoverReportService {
     /**
      * Generate account turnover report for specified period
      *
-     * @param startDate      Period start date
-     * @param endDate        Period end date
+     * @param period         Report period (validated by controller)
      * @param organizationId Filter by organization (null = all)
      * @param accountId      Filter by specific account (null = all)
      * @param currencyId     Filter by currency (null = all)
      * @return Account turnover report
      */
     public AccountTurnoverReportDto generateReport(
-            LocalDate startDate,
-            LocalDate endDate,
+            ReportPeriodDto period,
             Long organizationId,
             Long accountId,
             Long currencyId
     ) {
-        // Validate period
-        validatePeriod(startDate, endDate);
-
-        // Build period DTO
-        ReportPeriodDto period = new ReportPeriodDto(startDate, endDate);
+        // Period is already validated by ReportPeriodService
+        LocalDate startDate = period.getStartDate();
+        LocalDate endDate = period.getEndDate();
 
         // Get filtered accounts
         List<BankAccount> accounts = getFilteredAccounts(organizationId, accountId, currencyId);
@@ -82,12 +79,33 @@ public class AccountTurnoverReportService {
         // Build report
         AccountTurnoverReportDto report = new AccountTurnoverReportDto();
         report.setGeneratedAt(LocalDateTime.now());
-        report.setPeriod(period);
+        report.setPeriod(period);  // Use the period from controller (includes periodType)
         report.setAccounts(items);
         report.setTotalAccounts(items.size());
         report.setSummaryByCurrency(summaryByCurrency);
 
         return report;
+    }
+
+    /**
+     * Generate account turnover report for specified period (legacy overload for backward compatibility)
+     *
+     * @deprecated Use {@link #generateReport(ReportPeriodDto, Long, Long, Long)} instead
+     */
+    @Deprecated
+    public AccountTurnoverReportDto generateReport(
+            LocalDate startDate,
+            LocalDate endDate,
+            Long organizationId,
+            Long accountId,
+            Long currencyId
+    ) {
+        // Validate period for backward compatibility
+        validatePeriod(startDate, endDate);
+
+        // Create period DTO without periodType (for backward compatibility)
+        ReportPeriodDto period = new ReportPeriodDto(startDate, endDate);
+        return generateReport(period, organizationId, accountId, currencyId);
     }
 
     /**
@@ -112,27 +130,30 @@ public class AccountTurnoverReportService {
     }
 
     /**
-     * Get filtered accounts based on criteria
+     * Get filtered accounts based on criteria.
+     * Only returns organization accounts (not counterparty accounts).
+     * Balance is only tracked for organization accounts.
      */
     private List<BankAccount> getFilteredAccounts(Long organizationId, Long accountId, Long currencyId) {
-        // If specific account requested, return only that account
+        // If specific account requested, return only that account if it's an organization account
         if (accountId != null) {
             return bankAccountRepository.findByIdWithRelations(accountId)
+                    .filter(account -> account.getHolderType() == AccountHolderType.ORGANIZATION)
                     .map(Collections::singletonList)
                     .orElse(Collections.emptyList());
         }
 
-        // Otherwise use organization/currency filters
+        // Otherwise use organization/currency filters - only organization accounts
         List<BankAccount> accounts;
 
         if (organizationId != null && currencyId != null) {
-            accounts = bankAccountRepository.findByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
         } else if (organizationId != null) {
-            accounts = bankAccountRepository.findByHolderIdWithRelations(organizationId);
+            accounts = bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId);
         } else if (currencyId != null) {
-            accounts = bankAccountRepository.findByCurrencyIdWithRelations(currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
         } else {
-            accounts = bankAccountRepository.findAllWithRelations();
+            accounts = bankAccountRepository.findOrganizationAccountsWithRelations();
         }
 
         return accounts;

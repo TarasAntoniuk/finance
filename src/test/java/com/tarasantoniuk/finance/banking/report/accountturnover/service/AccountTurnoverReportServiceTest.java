@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.report.accountturnover.service;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
@@ -94,6 +95,7 @@ class AccountTurnoverReportServiceTest {
         testAccount.setAccountNumber("UA123456789012345678901234567");
         testAccount.setBank(testBank);
         testAccount.setCurrency(testCurrency);
+        testAccount.setHolderType(AccountHolderType.ORGANIZATION);
         testAccount.setHolderId(testOrganization.getId());
         testAccount.setStatus(AccountStatus.ACTIVE);
     }
@@ -159,7 +161,7 @@ class AccountTurnoverReportServiceTest {
         LocalDate yearStart = LocalDate.of(2024, 1, 1);
         LocalDate yearEnd = LocalDate.of(2024, 12, 31); // Exactly 365 days
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Collections.emptyList());
 
         // When & Then
         assertDoesNotThrow(() -> {
@@ -173,7 +175,7 @@ class AccountTurnoverReportServiceTest {
     @DisplayName("Should generate report with all accounts when no filters")
     void generateReport_ShouldReturnAllAccounts_WhenNoFilters() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(eq(testAccount.getId()), eq(startDateTime.toLocalDate().atStartOfDay())))
                 .thenReturn(new BigDecimal("0.00"));
         when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -200,7 +202,7 @@ class AccountTurnoverReportServiceTest {
         assertEquals("₴", item.getCurrencySymbol());
         assertEquals("Test Organization", item.getOrganizationName());
 
-        verify(bankAccountRepository).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsWithRelations();
     }
 
     @Test
@@ -208,7 +210,7 @@ class AccountTurnoverReportServiceTest {
     void generateReport_ShouldFilterByOrganization_WhenOrganizationIdProvided() {
         // Given
         Long organizationId = 1L;
-        when(bankAccountRepository.findByHolderIdWithRelations(organizationId))
+        when(bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId))
                 .thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
@@ -222,8 +224,8 @@ class AccountTurnoverReportServiceTest {
         // Then
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
-        verify(bankAccountRepository).findByHolderIdWithRelations(organizationId);
-        verify(bankAccountRepository, never()).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsByHolderIdWithRelations(organizationId);
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
     }
 
     @Test
@@ -231,7 +233,7 @@ class AccountTurnoverReportServiceTest {
     void generateReport_ShouldFilterByCurrency_WhenCurrencyIdProvided() {
         // Given
         Long currencyId = 1L;
-        when(bankAccountRepository.findByCurrencyIdWithRelations(currencyId))
+        when(bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId))
                 .thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
@@ -245,7 +247,7 @@ class AccountTurnoverReportServiceTest {
         // Then
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
-        verify(bankAccountRepository).findByCurrencyIdWithRelations(currencyId);
+        verify(bankAccountRepository).findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
     }
 
     @Test
@@ -268,7 +270,7 @@ class AccountTurnoverReportServiceTest {
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
         verify(bankAccountRepository).findByIdWithRelations(accountId);
-        verify(bankAccountRepository, never()).findAllWithRelations();
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
     }
 
     @Test
@@ -287,6 +289,76 @@ class AccountTurnoverReportServiceTest {
         assertTrue(report.getAccounts().isEmpty());
     }
 
+    @Test
+    @DisplayName("Should exclude counterparty accounts from report")
+    void generateReport_ShouldExcludeCounterpartyAccounts() {
+        // Given - Create a counterparty account
+        BankAccount counterpartyAccount = new BankAccount();
+        counterpartyAccount.setId(2L);
+        counterpartyAccount.setAccountNumber("UA987654321098765432109876543");
+        counterpartyAccount.setBank(testBank);
+        counterpartyAccount.setCurrency(testCurrency);
+        counterpartyAccount.setHolderType(AccountHolderType.COUNTERPARTY);
+        counterpartyAccount.setHolderId(999L);  // Different counterparty
+        counterpartyAccount.setStatus(AccountStatus.ACTIVE);
+
+        // Only organization account should be returned by repository
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
+                .thenReturn(Arrays.asList(testAccount)); // Only organization account
+        when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+
+        // Then
+        assertNotNull(report);
+        assertEquals(1, report.getTotalAccounts());
+        assertEquals(1, report.getAccounts().size());
+
+        // Verify only organization account is included
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        assertEquals(testAccount.getId(), item.getAccountId());
+        assertEquals(testAccount.getAccountNumber(), item.getAccountNumber());
+
+        // Verify the correct repository method was called
+        verify(bankAccountRepository).findOrganizationAccountsWithRelations();
+    }
+
+    @Test
+    @DisplayName("Should exclude counterparty account when filtering by specific account ID")
+    void generateReport_ShouldExcludeCounterpartyAccount_WhenFilteringByAccountId() {
+        // Given - Create a counterparty account
+        BankAccount counterpartyAccount = new BankAccount();
+        counterpartyAccount.setId(2L);
+        counterpartyAccount.setAccountNumber("UA987654321098765432109876543");
+        counterpartyAccount.setBank(testBank);
+        counterpartyAccount.setCurrency(testCurrency);
+        counterpartyAccount.setHolderType(AccountHolderType.COUNTERPARTY);
+        counterpartyAccount.setHolderId(999L);
+        counterpartyAccount.setStatus(AccountStatus.ACTIVE);
+
+        // Repository returns the counterparty account
+        when(bankAccountRepository.findByIdWithRelations(2L))
+                .thenReturn(Optional.of(counterpartyAccount));
+
+        // When - Request report for this counterparty account
+        AccountTurnoverReportDto report = reportService.generateReport(
+                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, 2L, null);
+
+        // Then - Report should be empty because counterparty accounts are filtered out
+        assertNotNull(report);
+        assertEquals(0, report.getTotalAccounts());
+        assertTrue(report.getAccounts().isEmpty());
+
+        // Verify the account was queried
+        verify(bankAccountRepository).findByIdWithRelations(2L);
+    }
+
     // ==================== Turnover Calculation Tests ====================
 
     @Test
@@ -296,7 +368,7 @@ class AccountTurnoverReportServiceTest {
         BigDecimal openingBalance = new BigDecimal("10000.00");
         List<BankAccountTransactionEvent> events = createTestEvents();
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
 
         // Mock opening balance (start of day)
         when(transactionService.calculateBalance(eq(testAccount.getId()), eq(startDateTime.toLocalDate().atStartOfDay())))
@@ -330,7 +402,7 @@ class AccountTurnoverReportServiceTest {
         BankAccountTransactionEvent normalEvent = createEvent(TransactionType.DEBIT, new BigDecimal("1000.00"), false);
         BankAccountTransactionEvent reversedEvent = createEvent(TransactionType.DEBIT, new BigDecimal("2000.00"), true);
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
         when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -355,7 +427,7 @@ class AccountTurnoverReportServiceTest {
         // Given
         BankAccount account2 = createSecondAccount();
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
         when(transactionService.calculateBalance(eq(testAccount.getId()), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
@@ -395,7 +467,7 @@ class AccountTurnoverReportServiceTest {
         BankAccount usdAccount = createSecondAccount();
         usdAccount.setCurrency(usd);
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, usdAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("1000.00"));
@@ -419,7 +491,7 @@ class AccountTurnoverReportServiceTest {
     @DisplayName("Should handle organization not found")
     void generateReport_ShouldHandleOrganizationNotFound() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
         when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -446,7 +518,7 @@ class AccountTurnoverReportServiceTest {
         accountWithNulls.setHolderId(null);
         accountWithNulls.setStatus(null);
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(accountWithNulls));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(accountWithNulls));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
         when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -470,7 +542,7 @@ class AccountTurnoverReportServiceTest {
     void generateReport_ShouldHandleNullCurrencyCodeInSummary() {
         // Given
         testAccount.setCurrency(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("5000.00"));
         when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -491,7 +563,7 @@ class AccountTurnoverReportServiceTest {
     @DisplayName("Should handle null opening balance")
     void generateReport_ShouldHandleNullOpeningBalance() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
 
         // Return null for opening balance (start of day)
         when(transactionService.calculateBalance(eq(testAccount.getId()), eq(startDateTime.toLocalDate().atStartOfDay())))
@@ -523,7 +595,7 @@ class AccountTurnoverReportServiceTest {
         // Given
         BankAccount account2 = createSecondAccount();
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
 
         // Mock opening balances for both accounts (start of day)
@@ -554,7 +626,7 @@ class AccountTurnoverReportServiceTest {
         // Given
         BankAccount account2 = createSecondAccount();
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("1000.00"));
@@ -585,7 +657,7 @@ class AccountTurnoverReportServiceTest {
         // Given
         BankAccount account2 = createSecondAccount();
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("1000.00"));
@@ -616,7 +688,7 @@ class AccountTurnoverReportServiceTest {
         // Given
         BankAccount account2 = createSecondAccount();
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
 
         // Mock opening balances for both accounts (start of day)

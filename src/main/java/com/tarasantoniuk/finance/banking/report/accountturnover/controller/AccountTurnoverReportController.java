@@ -2,6 +2,9 @@ package com.tarasantoniuk.finance.banking.report.accountturnover.controller;
 
 import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverReportDto;
 import com.tarasantoniuk.finance.banking.report.accountturnover.service.AccountTurnoverReportService;
+import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
+import com.tarasantoniuk.finance.common.report.enums.PeriodType;
+import com.tarasantoniuk.finance.common.report.service.ReportPeriodService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -16,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.Month;
 
 @RestController
 @RequestMapping("/api/v1/banking/reports")
@@ -24,9 +26,14 @@ import java.time.Month;
 public class AccountTurnoverReportController {
 
     private final AccountTurnoverReportService reportService;
+    private final ReportPeriodService periodService;
 
-    public AccountTurnoverReportController(AccountTurnoverReportService reportService) {
+    public AccountTurnoverReportController(
+            AccountTurnoverReportService reportService,
+            ReportPeriodService periodService
+    ) {
         this.reportService = reportService;
+        this.periodService = periodService;
     }
 
     @GetMapping("/account-turnovers")
@@ -34,17 +41,27 @@ public class AccountTurnoverReportController {
             summary = "Get account turnover report",
             description = """
                     Generate report showing account turnovers (receipts and payments) for a specified period.
-                    
+
                     Returns:
                     - Opening balance
                     - Debit/credit turnovers
                     - Closing balance
                     - Transaction count for each account
-                    
-                    Default period: current quarter (Q4 2025: October 1 - December 31)
+
+                    Period Types:
+                    - DAY: Single day (defaults to today if no date specified)
+                    - MONTH: Full month (first to last day)
+                    - QUARTER: Full quarter (3 months) - DEFAULT
+                    - YEAR: Full year (January 1 to December 31)
+                    - CUSTOM: Custom date range (requires both startDate and endDate)
+
+                    The client sends period type and date boundaries, backend validates and applies them.
                     Maximum period: 365 days
-                    
-                    Example: /api/v1/banking/reports/account-turnovers?startDate=2025-10-01&endDate=2025-12-31&organizationId=1
+
+                    Examples:
+                    - Current quarter: /api/v1/banking/reports/account-turnovers
+                    - Specific month: /api/v1/banking/reports/account-turnovers?periodType=MONTH&startDate=2025-10-01
+                    - Custom range: /api/v1/banking/reports/account-turnovers?periodType=CUSTOM&startDate=2025-10-01&endDate=2025-12-31
                     """,
             responses = {
                     @ApiResponse(
@@ -54,13 +71,20 @@ public class AccountTurnoverReportController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid request parameters (invalid period or period > 365 days)"
+                            description = "Invalid request parameters (invalid period type, missing dates for CUSTOM, or period > 365 days)"
                     )
             }
     )
     public ResponseEntity<AccountTurnoverReportDto> getAccountTurnovers(
             @Parameter(
-                    description = "Period start date (default: first day of current quarter)",
+                    description = "Period type (DAY, MONTH, QUARTER, YEAR, CUSTOM). Default: QUARTER",
+                    example = "QUARTER"
+            )
+            @RequestParam(required = false)
+            PeriodType periodType,
+
+            @Parameter(
+                    description = "Period start date. For CUSTOM - required. For others - optional (used to determine which day/month/quarter/year). If not provided, defaults to current period.",
                     example = "2025-10-01"
             )
             @RequestParam(required = false)
@@ -68,7 +92,7 @@ public class AccountTurnoverReportController {
             LocalDate startDate,
 
             @Parameter(
-                    description = "Period end date (default: last day of current quarter)",
+                    description = "Period end date. Required only for CUSTOM period type. Ignored for other period types (boundaries calculated automatically).",
                     example = "2025-12-31"
             )
             @RequestParam(required = false)
@@ -96,33 +120,16 @@ public class AccountTurnoverReportController {
             @RequestParam(required = false)
             Long currencyId
     ) {
-        // Дефолтні значення: поточний квартал
-        LocalDate reportStartDate = startDate != null ? startDate : getQuarterStartDate(LocalDate.now());
-        LocalDate reportEndDate = endDate != null ? endDate : getQuarterEndDate(LocalDate.now());
+        // Process period parameters - client is the single source of truth
+        ReportPeriodDto period = periodService.processPeriod(periodType, startDate, endDate);
 
+        // Generate report with validated period
         AccountTurnoverReportDto report = reportService.generateReport(
-                reportStartDate, reportEndDate, organizationId, accountId, currencyId
+                period,
+                organizationId,
+                accountId,
+                currencyId
         );
         return ResponseEntity.ok(report);
-    }
-
-    /**
-     * Get the first date of the current quarter
-     */
-    private LocalDate getQuarterStartDate(LocalDate date) {
-        int currentMonth = date.getMonthValue();
-        int quarterStartMonth = ((currentMonth - 1) / 3) * 3 + 1;
-        return date.withMonth(quarterStartMonth).withDayOfMonth(1);
-    }
-
-    /**
-     * Get the last date of the current quarter
-     */
-    private LocalDate getQuarterEndDate(LocalDate date) {
-        int currentMonth = date.getMonthValue();
-        int quarterEndMonth = ((currentMonth - 1) / 3) * 3 + 3;
-        return date.withMonth(quarterEndMonth).withDayOfMonth(
-                Month.of(quarterEndMonth).length(date.isLeapYear())
-        );
     }
 }

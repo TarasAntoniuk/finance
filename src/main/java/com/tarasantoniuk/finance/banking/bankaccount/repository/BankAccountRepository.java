@@ -149,4 +149,62 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     List<BankAccount> findByHolderIdAndCurrencyIdWithRelations(
             @Param("holderId") Long holderId,
             @Param("currencyId") Long currencyId);
+
+    /**
+     * Find all organization bank accounts with relationships loaded.
+     * Only returns accounts where holderType = ORGANIZATION.
+     * Used for reports that should only include organization accounts.
+     *
+     * @return list of organization bank accounts with relationships
+     */
+    @Query("SELECT ba FROM BankAccount ba " +
+            "LEFT JOIN FETCH ba.bank " +
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE ba.holderType = 'ORGANIZATION'")
+    List<BankAccount> findOrganizationAccountsWithRelations();
+
+    /**
+     * Find organization bank accounts by holder ID with relationships loaded.
+     * Only returns accounts where holderType = ORGANIZATION and holderId matches.
+     * Used for reports filtered by specific organization.
+     *
+     * @param holderId organization ID
+     * @return list of organization bank accounts with relationships
+     */
+    @Query("SELECT ba FROM BankAccount ba " +
+            "LEFT JOIN FETCH ba.bank " +
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE ba.holderType = 'ORGANIZATION' AND ba.holderId = :holderId")
+    List<BankAccount> findOrganizationAccountsByHolderIdWithRelations(@Param("holderId") Long holderId);
+
+    /**
+     * Find organization bank accounts by currency ID with relationships loaded.
+     * Only returns accounts where holderType = ORGANIZATION and currency matches.
+     * Used for reports filtered by specific currency.
+     *
+     * @param currencyId currency ID
+     * @return list of organization bank accounts with relationships
+     */
+    @Query("SELECT ba FROM BankAccount ba " +
+            "LEFT JOIN FETCH ba.bank " +
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE ba.holderType = 'ORGANIZATION' AND ba.currency.id = :currencyId")
+    List<BankAccount> findOrganizationAccountsByCurrencyIdWithRelations(@Param("currencyId") Long currencyId);
+
+    /**
+     * Find organization bank accounts by holder ID and currency ID with relationships loaded.
+     * Only returns accounts where holderType = ORGANIZATION and both holder and currency match.
+     * Used for reports with multiple filters.
+     *
+     * @param holderId   organization ID
+     * @param currencyId currency ID
+     * @return list of organization bank accounts with relationships
+     */
+    @Query("SELECT ba FROM BankAccount ba " +
+            "LEFT JOIN FETCH ba.bank " +
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE ba.holderType = 'ORGANIZATION' AND ba.holderId = :holderId AND ba.currency.id = :currencyId")
+    List<BankAccount> findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(
+            @Param("holderId") Long holderId,
+            @Param("currencyId") Long currencyId);
 }

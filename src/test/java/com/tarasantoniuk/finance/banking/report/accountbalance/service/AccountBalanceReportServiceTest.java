@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.report.accountbalance.service;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
@@ -88,6 +89,7 @@ class AccountBalanceReportServiceTest {
         testAccount.setAccountNumber("UA123456789012345678901234567");
         testAccount.setBank(testBank);
         testAccount.setCurrency(testCurrency);
+        testAccount.setHolderType(AccountHolderType.ORGANIZATION);
         testAccount.setHolderId(testOrganization.getId());
         testAccount.setStatus(AccountStatus.ACTIVE);
     }
@@ -99,7 +101,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldReturnAllAccounts_WhenNoFilters() {
         // Given
         List<BankAccount> accounts = Arrays.asList(testAccount);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(accounts);
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(accounts);
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("50000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -124,7 +126,7 @@ class AccountBalanceReportServiceTest {
         assertEquals("Test Organization", item.getOrganizationName());
         assertEquals(new BigDecimal("50000.00"), item.getBalance());
 
-        verify(bankAccountRepository).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsWithRelations();
         verify(transactionService).calculateBalance(eq(testAccount.getId()), any(LocalDateTime.class));
     }
 
@@ -133,7 +135,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldFilterByOrganization_WhenOrganizationIdProvided() {
         // Given
         Long organizationId = 1L;
-        when(bankAccountRepository.findByHolderIdWithRelations(organizationId))
+        when(bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId))
                 .thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
@@ -146,8 +148,8 @@ class AccountBalanceReportServiceTest {
         // Then
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
-        verify(bankAccountRepository).findByHolderIdWithRelations(organizationId);
-        verify(bankAccountRepository, never()).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsByHolderIdWithRelations(organizationId);
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
     }
 
     @Test
@@ -155,7 +157,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldFilterByCurrency_WhenCurrencyIdProvided() {
         // Given
         Long currencyId = 1L;
-        when(bankAccountRepository.findByCurrencyIdWithRelations(currencyId))
+        when(bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId))
                 .thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("5000.00"));
@@ -168,8 +170,8 @@ class AccountBalanceReportServiceTest {
         // Then
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
-        verify(bankAccountRepository).findByCurrencyIdWithRelations(currencyId);
-        verify(bankAccountRepository, never()).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
     }
 
     @Test
@@ -178,7 +180,7 @@ class AccountBalanceReportServiceTest {
         // Given
         Long organizationId = 1L;
         Long currencyId = 1L;
-        when(bankAccountRepository.findByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId))
+        when(bankAccountRepository.findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId))
                 .thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("25000.00"));
@@ -191,15 +193,15 @@ class AccountBalanceReportServiceTest {
         // Then
         assertNotNull(report);
         assertEquals(1, report.getTotalAccounts());
-        verify(bankAccountRepository).findByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
-        verify(bankAccountRepository, never()).findAllWithRelations();
+        verify(bankAccountRepository).findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
     }
 
     @Test
     @DisplayName("Should use current date when asOfDate is null")
     void generateReport_ShouldUseCurrentDate_WhenAsOfDateIsNull() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(BigDecimal.ZERO);
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -218,7 +220,7 @@ class AccountBalanceReportServiceTest {
     @DisplayName("Should return empty report when no accounts found")
     void generateReport_ShouldReturnEmptyReport_WhenNoAccounts() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Collections.emptyList());
 
         // When
         AccountBalanceReportDto report = reportService.generateReport(testDate, null, null);
@@ -244,7 +246,7 @@ class AccountBalanceReportServiceTest {
         account2.setHolderId(testOrganization.getId());
         account2.setStatus(AccountStatus.ACTIVE);
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
         when(transactionService.calculateBalance(eq(testAccount.getId()), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("30000.00"));
@@ -286,7 +288,7 @@ class AccountBalanceReportServiceTest {
         usdAccount.setHolderId(testOrganization.getId());
         usdAccount.setStatus(AccountStatus.ACTIVE);
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, usdAccount));
         when(transactionService.calculateBalance(eq(testAccount.getId()), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("50000.00"));
@@ -310,7 +312,7 @@ class AccountBalanceReportServiceTest {
     @DisplayName("Should handle null balance from transaction service")
     void generateReport_ShouldHandleNullBalance() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class))).thenReturn(null);
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
         when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
@@ -328,7 +330,7 @@ class AccountBalanceReportServiceTest {
     @DisplayName("Should handle organization not found")
     void generateReport_ShouldHandleOrganizationNotFound() {
         // Given
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.empty());
@@ -352,7 +354,7 @@ class AccountBalanceReportServiceTest {
         BankAccountTransactionEvent event2 = new BankAccountTransactionEvent();
         event2.setTransactionDateTime(LocalDateTime.of(2024, 1, 5, 10, 0, 0));
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -377,7 +379,7 @@ class AccountBalanceReportServiceTest {
         BankAccountTransactionEvent afterEvent = new BankAccountTransactionEvent();
         afterEvent.setTransactionDateTime(LocalDateTime.of(2024, 1, 20, 10, 0, 0));
 
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -397,7 +399,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullBank() {
         // Given
         testAccount.setBank(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -418,7 +420,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullCurrency() {
         // Given
         testAccount.setCurrency(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -439,7 +441,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullStatus() {
         // Given
         testAccount.setStatus(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -459,7 +461,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullOrganizationId() {
         // Given
         testAccount.setHolderId(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
@@ -479,7 +481,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullOrganizationNameInTotals() {
         // Given
         testAccount.setHolderId(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(transactionService.getAccountEvents(anyLong())).thenReturn(Collections.emptyList());
@@ -499,7 +501,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullCurrencyCodeInTotals() {
         // Given
         testAccount.setCurrency(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -520,7 +522,7 @@ class AccountBalanceReportServiceTest {
     void generateReport_ShouldHandleNullCurrencyCodeInGrandTotals() {
         // Given
         testAccount.setCurrency(null);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
         when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("10000.00"));
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
@@ -548,7 +550,7 @@ class AccountBalanceReportServiceTest {
         account2.setHolderId(testOrganization.getId());
         account2.setStatus(AccountStatus.ACTIVE);
 
-        when(bankAccountRepository.findAllWithRelations())
+        when(bankAccountRepository.findOrganizationAccountsWithRelations())
                 .thenReturn(Arrays.asList(testAccount, account2));
         when(transactionService.calculateBalance(eq(testAccount.getId()), any(LocalDateTime.class)))
                 .thenReturn(new BigDecimal("30000.00"));
