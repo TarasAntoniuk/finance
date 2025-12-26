@@ -164,6 +164,19 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     List<BankAccount> findOrganizationAccountsWithRelations();
 
     /**
+     * Find all counterparty bank accounts with relationships loaded.
+     * Only returns accounts where holderType = COUNTERPARTY.
+     * Used for getting all counterparty accounts across all counterparties.
+     *
+     * @return list of counterparty bank accounts with relationships
+     */
+    @Query("SELECT ba FROM BankAccount ba " +
+            "LEFT JOIN FETCH ba.bank " +
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE ba.holderType = 'COUNTERPARTY'")
+    List<BankAccount> findCounterpartyAccountsWithRelations();
+
+    /**
      * Find organization bank accounts by holder ID with relationships loaded.
      * Only returns accounts where holderType = ORGANIZATION and holderId matches.
      * Used for reports filtered by specific organization.

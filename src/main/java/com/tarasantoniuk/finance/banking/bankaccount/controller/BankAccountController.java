@@ -60,12 +60,82 @@ public class BankAccountController {
         return ResponseEntity.ok(bankAccount);
     }
 
+    @GetMapping("/holder/{holderType}")
+    @Operation(
+            summary = "Get all bank accounts by holder type",
+            description = """
+                    Retrieve all bank accounts for a specific holder type across all holders.
+
+                    **Usage Examples:**
+                    - Get ALL organization accounts: `/api/bank-accounts/holder/ORGANIZATION`
+                    - Get ALL counterparty accounts: `/api/bank-accounts/holder/COUNTERPARTY`
+
+                    **Use Case:**
+                    This endpoint is useful when you need to retrieve all accounts of a certain type without
+                    filtering by a specific organization or counterparty. For example, to get all organization
+                    bank accounts across all organizations in the system.
+
+                    **Parameters:**
+                    - `holderType` (required): Type of account holder - must be either ORGANIZATION or COUNTERPARTY
+
+                    **Response:**
+                    Returns a list of all bank accounts matching the holder type, including:
+                    - Account details (number, name, status)
+                    - Associated bank information
+                    - Currency information
+                    - Holder information (organization or counterparty)
+                    - Default account flag
+
+                    Returns an empty list if no accounts are found for the specified holder type.
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of all bank accounts by holder type")
+    public ResponseEntity<List<BankAccountResponseDto>> getBankAccountsByHolderType(
+            @Parameter(
+                    description = "Type of account holder to filter by (ORGANIZATION to get all organization accounts, COUNTERPARTY to get all counterparty accounts)",
+                    required = true,
+                    example = "ORGANIZATION"
+            ) @PathVariable AccountHolderType holderType) {
+        List<BankAccountResponseDto> bankAccounts = bankAccountService.getBankAccountsByHolderType(holderType);
+        return ResponseEntity.ok(bankAccounts);
+    }
+
     @GetMapping("/holder/{holderType}/{holderId}")
-    @Operation(summary = "Get bank accounts by holder", description = "Retrieve all bank accounts for a specific holder")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
+    @Operation(
+            summary = "Get bank accounts by holder type and holder ID",
+            description = """
+                    Retrieve all bank accounts for a specific holder (organization or counterparty).
+
+                    **Usage Examples:**
+                    - Get all accounts for organization #1: `/api/bank-accounts/holder/ORGANIZATION/1`
+                    - Get all accounts for counterparty #5: `/api/bank-accounts/holder/COUNTERPARTY/5`
+
+                    **Parameters:**
+                    - `holderType` (required): Type of account holder - must be either ORGANIZATION or COUNTERPARTY
+                    - `holderId` (required): Unique identifier of the organization or counterparty
+
+                    **Response:**
+                    Returns a list of all bank accounts belonging to the specified holder, including:
+                    - Account details (number, name, status)
+                    - Associated bank information
+                    - Currency information
+                    - Default account flag
+
+                    Returns an empty list if no accounts are found for the specified holder.
+                    """
+    )
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of bank accounts")
     public ResponseEntity<List<BankAccountResponseDto>> getBankAccountsByHolder(
-            @Parameter(description = "Holder type (ORGANIZATION or COUNTERPARTY)", required = true) @PathVariable AccountHolderType holderType,
-            @Parameter(description = "Holder ID", required = true) @PathVariable Long holderId) {
+            @Parameter(
+                    description = "Type of account holder (ORGANIZATION or COUNTERPARTY)",
+                    required = true,
+                    example = "ORGANIZATION"
+            ) @PathVariable AccountHolderType holderType,
+            @Parameter(
+                    description = "Unique identifier of the organization or counterparty",
+                    required = true,
+                    example = "1"
+            ) @PathVariable Long holderId) {
         List<BankAccountResponseDto> bankAccounts = bankAccountService.getBankAccountsByHolder(holderType, holderId);
         return ResponseEntity.ok(bankAccounts);
     }
