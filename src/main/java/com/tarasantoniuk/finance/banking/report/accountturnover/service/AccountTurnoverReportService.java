@@ -214,11 +214,15 @@ public class AccountTurnoverReportService {
 
     /**
      * Calculate turnover for specific transaction type
+     * Excludes:
+     * 1. Events that are reversed (isReversed = true)
+     * 2. Reversal events themselves (documentType ends with "Reversal")
      */
     private BigDecimal calculateTurnover(List<BankAccountTransactionEvent> events, TransactionType type) {
         return events.stream()
                 .filter(event -> event.getTransactionType() == type)
                 .filter(event -> !Boolean.TRUE.equals(event.getIsReversed()))
+                .filter(event -> event.getDocumentType() == null || !event.getDocumentType().endsWith("Reversal"))
                 .map(BankAccountTransactionEvent::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

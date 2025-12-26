@@ -163,7 +163,14 @@ public class BankAccountTransactionService {
                 .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime.minusNanos(1));
 
         // Apply events to balance
+        // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
+        // These are technical records that cancel other transactions, not real business transactions
         for (BankAccountTransactionEvent event : events) {
+            // Skip reversal events
+            if (event.getDocumentType() != null && event.getDocumentType().endsWith("Reversal")) {
+                continue;
+            }
+
             if (event.getTransactionType() == TransactionType.DEBIT) {
                 balance = balance.add(event.getAmount());
             } else {
@@ -289,11 +296,18 @@ public class BankAccountTransactionService {
                         endOfDay.minusNanos(1));
 
         // Calculate turnovers
+        // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
+        // These are technical records that cancel other transactions, not real business transactions
         BigDecimal debitTurnover = BigDecimal.ZERO;
         BigDecimal creditTurnover = BigDecimal.ZERO;
         Long lastEventId = null;
 
         for (BankAccountTransactionEvent event : events) {
+            // Skip reversal events
+            if (event.getDocumentType() != null && event.getDocumentType().endsWith("Reversal")) {
+                continue;
+            }
+
             if (event.getTransactionType() == TransactionType.DEBIT) {
                 debitTurnover = debitTurnover.add(event.getAmount());
             } else {
