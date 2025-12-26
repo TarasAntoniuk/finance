@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/banking/reports")
-@Tag(name = "Banking - Banking Reports", description = "Banking reports and analytics endpoints")
+@RequestMapping("/api/v1/banking/reports/accountbalance")
+@Tag(name = "Banking - Banking Reports - Account Balance", description = "Banking report Account Balance")
 public class AccountBalanceReportController {
 
     private final AccountBalanceReportService reportService;
