@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/banking/reports/accountturnover")
+@RequestMapping("/api/v1/banking/reports/account-turnover")
 @Tag(name = "Banking - Banking Reports - Account Turnover", description = "Banking report - Account Turnover")
 public class AccountTurnoverReportController {
 
