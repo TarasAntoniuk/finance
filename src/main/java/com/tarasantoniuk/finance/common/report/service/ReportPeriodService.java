@@ -30,8 +30,17 @@ public class ReportPeriodService {
      * @throws ValidationException if period parameters are invalid
      */
     public ReportPeriodDto processPeriod(PeriodType periodType, LocalDate startDate, LocalDate endDate) {
-        // Default to QUARTER if not specified
-        PeriodType effectivePeriodType = periodType != null ? periodType : PeriodType.QUARTER;
+        // Auto-detect period type if not specified
+        PeriodType effectivePeriodType;
+        if (periodType != null) {
+            effectivePeriodType = periodType;
+        } else if (startDate != null && endDate != null) {
+            // If both dates are provided without period type, treat as CUSTOM
+            effectivePeriodType = PeriodType.CUSTOM;
+        } else {
+            // Default to QUARTER if no period type and not both dates provided
+            effectivePeriodType = PeriodType.QUARTER;
+        }
 
         LocalDate effectiveStartDate;
         LocalDate effectiveEndDate;
