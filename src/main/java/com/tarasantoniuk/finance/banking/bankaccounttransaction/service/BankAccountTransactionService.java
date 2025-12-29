@@ -162,11 +162,14 @@ public class BankAccountTransactionService {
         // Find the active (non-reversed) transaction event
         BankAccountTransactionEvent originalEvent = findActiveByDocument(documentType, documentId);
 
-        // Generate safe reversal description with null check
+        // Generate safe reversal description - always include document ID
         String documentTypeName = documentType.equals("BankReceipt") ? "receipt" : "payment";
-        String reversalDescription = (description != null && !description.isBlank())
-                ? "Reversal of: " + description
-                : "Reversal of " + documentTypeName + " #" + documentId;
+        String reversalDescription = "Reversal of " + documentTypeName + " #" + documentId;
+
+        // Optionally append original description if it exists
+        if (description != null && !description.isBlank()) {
+            reversalDescription += ": " + description;
+        }
 
         // Determine reversal document type
         String reversalDocumentType = documentType + "Reversal";
