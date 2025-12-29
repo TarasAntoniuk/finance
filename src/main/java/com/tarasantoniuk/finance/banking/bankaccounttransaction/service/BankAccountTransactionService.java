@@ -7,6 +7,7 @@ import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccou
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
@@ -44,14 +45,18 @@ public class BankAccountTransactionService {
     }
 
     /**
-     * Create transaction event for bank receipt (money in)
+     * Unified method to create transaction event for any document type.
+     * Package-private to allow access from tests.
+     *
+     * @param transactionType DEBIT (money in) or CREDIT (money out)
      */
-    public BankAccountTransactionEvent createReceiptEvent(
+    BankAccountTransactionEvent createTransactionEvent(
             Long bankAccountId,
             Long organizationId,
             Long currencyId,
             LocalDateTime transactionDateTime,
             BigDecimal amount,
+            TransactionType transactionType,
             String documentType,
             Long documentId,
             String description) {
@@ -70,63 +75,124 @@ public class BankAccountTransactionService {
         event.setOrganization(organization);
         event.setCurrency(currency);
         event.setTransactionDateTime(transactionDateTime);
-        event.setTransactionType(TransactionType.DEBIT);
+        event.setTransactionType(transactionType);
         event.setAmount(amount);
         event.setDocumentType(documentType);
         event.setDocumentId(documentId);
         event.setDescription(description);
 
         // Calculate balance after transaction
-        // Use current time to ensure we include all previously created events,
-        // including those at the same transactionDateTime (e.g., reversals)
+        // Use current time to ensure we include all previously created events
         BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
-        BigDecimal balanceAfter = currentBalance.add(amount);
+        BigDecimal balanceAfter = transactionType == TransactionType.DEBIT
+                ? currentBalance.add(amount)
+                : currentBalance.subtract(amount);
         event.setBalanceAfter(balanceAfter);
 
         return transactionEventRepository.save(event);
     }
 
     /**
-     * Create transaction event for bank payment (money out)
+     * Unified method to post a document (BankReceipt or BankPayment).
+     * Determines transaction type based on document type and creates the appropriate event.
+     *
+     * @param documentType "BankReceipt" or "BankPayment"
+     * @return created transaction event
      */
-    public BankAccountTransactionEvent createPaymentEvent(
+    public BankAccountTransactionEvent postDocument(
             Long bankAccountId,
             Long organizationId,
             Long currencyId,
             LocalDateTime transactionDateTime,
             BigDecimal amount,
+            String description,
+            String documentType,
+            Long documentId) {
+
+        // Check if transaction event already exists
+        if (existsByDocument(documentType, documentId)) {
+            throw new ResourceAlreadyExistsException(
+                    "Transaction event already exists for " + documentType + " id: " + documentId
+            );
+        }
+
+        // Repost optimization: If reposting after unpost, mark the reversal event as reversed
+        // This effectively cancels the reversal without creating additional events
+        String reversalDocumentType = documentType + "Reversal";
+        if (existsByDocument(reversalDocumentType, documentId)) {
+            var reversalEvent = findActiveByDocument(reversalDocumentType, documentId);
+            // Mark the reversal as reversed (excludes it from balance calculations)
+            reversalEvent.setIsReversed(true);
+            transactionEventRepository.save(reversalEvent);
+        }
+
+        // Determine transaction type based on document type
+        TransactionType transactionType = documentType.equals("BankReceipt")
+                ? TransactionType.DEBIT   // Receipt = money in
+                : TransactionType.CREDIT; // Payment = money out
+
+        // Create the transaction event
+        return createTransactionEvent(
+                bankAccountId,
+                organizationId,
+                currencyId,
+                transactionDateTime,
+                amount,
+                transactionType,
+                documentType,
+                documentId,
+                description
+        );
+    }
+
+    /**
+     * Unified method to reverse a document (unpost BankReceipt or BankPayment).
+     * Creates a reversal event with inverted transaction type and establishes bidirectional links.
+     *
+     * @param documentType "BankReceipt" or "BankPayment"
+     * @param documentId document ID
+     * @param description original document description (used for generating reversal description)
+     * @return created reversal event
+     */
+    public BankAccountTransactionEvent reverseDocument(
             String documentType,
             Long documentId,
             String description) {
 
-        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId)
-                .orElseThrow(() -> new ResourceNotFoundException("Bank account not found with id: " + bankAccountId));
+        // Find the active (non-reversed) transaction event
+        BankAccountTransactionEvent originalEvent = findActiveByDocument(documentType, documentId);
 
-        Organization organization = organizationRepository.findById(organizationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id: " + organizationId));
+        // Generate safe reversal description with null check
+        String documentTypeName = documentType.equals("BankReceipt") ? "receipt" : "payment";
+        String reversalDescription = (description != null && !description.isBlank())
+                ? "Reversal of: " + description
+                : "Reversal of " + documentTypeName + " #" + documentId;
 
-        Currency currency = currencyRepository.findById(currencyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Currency not found with id: " + currencyId));
+        // Determine reversal document type
+        String reversalDocumentType = documentType + "Reversal";
 
-        BankAccountTransactionEvent event = new BankAccountTransactionEvent();
-        event.setBankAccount(bankAccount);
-        event.setOrganization(organization);
-        event.setCurrency(currency);
-        event.setTransactionDateTime(transactionDateTime);
-        event.setTransactionType(TransactionType.CREDIT);
-        event.setAmount(amount);
-        event.setDocumentType(documentType);
-        event.setDocumentId(documentId);
-        event.setDescription(description);
+        // Invert transaction type (DEBIT → CREDIT, CREDIT → DEBIT)
+        TransactionType reversalTransactionType = originalEvent.getTransactionType() == TransactionType.DEBIT
+                ? TransactionType.CREDIT
+                : TransactionType.DEBIT;
 
-        // Calculate balance after transaction
-        // Use current time to ensure we include all previously created events,
-        // including those at the same transactionDateTime (e.g., original transactions being reversed)
-        BigDecimal currentBalance = calculateBalance(bankAccountId, LocalDateTime.now());
-        BigDecimal balanceAfter = currentBalance.subtract(amount);
-        event.setBalanceAfter(balanceAfter);
+        // Create reversal event with inverted transaction type
+        BankAccountTransactionEvent reversalEvent = createTransactionEvent(
+                originalEvent.getBankAccount().getId(),
+                originalEvent.getOrganization().getId(),
+                originalEvent.getCurrency().getId(),
+                originalEvent.getTransactionDateTime(),
+                originalEvent.getAmount(),
+                reversalTransactionType,
+                reversalDocumentType,
+                documentId,
+                reversalDescription
+        );
 
-        return transactionEventRepository.save(event);
+        // Mark original event as reversed and create bidirectional link
+        reverseTransaction(originalEvent.getId(), reversalEvent.getId());
+
+        return reversalEvent;
     }
 
     /**
@@ -163,7 +229,14 @@ public class BankAccountTransactionService {
                 .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime.minusNanos(1));
 
         // Apply events to balance
+        // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
+        // These are technical records that cancel other transactions, not real business transactions
         for (BankAccountTransactionEvent event : events) {
+            // Skip reversal events
+            if (event.getDocumentType() != null && event.getDocumentType().endsWith("Reversal")) {
+                continue;
+            }
+
             if (event.getTransactionType() == TransactionType.DEBIT) {
                 balance = balance.add(event.getAmount());
             } else {
@@ -289,11 +362,18 @@ public class BankAccountTransactionService {
                         endOfDay.minusNanos(1));
 
         // Calculate turnovers
+        // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
+        // These are technical records that cancel other transactions, not real business transactions
         BigDecimal debitTurnover = BigDecimal.ZERO;
         BigDecimal creditTurnover = BigDecimal.ZERO;
         Long lastEventId = null;
 
         for (BankAccountTransactionEvent event : events) {
+            // Skip reversal events
+            if (event.getDocumentType() != null && event.getDocumentType().endsWith("Reversal")) {
+                continue;
+            }
+
             if (event.getTransactionType() == TransactionType.DEBIT) {
                 debitTurnover = debitTurnover.add(event.getAmount());
             } else {

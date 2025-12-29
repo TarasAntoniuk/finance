@@ -55,6 +55,20 @@ public class BankAccountService {
     }
 
     /**
+     * Get all bank accounts by holder type (all organizations or all counterparties).
+     * Returns all accounts matching the holder type across all holders.
+     */
+    public List<BankAccountResponseDto> getBankAccountsByHolderType(AccountHolderType holderType) {
+        List<BankAccount> bankAccounts;
+        if (holderType == AccountHolderType.ORGANIZATION) {
+            bankAccounts = bankAccountRepository.findOrganizationAccountsWithRelations();
+        } else {
+            bankAccounts = bankAccountRepository.findCounterpartyAccountsWithRelations();
+        }
+        return bankAccountMapper.toResponseList(bankAccounts);
+    }
+
+    /**
      * Get bank accounts by holder with optimized query.
      */
     public List<BankAccountResponseDto> getBankAccountsByHolder(AccountHolderType holderType, Long holderId) {

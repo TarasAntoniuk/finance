@@ -204,32 +204,16 @@ public class BankReceiptService {
             );
         }
 
-        // Check if transaction event already exists
-        if (transactionService.existsByDocument("BankReceipt", id)) {
-            throw new ResourceAlreadyExistsException(
-                    "Transaction event already exists for BankReceipt id: " + id
-            );
-        }
-
-        // If reposting after unpost, mark the reversal event as reversed
-        // This effectively cancels the reversal without creating additional events
-        if (transactionService.existsByDocument("BankReceiptReversal", id)) {
-            var reversalEvent = transactionService.findActiveByDocument("BankReceiptReversal", id);
-            // Mark the reversal as reversed (excludes it from balance calculations)
-            reversalEvent.setIsReversed(true);
-            // Note: We don't create a counter-event; marking it as reversed is sufficient
-        }
-
-        // Create transaction event (DEBIT - money in)
-        transactionService.createReceiptEvent(
+        // Use unified method to post document
+        transactionService.postDocument(
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
                 receipt.getTransactionDateTime(),
                 receipt.getAmount(),
+                receipt.getDescription(),
                 "BankReceipt",
-                receipt.getId(),
-                receipt.getDescription()
+                receipt.getId()
         );
 
         // Update document status
@@ -252,29 +236,12 @@ public class BankReceiptService {
             );
         }
 
-        // Find the active (non-reversed) transaction event
-        var originalEvent = transactionService.findActiveByDocument("BankReceipt", id);
-
-        // Create reversal event (CREDIT - reverse the DEBIT)
-        // Use safe description: if receipt description is null, use a generic message
-        String reversalDescription = "Reversal of receipt #" + receipt.getId();
-        if (receipt.getDescription() != null && !receipt.getDescription().isBlank()) {
-            reversalDescription = "Reversal of: " + receipt.getDescription();
-        }
-
-        var reversalEvent = transactionService.createPaymentEvent(
-                receipt.getAccount().getId(),
-                receipt.getOrganization().getId(),
-                receipt.getCurrency().getId(),
-                receipt.getTransactionDateTime(),
-                receipt.getAmount(),
-                "BankReceiptReversal",
+        // Use unified method to reverse document
+        transactionService.reverseDocument(
+                "BankReceipt",
                 receipt.getId(),
-                reversalDescription
+                receipt.getDescription()
         );
-
-        // Mark original event as reversed and create bidirectional link
-        transactionService.reverseTransaction(originalEvent.getId(), reversalEvent.getId());
 
         // Update document status
         receipt.setStatus(DocumentStatus.DRAFT);

@@ -338,13 +338,12 @@ class BankReceiptServiceTest {
     void shouldPostBankReceipt() {
         // Given
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
-        when(transactionService.existsByDocument("BankReceipt", receipt.getId())).thenReturn(false);
 
         BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
         mockEvent.setId(1L);
-        when(transactionService.createReceiptEvent(
+        when(transactionService.postDocument(
                 anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString()))
+                any(BigDecimal.class), anyString(), anyString(), anyLong()))
                 .thenReturn(mockEvent);
 
         when(bankReceiptRepository.save(any(BankReceipt.class)))
@@ -358,16 +357,15 @@ class BankReceiptServiceTest {
 
         // Then
         assertNotNull(result);
-        verify(transactionService).existsByDocument("BankReceipt", receipt.getId());
-        verify(transactionService).createReceiptEvent(
+        verify(transactionService).postDocument(
                 receipt.getAccount().getId(),
                 receipt.getOrganization().getId(),
                 receipt.getCurrency().getId(),
                 receipt.getTransactionDateTime(),
                 receipt.getAmount(),
+                receipt.getDescription(),
                 "BankReceipt",
-                receipt.getId(),
-                receipt.getDescription()
+                receipt.getId()
         );
         verify(bankReceiptRepository).save(any(BankReceipt.class));
     }
@@ -384,8 +382,8 @@ class BankReceiptServiceTest {
             bankReceiptService.post(receipt.getId());
         });
 
-        verify(transactionService, never()).createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+        verify(transactionService, never()).postDocument(
+                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
         );
     }
 
@@ -394,16 +392,14 @@ class BankReceiptServiceTest {
     void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
         // Given
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
-        when(transactionService.existsByDocument("BankReceipt", receipt.getId())).thenReturn(true);
+        when(transactionService.postDocument(
+                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
+                .thenThrow(new ResourceAlreadyExistsException("Transaction event already exists"));
 
         // When & Then
         assertThrows(ResourceAlreadyExistsException.class, () -> {
             bankReceiptService.post(receipt.getId());
         });
-
-        verify(transactionService, never()).createReceiptEvent(
-                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
-        );
     }
 
     // ==================== UNPOST Tests ====================
@@ -415,17 +411,10 @@ class BankReceiptServiceTest {
         receipt.setStatus(DocumentStatus.POSTED);
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
 
-        BankAccountTransactionEvent originalEvent = new BankAccountTransactionEvent();
-        originalEvent.setId(1L);
-        // Change from findByDocument to findActiveByDocument
-        when(transactionService.findActiveByDocument("BankReceipt", receipt.getId()))
-                .thenReturn(originalEvent);
-
         BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
         reversalEvent.setId(2L);
-        when(transactionService.createPaymentEvent(
-                anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
-                any(BigDecimal.class), anyString(), anyLong(), anyString()))
+        when(transactionService.reverseDocument(
+                anyString(), anyLong(), anyString()))
                 .thenReturn(reversalEvent);
 
         when(bankReceiptRepository.save(any(BankReceipt.class)))
@@ -439,19 +428,29 @@ class BankReceiptServiceTest {
 
         // Then
         assertNotNull(result);
-        verify(transactionService).findActiveByDocument("BankReceipt", receipt.getId());
-        verify(transactionService).createPaymentEvent(
-                receipt.getAccount().getId(),
-                receipt.getOrganization().getId(),
-                receipt.getCurrency().getId(),
-                receipt.getTransactionDateTime(),
-                receipt.getAmount(),
-                "BankReceiptReversal",
+        verify(transactionService).reverseDocument(
+                "BankReceipt",
                 receipt.getId(),
-                "Reversal of: " + receipt.getDescription()
+                receipt.getDescription()
         );
-        verify(transactionService).reverseTransaction(originalEvent.getId(), reversalEvent.getId());
         verify(bankReceiptRepository).save(any(BankReceipt.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when unposting non-POSTED receipt")
+    void shouldThrowExceptionWhenUnpostingNonPostedReceipt() {
+        // Given
+        receipt.setStatus(DocumentStatus.DRAFT);
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+
+        // When & Then
+        assertThrows(InvalidDocumentStatusException.class, () -> {
+            bankReceiptService.unpost(receipt.getId());
+        });
+
+        verify(transactionService, never()).reverseDocument(
+                anyString(), anyLong(), anyString()
+        );
     }
 
     @Test

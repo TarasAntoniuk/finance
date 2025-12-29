@@ -83,19 +83,21 @@ public class AccountBalanceReportService {
     }
 
     /**
-     * Get filtered accounts based on criteria
+     * Get filtered accounts based on criteria.
+     * Only returns organization accounts (not counterparty accounts).
+     * Balance is only tracked for organization accounts.
      */
     private List<BankAccount> getFilteredAccounts(Long organizationId, Long currencyId) {
         List<BankAccount> accounts;
 
         if (organizationId != null && currencyId != null) {
-            accounts = bankAccountRepository.findByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
         } else if (organizationId != null) {
-            accounts = bankAccountRepository.findByHolderIdWithRelations(organizationId);
+            accounts = bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId);
         } else if (currencyId != null) {
-            accounts = bankAccountRepository.findByCurrencyIdWithRelations(currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
         } else {
-            accounts = bankAccountRepository.findAllWithRelations();
+            accounts = bankAccountRepository.findOrganizationAccountsWithRelations();
         }
 
         return accounts;
