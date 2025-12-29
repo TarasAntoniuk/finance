@@ -621,12 +621,10 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.existsByDocument("BankPayment", 10L)).thenReturn(false);
             when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
-            when(transactionService.createPaymentEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
-                    eq(BigDecimal.valueOf(1000.00)), eq("BankPayment"),
-                    eq(10L), anyString()
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
@@ -636,10 +634,10 @@ class BankPaymentServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(transactionService).createPaymentEvent(
+            verify(transactionService).postDocument(
                     eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
-                    eq(BigDecimal.valueOf(1000.00)), eq("BankPayment"),
-                    eq(10L), anyString()
+                    eq(BigDecimal.valueOf(1000.00)), eq("Test payment"),
+                    eq("BankPayment"), eq(10L)
             );
             verify(bankPaymentRepository).save(any(BankPayment.class));
         }
@@ -655,8 +653,8 @@ class BankPaymentServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Bank payment not found");
 
-            verify(transactionService, never()).createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+            verify(transactionService, never()).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
         }
 
@@ -672,8 +670,8 @@ class BankPaymentServiceTest {
                     .isInstanceOf(InvalidDocumentStatusException.class)
                     .hasMessageContaining("Cannot post payment in status");
 
-            verify(transactionService, never()).createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+            verify(transactionService, never()).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
         }
 
@@ -682,16 +680,15 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.existsByDocument("BankPayment", 10L)).thenReturn(true);
+            when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
+                    .thenThrow(new ResourceAlreadyExistsException("Transaction event already exists"));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.post(10L))
                     .isInstanceOf(ResourceAlreadyExistsException.class)
                     .hasMessageContaining("Transaction event already exists");
-
-            verify(transactionService, never()).createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
-            );
         }
 
         @Test
@@ -699,7 +696,6 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenInsufficientBalance() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.existsByDocument("BankPayment", 10L)).thenReturn(false);
             when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(500.00));
 
             // Act & Assert
@@ -707,8 +703,8 @@ class BankPaymentServiceTest {
                     .isInstanceOf(InsufficientBalanceException.class)
                     .hasMessageContaining("Insufficient balance");
 
-            verify(transactionService, never()).createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+            verify(transactionService, never()).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
         }
 
@@ -720,10 +716,9 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.existsByDocument("BankPayment", 10L)).thenReturn(false);
             when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(1000.00));
-            when(transactionService.createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
@@ -733,8 +728,8 @@ class BankPaymentServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(transactionService).createPaymentEvent(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyLong(), anyString()
+            verify(transactionService).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
         }
     }
@@ -749,18 +744,12 @@ class BankPaymentServiceTest {
             // Arrange
             payment.setStatus(DocumentStatus.POSTED);
 
-            BankAccountTransactionEvent originalEvent = new BankAccountTransactionEvent();
-            originalEvent.setId(100L);
-
             BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
             reversalEvent.setId(101L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.findByDocument("BankPayment", 10L)).thenReturn(originalEvent);
-            when(transactionService.createReceiptEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
-                    eq(BigDecimal.valueOf(1000.00)), eq("BankPaymentReversal"),
-                    eq(10L), anyString()
+            when(transactionService.reverseDocument(
+                    anyString(), anyLong(), anyString()
             )).thenReturn(reversalEvent);
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
@@ -770,13 +759,11 @@ class BankPaymentServiceTest {
 
             // Assert
             assertThat(result).isNotNull();
-            verify(transactionService).findByDocument("BankPayment", 10L);
-            verify(transactionService).createReceiptEvent(
-                    eq(1L), eq(5L), eq(4L), any(LocalDateTime.class),
-                    eq(BigDecimal.valueOf(1000.00)), eq("BankPaymentReversal"),
-                    eq(10L), anyString()
+            verify(transactionService).reverseDocument(
+                    eq("BankPayment"),
+                    eq(10L),
+                    eq("Test payment")
             );
-            verify(transactionService).reverseTransaction(100L, 101L);
             verify(bankPaymentRepository).save(any(BankPayment.class));
         }
 
@@ -792,7 +779,7 @@ class BankPaymentServiceTest {
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Bank payment not found");
 
-            verify(transactionService, never()).findByDocument(anyString(), anyLong());
+            verify(transactionService, never()).reverseDocument(anyString(), anyLong(), anyString());
         }
 
         @Test
@@ -806,7 +793,7 @@ class BankPaymentServiceTest {
                     .isInstanceOf(InvalidDocumentStatusException.class)
                     .hasMessageContaining("Cannot unpost payment in status");
 
-            verify(transactionService, never()).findByDocument(anyString(), anyLong());
+            verify(transactionService, never()).reverseDocument(anyString(), anyLong(), anyString());
         }
 
         @Test
@@ -821,7 +808,7 @@ class BankPaymentServiceTest {
                     .isInstanceOf(InvalidDocumentStatusException.class)
                     .hasMessageContaining("Cannot unpost payment in status");
 
-            verify(transactionService, never()).findByDocument(anyString(), anyLong());
+            verify(transactionService, never()).reverseDocument(anyString(), anyLong(), anyString());
         }
     }
 

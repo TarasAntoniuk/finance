@@ -206,13 +206,6 @@ public class BankPaymentService {
             );
         }
 
-        // Check if transaction event already exists
-        if (transactionService.existsByDocument("BankPayment", id)) {
-            throw new ResourceAlreadyExistsException(
-                    "Transaction event already exists for BankPayment id: " + id
-            );
-        }
-
         // Check if account has sufficient balance
         BigDecimal currentBalance = transactionService.getCurrentBalance(payment.getAccount().getId());
         if (currentBalance.compareTo(payment.getAmount()) < 0) {
@@ -222,16 +215,16 @@ public class BankPaymentService {
             );
         }
 
-        // Create transaction event (CREDIT - money out)
-        transactionService.createPaymentEvent(
+        // Use unified method to post document
+        transactionService.postDocument(
                 payment.getAccount().getId(),
                 payment.getOrganization().getId(),
                 payment.getCurrency().getId(),
                 payment.getTransactionDateTime(),
                 payment.getAmount(),
+                payment.getDescription(),
                 "BankPayment",
-                payment.getId(),
-                payment.getDescription()
+                payment.getId()
         );
 
         // Update document status
@@ -254,23 +247,12 @@ public class BankPaymentService {
             );
         }
 
-        // Find and reverse the transaction event
-        var event = transactionService.findByDocument("BankPayment", id);
-
-        // Create reversal event (DEBIT - reverse the CREDIT)
-        var reversalEvent = transactionService.createReceiptEvent(
-                payment.getAccount().getId(),
-                payment.getOrganization().getId(),
-                payment.getCurrency().getId(),
-                payment.getTransactionDateTime(),
-                payment.getAmount(),
-                "BankPaymentReversal",
+        // Use unified method to reverse document (this fixes the "Reversal of: null" bug)
+        transactionService.reverseDocument(
+                "BankPayment",
                 payment.getId(),
-                "Reversal of: " + payment.getDescription()
+                payment.getDescription()
         );
-
-        // Mark original event as reversed
-        transactionService.reverseTransaction(event.getId(), reversalEvent.getId());
 
         // Update document status
         payment.setStatus(DocumentStatus.DRAFT);
