@@ -742,7 +742,444 @@ class AccountTurnoverReportServiceTest {
         account.setBank(testBank);
         account.setCurrency(testCurrency);
         account.setHolderId(testOrganization.getId());
+        account.setHolderType(AccountHolderType.ORGANIZATION);
         account.setStatus(AccountStatus.ACTIVE);
         return account;
+    }
+
+    // ==================== Filter Combination Tests ====================
+
+    @Test
+    @DisplayName("Should filter by organization and currency together")
+    void generateReport_ShouldFilterByOrganizationAndCurrency_WhenBothProvided() {
+        // Given
+        Long organizationId = 1L;
+        Long currencyId = 1L;
+        when(bankAccountRepository.findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId))
+                .thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                startDateTime.toLocalDate(), endDateTime.toLocalDate(), organizationId, null, currencyId);
+
+        // Then
+        assertNotNull(report);
+        assertEquals(1, report.getTotalAccounts());
+        verify(bankAccountRepository).findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(organizationId, currencyId);
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
+    }
+
+    @Test
+    @DisplayName("Should filter reversal events in turnover calculation")
+    void generateReport_ShouldFilterReversalEvents() {
+        // Given
+        BankAccountTransactionEvent normalEvent = createEvent(TransactionType.DEBIT, new BigDecimal("1000.00"), false);
+        normalEvent.setDocumentType("BankReceipt");
+
+        BankAccountTransactionEvent reversalEvent = createEvent(TransactionType.CREDIT, new BigDecimal("1000.00"), false);
+        reversalEvent.setDocumentType("BankReceiptReversal");
+
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(transactionService.calculateBalance(anyLong(), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(normalEvent, reversalEvent));
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+
+        // Then
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        // Should only count normal event, reversal event should be filtered
+        assertEquals(new BigDecimal("1000.00"), item.getDebitTurnover());
+        assertEquals(BigDecimal.ZERO, item.getCreditTurnover());
+        assertEquals(new BigDecimal("1000.00"), item.getClosingBalance());
+    }
+
+    // ==================== Account Turnover Details Tests ====================
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when accountId is null")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenAccountIdIsNull() {
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(null, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+        });
+
+        assertEquals("Account ID is required", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when startDate is null")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenStartDateIsNull() {
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(1L, null, endDateTime.toLocalDate(), 1L);
+        });
+
+        assertEquals("Start date and end date are required", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when endDate is null")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenEndDateIsNull() {
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), null, 1L);
+        });
+
+        assertEquals("Start date and end date are required", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when organizationId is null")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenOrganizationIdIsNull() {
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), null);
+        });
+
+        assertEquals("Organization ID is required", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when account not found")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenAccountNotFound() {
+        // Given
+        when(bankAccountRepository.findByIdWithRelations(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(999L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+        });
+
+        assertEquals("Account not found with ID: 999", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception when account doesn't belong to organization")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenAccountDoesNotBelongToOrganization() {
+        // Given
+        testAccount.setHolderId(2L); // Different organization
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+        });
+
+        assertEquals("Account does not belong to the specified organization", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should throw exception for counterparty account")
+    void getAccountTurnoverDetails_ShouldThrowException_WhenAccountIsCounterpartyAccount() {
+        // Given
+        testAccount.setHolderType(AccountHolderType.COUNTERPARTY);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+
+        // When & Then
+        ValidationException exception = assertThrows(ValidationException.class, () -> {
+            reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+        });
+
+        assertEquals("Account is not an organization account", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should return details with no movements")
+    void getAccountTurnoverDetails_ShouldReturnDetailsWithNoMovements() {
+        // Given
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(new BigDecimal("5000.00"));
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(1L, details.getAccountId());
+        assertEquals("UA123456789012345678901234567", details.getAccountNumber());
+        assertEquals("PrivatBank (PBANUA2X)", details.getAccountName());
+        assertEquals("UAH", details.getCurrency());
+        assertEquals(new BigDecimal("5000.00"), details.getOpeningBalance());
+        assertEquals(new BigDecimal("5000.00"), details.getClosingBalance());
+        assertTrue(details.getMovements().isEmpty());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should return details with movements and running balance")
+    void getAccountTurnoverDetails_ShouldReturnDetailsWithMovements() {
+        // Given
+        BankAccountTransactionEvent event1 = createEvent(TransactionType.DEBIT, new BigDecimal("1000.00"), false);
+        event1.setId(1L);
+        event1.setDocumentId(100L);
+        event1.setDocumentType("BankReceipt");
+        event1.setDescription("Customer payment");
+        event1.setTransactionDateTime(startDateTime.plusDays(1));
+
+        BankAccountTransactionEvent event2 = createEvent(TransactionType.CREDIT, new BigDecimal("500.00"), false);
+        event2.setId(2L);
+        event2.setDocumentId(200L);
+        event2.setDocumentType("BankPayment");
+        event2.setDescription("Supplier payment");
+        event2.setTransactionDateTime(startDateTime.plusDays(2));
+
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(new BigDecimal("5000.00"));
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(event1, event2));
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(new BigDecimal("5000.00"), details.getOpeningBalance());
+        assertEquals(new BigDecimal("5500.00"), details.getClosingBalance()); // 5000 + 1000 - 500
+        assertEquals(2, details.getMovements().size());
+
+        // Verify first movement
+        var movement1 = details.getMovements().get(0);
+        assertEquals(1L, movement1.getEventId());
+        assertEquals(100L, movement1.getDocumentId());
+        assertEquals("BankReceipt", movement1.getDocumentType());
+        assertEquals("Customer payment", movement1.getDescription());
+        assertEquals(new BigDecimal("1000.00"), movement1.getDebit());
+        assertEquals(BigDecimal.ZERO, movement1.getCredit());
+        assertEquals(new BigDecimal("6000.00"), movement1.getRunningBalance()); // 5000 + 1000
+
+        // Verify second movement
+        var movement2 = details.getMovements().get(1);
+        assertEquals(2L, movement2.getEventId());
+        assertEquals(200L, movement2.getDocumentId());
+        assertEquals("BankPayment", movement2.getDocumentType());
+        assertEquals("Supplier payment", movement2.getDescription());
+        assertEquals(BigDecimal.ZERO, movement2.getDebit());
+        assertEquals(new BigDecimal("500.00"), movement2.getCredit());
+        assertEquals(new BigDecimal("5500.00"), movement2.getRunningBalance()); // 6000 - 500
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should filter reversed and reversal events")
+    void getAccountTurnoverDetails_ShouldFilterReversedAndReversalEvents() {
+        // Given
+        BankAccountTransactionEvent normalEvent = createEvent(TransactionType.DEBIT, new BigDecimal("1000.00"), false);
+        normalEvent.setId(1L);
+        normalEvent.setDocumentId(100L);
+        normalEvent.setDocumentType("BankReceipt");
+        normalEvent.setTransactionDateTime(startDateTime.plusDays(1));
+
+        BankAccountTransactionEvent reversedEvent = createEvent(TransactionType.DEBIT, new BigDecimal("2000.00"), true);
+        reversedEvent.setId(2L);
+        reversedEvent.setDocumentId(200L);
+        reversedEvent.setDocumentType("BankReceipt");
+        reversedEvent.setTransactionDateTime(startDateTime.plusDays(2));
+
+        BankAccountTransactionEvent reversalEvent = createEvent(TransactionType.CREDIT, new BigDecimal("2000.00"), false);
+        reversalEvent.setId(3L);
+        reversalEvent.setDocumentId(200L);
+        reversalEvent.setDocumentType("BankReceiptReversal");
+        reversalEvent.setTransactionDateTime(startDateTime.plusDays(3));
+
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(normalEvent, reversedEvent, reversalEvent));
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(1, details.getMovements().size()); // Only normal event should be included
+        assertEquals(1L, details.getMovements().get(0).getEventId());
+        assertEquals(new BigDecimal("1000.00"), details.getClosingBalance());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should handle null opening balance")
+    void getAccountTurnoverDetails_ShouldHandleNullOpeningBalance() {
+        // Given
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(null); // Null opening balance
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(BigDecimal.ZERO, details.getOpeningBalance());
+        assertEquals(BigDecimal.ZERO, details.getClosingBalance());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should handle null description")
+    void getAccountTurnoverDetails_ShouldHandleNullDescription() {
+        // Given
+        BankAccountTransactionEvent event = createEvent(TransactionType.DEBIT, new BigDecimal("1000.00"), false);
+        event.setId(1L);
+        event.setDocumentId(100L);
+        event.setDocumentType("BankReceipt");
+        event.setDescription(null); // Null description
+        event.setTransactionDateTime(startDateTime.plusDays(1));
+
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(event));
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(1, details.getMovements().size());
+        assertEquals("", details.getMovements().get(0).getDescription()); // Should be empty string, not null
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should handle bank with no SWIFT code")
+    void getAccountTurnoverDetails_ShouldHandleBankWithNoSwiftCode() {
+        // Given
+        testBank.setSwiftCode(null);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals("PrivatBank", details.getAccountName()); // Should not include SWIFT code
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should handle null bank")
+    void getAccountTurnoverDetails_ShouldHandleNullBank() {
+        // Given
+        testAccount.setBank(null);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals("Unknown Bank", details.getAccountName());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should handle null currency")
+    void getAccountTurnoverDetails_ShouldHandleNullCurrency() {
+        // Given
+        testAccount.setCurrency(null);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals("UNKNOWN", details.getCurrency());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should sort movements chronologically")
+    void getAccountTurnoverDetails_ShouldSortMovementsChronologically() {
+        // Given
+        BankAccountTransactionEvent event1 = createEvent(TransactionType.DEBIT, new BigDecimal("100.00"), false);
+        event1.setId(3L);
+        event1.setTransactionDateTime(startDateTime.plusDays(3));
+
+        BankAccountTransactionEvent event2 = createEvent(TransactionType.DEBIT, new BigDecimal("200.00"), false);
+        event2.setId(1L);
+        event2.setTransactionDateTime(startDateTime.plusDays(1));
+
+        BankAccountTransactionEvent event3 = createEvent(TransactionType.DEBIT, new BigDecimal("300.00"), false);
+        event3.setId(2L);
+        event3.setTransactionDateTime(startDateTime.plusDays(2));
+
+        // Return events in random order
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(event1, event2, event3));
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(3, details.getMovements().size());
+        // Should be sorted by date, then by ID
+        assertEquals(1L, details.getMovements().get(0).getEventId());
+        assertEquals(2L, details.getMovements().get(1).getEventId());
+        assertEquals(3L, details.getMovements().get(2).getEventId());
+    }
+
+    @Test
+    @DisplayName("getAccountTurnoverDetails - Should sort movements by ID when same timestamp")
+    void getAccountTurnoverDetails_ShouldSortMovementsByIdWhenSameTimestamp() {
+        // Given
+        LocalDateTime sameTime = startDateTime.plusDays(1);
+
+        BankAccountTransactionEvent event1 = createEvent(TransactionType.DEBIT, new BigDecimal("100.00"), false);
+        event1.setId(3L);
+        event1.setTransactionDateTime(sameTime);
+
+        BankAccountTransactionEvent event2 = createEvent(TransactionType.DEBIT, new BigDecimal("200.00"), false);
+        event2.setId(1L);
+        event2.setTransactionDateTime(sameTime);
+
+        BankAccountTransactionEvent event3 = createEvent(TransactionType.DEBIT, new BigDecimal("300.00"), false);
+        event3.setId(2L);
+        event3.setTransactionDateTime(sameTime);
+
+        // Return events in random order
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(testAccount));
+        when(transactionService.calculateBalance(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(BigDecimal.ZERO);
+        when(transactionService.getAccountEventsInDateTimeRange(eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(event1, event2, event3));
+
+        // When
+        var details = reportService.getAccountTurnoverDetails(1L, startDateTime.toLocalDate(), endDateTime.toLocalDate(), 1L);
+
+        // Then
+        assertNotNull(details);
+        assertEquals(3, details.getMovements().size());
+        // Should be sorted by ID when timestamps are equal
+        assertEquals(1L, details.getMovements().get(0).getEventId());
+        assertEquals(2L, details.getMovements().get(1).getEventId());
+        assertEquals(3L, details.getMovements().get(2).getEventId());
     }
 }
