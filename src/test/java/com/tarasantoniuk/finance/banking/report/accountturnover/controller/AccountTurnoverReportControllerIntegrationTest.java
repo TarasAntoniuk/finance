@@ -390,4 +390,123 @@ class AccountTurnoverReportControllerIntegrationTest extends BaseIntegrationTest
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.period.daysCount").value(31)); // January has 31 days
     }
+
+    // ==================== GET ACCOUNT TURNOVER DETAILS Tests ====================
+
+    @Test
+    @DisplayName("Should return account turnover details with movements")
+    void getAccountTurnoverDetails_ShouldReturnDetailsWithMovements() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 1, 31);
+
+        // Create account with some transactions
+        factoryBanking.createBankReceipt(uahAccount, counterparty, uah, organization);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .param("organizationId", organization.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountId").value(uahAccount.getId()))
+                .andExpect(jsonPath("$.accountNumber").value(uahAccount.getAccountNumber()))
+                .andExpect(jsonPath("$.accountName").exists())
+                .andExpect(jsonPath("$.openingBalance").exists())
+                .andExpect(jsonPath("$.closingBalance").exists())
+                .andExpect(jsonPath("$.movements").isArray());
+    }
+
+    @Test
+    @DisplayName("Should return account turnover details without movements when no transactions")
+    void getAccountTurnoverDetails_ShouldReturnDetailsWithoutMovements() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 1, 31);
+
+        // When & Then - account exists but no transactions in period
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .param("organizationId", organization.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountId").value(uahAccount.getId()))
+                .andExpect(jsonPath("$.movements").isArray())
+                .andExpect(jsonPath("$.movements").isEmpty());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when startDate is missing")
+    void getAccountTurnoverDetails_ShouldReturnBadRequest_WhenStartDateMissing() throws Exception {
+        // Given
+        LocalDate end = LocalDate.of(2024, 1, 31);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("endDate", end.toString())
+                        .param("organizationId", organization.getId().toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when endDate is missing")
+    void getAccountTurnoverDetails_ShouldReturnBadRequest_WhenEndDateMissing() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("startDate", start.toString())
+                        .param("organizationId", organization.getId().toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when organizationId is missing")
+    void getAccountTurnoverDetails_ShouldReturnBadRequest_WhenOrganizationIdMissing() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 1, 31);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when account does not exist")
+    void getAccountTurnoverDetails_ShouldReturnBadRequest_WhenAccountNotExists() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 1, 31);
+        Long nonExistentAccountId = 99999L;
+
+        // When & Then - service validates and returns 400 for non-existent account
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", nonExistentAccountId)
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .param("organizationId", organization.getId().toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return bad request when account does not belong to organization")
+    void getAccountTurnoverDetails_ShouldReturnBadRequest_WhenAccountNotBelongsToOrganization() throws Exception {
+        // Given
+        LocalDate start = LocalDate.of(2024, 1, 1);
+        LocalDate end = LocalDate.of(2024, 1, 31);
+
+        // Create another organization
+        Organization anotherOrg = factoryCore.createOrganization("Another Org", "12345", country);
+
+        // Try to access uahAccount (which belongs to 'organization') with 'anotherOrg'
+        // When & Then - service validates ownership and returns 400
+        mockMvc.perform(get("/api/v1/banking/reports/account-turnovers/{accountId}/details", uahAccount.getId())
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString())
+                        .param("organizationId", anotherOrg.getId().toString()))
+                .andExpect(status().isBadRequest());
+    }
 }
