@@ -981,5 +981,37 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             BigDecimal balanceAfterRepost = service.getCurrentBalance(bankAccount.getId());
             assertThat(balanceAfterRepost).isEqualByComparingTo(new BigDecimal("1000.00"));
         }
+
+        @Test
+        @DisplayName("calculateBalance should skip reversal events with endsWith Reversal check")
+        void calculateBalanceShouldSkipReversalEventsWithEndsWithCheck() {
+            // Given: Create events that will be in the query result
+            // 1. Post a receipt at T+1: +500
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(1), new BigDecimal("500.00"), "First receipt", "BankReceipt", 100L);
+
+            // 2. Post a payment at T+2: -200
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(2), new BigDecimal("200.00"), "First payment", "BankPayment", 200L);
+
+            // 3. Reverse the receipt at T+3: creates BankReceiptReversal event
+            service.reverseDocument("BankReceipt", 100L, "First receipt");
+
+            // 4. Post another receipt at T+4: +300
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    testDateTime.plusHours(4), new BigDecimal("300.00"), "Second receipt", "BankReceipt", 101L);
+
+            // When: Calculate balance at T+5 (after all events)
+            // This should include:
+            // - Original receipt (+500) marked as reversed (excluded by isReversed=false in query)
+            // - Payment (-200)
+            // - BankReceiptReversal event (should be SKIPPED by endsWith("Reversal") check)
+            // - Second receipt (+300)
+            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(5));
+
+            // Then: Balance should be 100 (0 - 200 + 300)
+            // The reversal event itself should be skipped due to endsWith("Reversal")
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("100.00"));
+        }
     }
 }
