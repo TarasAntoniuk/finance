@@ -315,6 +315,48 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             assertThat(result.getOpeningBalance()).isEqualByComparingTo(new BigDecimal("5000.00"));
             assertThat(result.getClosingBalance()).isEqualByComparingTo(new BigDecimal("6000.00"));
         }
+
+        @Test
+        @DisplayName("Should skip reversal events when calculating turnovers in snapshot")
+        void shouldSkipReversalEventsInSnapshot() {
+            // Given: Create normal events and a reversal event for the same day
+            LocalDateTime dayStart = testDateTime.toLocalDate().atStartOfDay();
+
+            // 1. Create a receipt event at T+1: +1000
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    dayStart.plusHours(1), new BigDecimal("1000.00"), "Receipt 1", "BankReceipt", 100L);
+
+            // 2. Create a payment event at T+2: -500
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    dayStart.plusHours(2), new BigDecimal("500.00"), "Payment 1", "BankPayment", 200L);
+
+            // 3. Reverse the receipt at T+3 (creates BankReceiptReversal event)
+            service.reverseDocument("BankReceipt", 100L, "Receipt 1");
+
+            // 4. Create another receipt event at T+4: +300
+            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
+                    dayStart.plusHours(4), new BigDecimal("300.00"), "Receipt 2", "BankReceipt", 101L);
+
+            // When: Create snapshot for the day
+            BankAccountBalanceSnapshot snapshot = service.createSnapshot(bankAccount.getId(), testDateTime);
+
+            // Then: Reversal events should be excluded from turnovers
+            // The query filters events where isReversed=false, so:
+            // - BankReceipt #100: EXCLUDED (marked as isReversed=true when reversed)
+            // - BankPayment #200: -500 credit turnover (isReversed=false)
+            // - BankReceiptReversal: FETCHED by query (isReversed=false) but SKIPPED by code (ends with "Reversal")
+            // - BankReceipt #101: +300 debit turnover (isReversed=false)
+            assertThat(snapshot.getDebitTurnover()).isEqualByComparingTo(new BigDecimal("300.00")); // Only receipt #101
+            assertThat(snapshot.getCreditTurnover()).isEqualByComparingTo(new BigDecimal("500.00")); // Only payment #200
+
+            // Closing balance: 0 + 300 - 500 = -200
+            assertThat(snapshot.getClosingBalance()).isEqualByComparingTo(new BigDecimal("-200.00"));
+
+            // Events count is set to events.size() which includes ALL events fetched by query
+            // Receipt #100 is filtered out by isReversed check in query (not counted)
+            // Payment #200, BankReceiptReversal, Receipt #101 are all counted (even though reversal is skipped in turnover)
+            assertThat(snapshot.getEventsCount()).isEqualTo(3);
+        }
     }
 
     @Nested
