@@ -212,6 +212,94 @@ class BankReceiptMapperTest extends BaseIntegrationTest {
         assertNull(entity.getExternalTransactionId());
     }
 
+    @Test
+    void mapAccount_ShouldReturnNull_WhenIdIsNull() {
+        // When
+        BankAccount result = mapper.mapAccount(null);
+
+        // Then
+        assertNull(result, "Should return null when account ID is null");
+    }
+
+    @Test
+    void mapAccount_ShouldReturnEntityStub_WhenIdIsProvided() {
+        // Given
+        Long accountId = 123L;
+
+        // When
+        BankAccount result = mapper.mapAccount(accountId);
+
+        // Then
+        assertNotNull(result, "Should return entity stub");
+        assertEquals(accountId, result.getId(), "Should have correct ID");
+    }
+
+    @Test
+    void mapCounterparty_ShouldReturnNull_WhenIdIsNull() {
+        // When
+        Counterparty result = mapper.mapCounterparty(null);
+
+        // Then
+        assertNull(result, "Should return null when counterparty ID is null");
+    }
+
+    @Test
+    void mapCounterparty_ShouldReturnEntityStub_WhenIdIsProvided() {
+        // Given
+        Long counterpartyId = 456L;
+
+        // When
+        Counterparty result = mapper.mapCounterparty(counterpartyId);
+
+        // Then
+        assertNotNull(result, "Should return entity stub");
+        assertEquals(counterpartyId, result.getId(), "Should have correct ID");
+    }
+
+    @Test
+    void mapCurrency_ShouldReturnNull_WhenIdIsNull() {
+        // When
+        Currency result = mapper.mapCurrency(null);
+
+        // Then
+        assertNull(result, "Should return null when currency ID is null");
+    }
+
+    @Test
+    void mapCurrency_ShouldReturnEntityStub_WhenIdIsProvided() {
+        // Given
+        Long currencyId = 789L;
+
+        // When
+        Currency result = mapper.mapCurrency(currencyId);
+
+        // Then
+        assertNotNull(result, "Should return entity stub");
+        assertEquals(currencyId, result.getId(), "Should have correct ID");
+    }
+
+    @Test
+    void mapOrganization_ShouldReturnNull_WhenIdIsNull() {
+        // When
+        Organization result = mapper.mapOrganization(null);
+
+        // Then
+        assertNull(result, "Should return null when organization ID is null");
+    }
+
+    @Test
+    void mapOrganization_ShouldReturnEntityStub_WhenIdIsProvided() {
+        // Given
+        Long organizationId = 321L;
+
+        // When
+        Organization result = mapper.mapOrganization(organizationId);
+
+        // Then
+        assertNotNull(result, "Should return entity stub");
+        assertEquals(organizationId, result.getId(), "Should have correct ID");
+    }
+
     // Helper method to create full entity
     private BankReceipt createFullBankReceiptEntity() {
         BankReceipt receipt = new BankReceipt();

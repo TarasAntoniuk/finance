@@ -20,7 +20,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
@@ -34,7 +38,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
@@ -47,7 +55,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
@@ -61,7 +73,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
@@ -75,7 +91,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
@@ -89,7 +109,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
      */
     @Query("""
             SELECT p FROM BankPayment p
-            LEFT JOIN FETCH p.account
+            LEFT JOIN FETCH p.account a
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
+            LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency

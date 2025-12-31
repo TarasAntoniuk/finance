@@ -258,6 +258,53 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    @DisplayName("Should return created when counterparty bank account provided")
+    void createBankReceipt_ShouldReturnCreated_WhenCounterpartyBankAccountProvided() throws Exception {
+        // Given - create a counterparty bank account
+        BankAccount counterpartyBankAccount = factoryBanking.createCounterpartyBankAccount(bank, currency, counterparty);
+
+        BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
+        requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
+        requestDto.setAmount(new BigDecimal("1000.00"));
+        requestDto.setAccountId(bankAccount.getId());
+        requestDto.setCounterpartyId(counterparty.getId());
+        requestDto.setCounterpartyBankAccountId(counterpartyBankAccount.getId()); // Set counterparty bank account
+        requestDto.setCurrencyId(currency.getId());
+        requestDto.setOrganizationId(organization.getId());
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/bank-receipts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.counterpartyBankAccount").exists())
+                .andExpect(jsonPath("$.counterpartyBankAccount.id").value(counterpartyBankAccount.getId()));
+    }
+
+    @Test
+    @DisplayName("Should return not found when counterparty bank account not exists")
+    void createBankReceipt_ShouldReturnNotFound_WhenCounterpartyBankAccountNotExists() throws Exception {
+        // Given
+        BankReceiptRequestDto requestDto = new BankReceiptRequestDto();
+        requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 9,0,0));
+        requestDto.setReceiptType(ReceiptType.CUSTOMER_PAYMENT);
+        requestDto.setAmount(new BigDecimal("1000.00"));
+        requestDto.setAccountId(bankAccount.getId());
+        requestDto.setCounterpartyId(counterparty.getId());
+        requestDto.setCounterpartyBankAccountId(99999L); // Non-existent counterparty bank account
+        requestDto.setCurrencyId(currency.getId());
+        requestDto.setOrganizationId(organization.getId());
+
+        // When & Then
+        mockMvc.perform(post("/api/v1/bank-receipts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isNotFound());
+    }
+
     // ==================== GET BY ID Tests ====================
 
     @Test
@@ -452,6 +499,147 @@ class BankReceiptControllerIntegrationTest extends BaseIntegrationTest {
     void getBankReceiptsByAccountId_ShouldReturnEmpty_WhenNoReceiptsForAccount() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/v1/bank-receipts/account/{accountId}", 99999L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Should return filtered by counterparty ID")
+    void getBankReceiptsByCounterpartyId_ShouldReturnFiltered() throws Exception {
+        // Given
+        factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+
+        // When & Then
+        mockMvc.perform(get("/api/v1/bank-receipts/counterparty/{counterpartyId}", counterparty.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(3)));
+    }
+
+    @Test
+    @DisplayName("Should return empty when no receipts for counterparty")
+    void getBankReceiptsByCounterpartyId_ShouldReturnEmpty_WhenNoReceiptsForCounterparty() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/v1/bank-receipts/counterparty/{counterpartyId}", 99999L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Should return filtered by status DRAFT")
+    void getBankReceiptsByStatus_ShouldReturnFiltered_WhenStatusIsDraft() throws Exception {
+        // Given - create receipts with different statuses
+        BankReceipt draft1 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        BankReceipt draft2 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        BankReceipt posted = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        posted.setStatus(DocumentStatus.POSTED);
+        bankReceiptRepository.save(posted);
+
+        // When & Then - filter by DRAFT status
+        mockMvc.perform(get("/api/v1/bank-receipts/status/{status}", DocumentStatus.DRAFT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("Should return filtered by status POSTED")
+    void getBankReceiptsByStatus_ShouldReturnFiltered_WhenStatusIsPosted() throws Exception {
+        // Given - create receipts with different statuses
+        factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        BankReceipt posted1 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        posted1.setStatus(DocumentStatus.POSTED);
+        bankReceiptRepository.save(posted1);
+        BankReceipt posted2 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        posted2.setStatus(DocumentStatus.POSTED);
+        bankReceiptRepository.save(posted2);
+
+        // When & Then - filter by POSTED status
+        mockMvc.perform(get("/api/v1/bank-receipts/status/{status}", DocumentStatus.POSTED))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("Should return empty when no receipts with status")
+    void getBankReceiptsByStatus_ShouldReturnEmpty_WhenNoReceiptsWithStatus() throws Exception {
+        // Given - create only DRAFT receipts
+        factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+
+        // When & Then - try to find CANCELLED receipts
+        mockMvc.perform(get("/api/v1/bank-receipts/status/{status}", DocumentStatus.CANCELLED))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("Should return receipts within date range")
+    void getBankReceiptsByDateRange_ShouldReturnFiltered_WhenReceiptsInRange() throws Exception {
+        // Given - create receipts with different transaction dates
+        BankReceipt receipt1 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        receipt1.setTransactionDateTime(LocalDateTime.of(2024, 10, 15, 10, 0));
+        bankReceiptRepository.save(receipt1);
+
+        BankReceipt receipt2 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        receipt2.setTransactionDateTime(LocalDateTime.of(2024, 11, 10, 14, 30));
+        bankReceiptRepository.save(receipt2);
+
+        BankReceipt receipt3 = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        receipt3.setTransactionDateTime(LocalDateTime.of(2024, 12, 5, 9, 15));
+        bankReceiptRepository.save(receipt3);
+
+        BankReceipt outsideRange = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        outsideRange.setTransactionDateTime(LocalDateTime.of(2025, 1, 10, 12, 0));
+        bankReceiptRepository.save(outsideRange);
+
+        // When & Then - filter by date range that includes only first 3 receipts
+        mockMvc.perform(get("/api/v1/bank-receipts/date-range")
+                        .param("startDate", "2024-10-01")
+                        .param("endDate", "2024-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(3)));
+    }
+
+    @Test
+    @DisplayName("Should return receipts on exact boundary dates")
+    void getBankReceiptsByDateRange_ShouldIncludeBoundaryDates() throws Exception {
+        // Given - create receipt exactly on start date and end date
+        BankReceipt onStartDate = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        onStartDate.setTransactionDateTime(LocalDateTime.of(2024, 10, 1, 0, 0, 0));
+        bankReceiptRepository.save(onStartDate);
+
+        BankReceipt onEndDate = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        onEndDate.setTransactionDateTime(LocalDateTime.of(2024, 10, 31, 23, 59, 59));
+        bankReceiptRepository.save(onEndDate);
+
+        BankReceipt beforeRange = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        beforeRange.setTransactionDateTime(LocalDateTime.of(2024, 9, 30, 23, 59, 59));
+        bankReceiptRepository.save(beforeRange);
+
+        BankReceipt afterRange = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        afterRange.setTransactionDateTime(LocalDateTime.of(2024, 11, 1, 0, 0, 1));
+        bankReceiptRepository.save(afterRange);
+
+        // When & Then - filter should include boundary dates
+        mockMvc.perform(get("/api/v1/bank-receipts/date-range")
+                        .param("startDate", "2024-10-01")
+                        .param("endDate", "2024-10-31"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("Should return empty when no receipts in date range")
+    void getBankReceiptsByDateRange_ShouldReturnEmpty_WhenNoReceiptsInRange() throws Exception {
+        // Given - create receipt outside the search range
+        BankReceipt receipt = factoryBanking.createBankReceipt(bankAccount, counterparty, currency, organization);
+        receipt.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0));
+        bankReceiptRepository.save(receipt);
+
+        // When & Then - search in a different date range
+        mockMvc.perform(get("/api/v1/bank-receipts/date-range")
+                        .param("startDate", "2024-06-01")
+                        .param("endDate", "2024-06-30"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(0)));
     }

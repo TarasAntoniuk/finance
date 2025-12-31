@@ -21,7 +21,9 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     @Query("""
                 SELECT br FROM BankReceipt br
                 LEFT JOIN FETCH br.account a
-                LEFT JOIN FETCH a.bank
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
                 LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.organization
                 LEFT JOIN FETCH br.counterparty cp
@@ -37,7 +39,9 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     @Query(value = """
             SELECT DISTINCT br FROM BankReceipt br
             LEFT JOIN FETCH br.account a
-            LEFT JOIN FETCH a.bank
+            LEFT JOIN FETCH a.bank b
+            LEFT JOIN FETCH b.country
+            LEFT JOIN FETCH b.counterparty
             LEFT JOIN FETCH a.currency
             LEFT JOIN FETCH br.organization
             LEFT JOIN FETCH br.counterparty
@@ -54,7 +58,10 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     @Query("""
                 SELECT DISTINCT br FROM BankReceipt br
                 LEFT JOIN FETCH br.account a
-                LEFT JOIN FETCH a.bank
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
+                LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE a.id = :accountId
@@ -66,7 +73,11 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      */
     @Query("""
                 SELECT DISTINCT br FROM BankReceipt br
-                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
+                LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.counterparty cp
                 LEFT JOIN FETCH br.currency
                 WHERE cp.id = :counterpartyId
@@ -78,7 +89,11 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      */
     @Query("""
                 SELECT DISTINCT br FROM BankReceipt br
-                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
+                LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE br.status = :status
@@ -90,7 +105,11 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      */
     @Query("""
                 SELECT DISTINCT br FROM BankReceipt br
-                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
+                LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE br.transactionDateTime BETWEEN :startDateTime AND :endDateTime
@@ -111,7 +130,11 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
      */
     @Query("""
                 SELECT br FROM BankReceipt br
-                LEFT JOIN FETCH br.account
+                LEFT JOIN FETCH br.account a
+                LEFT JOIN FETCH a.bank b
+                LEFT JOIN FETCH b.country
+                LEFT JOIN FETCH b.counterparty
+                LEFT JOIN FETCH a.currency
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE br.externalTransactionId = :externalTransactionId
