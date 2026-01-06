@@ -95,27 +95,6 @@ public class AccountTurnoverReportService {
     }
 
     /**
-     * Generate account turnover report for specified period (legacy overload for backward compatibility)
-     *
-     * @deprecated Use {@link #generateReport(ReportPeriodDto, Long, Long, Long)} instead
-     */
-    @Deprecated
-    public AccountTurnoverReportDto generateReport(
-            LocalDate startDate,
-            LocalDate endDate,
-            Long organizationId,
-            Long accountId,
-            Long currencyId
-    ) {
-        // Validate period for backward compatibility
-        validatePeriod(startDate, endDate);
-
-        // Create period DTO without periodType (for backward compatibility)
-        ReportPeriodDto period = new ReportPeriodDto(startDate, endDate);
-        return generateReport(period, organizationId, accountId, currencyId);
-    }
-
-    /**
      * Validate report period (max 365 days)
      */
     private void validatePeriod(LocalDate startDate, LocalDate endDate) {
