@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.common.report.enums;
+package com.tarasantoniuk.finance.common.period.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

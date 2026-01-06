@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.common;
+package com.tarasantoniuk.finance.common.swagger;
 
 import org.springframework.context.annotation.Configuration;
 

@@ -1,6 +1,6 @@
-package com.tarasantoniuk.finance.common.report.dto;
+package com.tarasantoniuk.finance.common.period.dto;
 
-import com.tarasantoniuk.finance.common.report.enums.PeriodType;
+import com.tarasantoniuk.finance.common.period.enums.PeriodType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;

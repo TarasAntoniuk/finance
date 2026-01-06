@@ -13,7 +13,7 @@ import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurno
 import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverSummaryDto;
 import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverTotalDto;
 import com.tarasantoniuk.finance.common.exception.ValidationException;
-import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
+import com.tarasantoniuk.finance.common.period.dto.ReportPeriodDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;

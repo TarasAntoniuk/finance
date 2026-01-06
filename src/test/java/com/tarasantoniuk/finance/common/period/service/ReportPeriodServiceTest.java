@@ -1,8 +1,8 @@
-package com.tarasantoniuk.finance.common.report.service;
+package com.tarasantoniuk.finance.common.period.service;
 
 import com.tarasantoniuk.finance.common.exception.ValidationException;
-import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
-import com.tarasantoniuk.finance.common.report.enums.PeriodType;
+import com.tarasantoniuk.finance.common.period.dto.ReportPeriodDto;
+import com.tarasantoniuk.finance.common.period.enums.PeriodType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

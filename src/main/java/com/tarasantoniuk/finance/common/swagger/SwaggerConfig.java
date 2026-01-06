@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.common;
+package com.tarasantoniuk.finance.common.swagger;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;

@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.banking.report.accountturnover.dto;
 
-import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
+import com.tarasantoniuk.finance.common.period.dto.ReportPeriodDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
