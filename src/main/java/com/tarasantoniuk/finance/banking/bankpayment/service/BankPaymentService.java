@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.bankpayment.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
@@ -41,6 +42,7 @@ public class BankPaymentService {
     private final CurrencyRepository currencyRepository;
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionService transactionService;
+    private final BankAccountBalanceService balanceService;
 
     public BankPaymentService(
             BankPaymentRepository bankPaymentRepository,
@@ -49,7 +51,8 @@ public class BankPaymentService {
             CounterpartyRepository counterpartyRepository,
             CurrencyRepository currencyRepository,
             OrganizationRepository organizationRepository,
-            BankAccountTransactionService transactionService) {
+            BankAccountTransactionService transactionService,
+            BankAccountBalanceService balanceService) {
         this.bankPaymentRepository = bankPaymentRepository;
         this.bankPaymentMapper = bankPaymentMapper;
         this.bankAccountRepository = bankAccountRepository;
@@ -57,6 +60,7 @@ public class BankPaymentService {
         this.currencyRepository = currencyRepository;
         this.organizationRepository = organizationRepository;
         this.transactionService = transactionService;
+        this.balanceService = balanceService;
     }
 
     /**
@@ -207,7 +211,7 @@ public class BankPaymentService {
         }
 
         // Check if account has sufficient balance
-        BigDecimal currentBalance = transactionService.getCurrentBalance(payment.getAccount().getId());
+        BigDecimal currentBalance = balanceService.getCurrentBalance(payment.getAccount().getId());
         if (currentBalance.compareTo(payment.getAmount()) < 0) {
             throw new InsufficientBalanceException(
                     "Insufficient balance. Current balance: " + currentBalance +

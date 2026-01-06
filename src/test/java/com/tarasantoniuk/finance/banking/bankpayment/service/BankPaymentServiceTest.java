@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.bankpayment.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
@@ -68,6 +69,9 @@ class BankPaymentServiceTest {
 
     @Mock
     private BankAccountTransactionService transactionService;
+
+    @Mock
+    private BankAccountBalanceService balanceService;
 
     @InjectMocks
     private BankPaymentService bankPaymentService;
@@ -621,7 +625,7 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                     any(BigDecimal.class), anyString(), anyString(), anyLong()
@@ -680,7 +684,7 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
                     .thenThrow(new ResourceAlreadyExistsException("Transaction event already exists"));
@@ -696,7 +700,7 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenInsufficientBalance() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(500.00));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(500.00));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.post(10L))
@@ -716,7 +720,7 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(transactionService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(1000.00));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(1000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
