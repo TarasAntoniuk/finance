@@ -3,7 +3,7 @@ package com.tarasantoniuk.finance.banking.report.accountbalance.service;
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceItemDto;
 import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanceReportDto;
@@ -29,16 +29,19 @@ public class AccountBalanceReportService {
 
     private final BankAccountRepository bankAccountRepository;
     private final BankAccountTransactionService transactionService;
+    private final BankAccountBalanceService balanceService;
     private final OrganizationRepository organizationRepository;
 
     @Autowired
     public AccountBalanceReportService(
             BankAccountRepository bankAccountRepository,
             BankAccountTransactionService transactionService,
+            BankAccountBalanceService balanceService,
             OrganizationRepository organizationRepository
     ) {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionService = transactionService;
+        this.balanceService = balanceService;
         this.organizationRepository = organizationRepository;
     }
 
@@ -109,7 +112,7 @@ public class AccountBalanceReportService {
     private AccountBalanceItemDto buildBalanceItem(BankAccount account, LocalDate asOfDate) {
         // Calculate balance using transaction service (end of day)
         LocalDateTime endOfDay = asOfDate.plusDays(1).atStartOfDay();
-        BigDecimal balance = transactionService.calculateBalance(account.getId(), endOfDay);
+        BigDecimal balance = balanceService.calculateBalance(account.getId(), endOfDay);
 
         // Get organization name
         String organizationName = getOrganizationName(account.getHolderId());

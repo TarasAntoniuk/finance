@@ -4,6 +4,7 @@ import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
@@ -36,16 +37,19 @@ public class AccountTurnoverReportService {
 
     private final BankAccountRepository bankAccountRepository;
     private final BankAccountTransactionService transactionService;
+    private final BankAccountBalanceService balanceService;
     private final OrganizationRepository organizationRepository;
 
     @Autowired
     public AccountTurnoverReportService(
             BankAccountRepository bankAccountRepository,
             BankAccountTransactionService transactionService,
+            BankAccountBalanceService balanceService,
             OrganizationRepository organizationRepository
     ) {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionService = transactionService;
+        this.balanceService = balanceService;
         this.organizationRepository = organizationRepository;
     }
 
@@ -168,7 +172,7 @@ public class AccountTurnoverReportService {
     private AccountTurnoverSummaryDto buildTurnoverItem(BankAccount account, LocalDate startDate, LocalDate endDate) {
         // Calculate opening balance (start of startDate)
         LocalDateTime startDateTime = startDate.atStartOfDay();
-        BigDecimal openingBalance = transactionService.calculateBalance(account.getId(), startDateTime);
+        BigDecimal openingBalance = balanceService.calculateBalance(account.getId(), startDateTime);
 
         // Handle null opening balance
         if (openingBalance == null) {
@@ -314,7 +318,7 @@ public class AccountTurnoverReportService {
 
         // Calculate opening balance (before start date)
         LocalDateTime startDateTime = startDate.atStartOfDay();
-        BigDecimal openingBalance = transactionService.calculateBalance(accountId, startDateTime);
+        BigDecimal openingBalance = balanceService.calculateBalance(accountId, startDateTime);
         if (openingBalance == null) {
             openingBalance = BigDecimal.ZERO;
         }

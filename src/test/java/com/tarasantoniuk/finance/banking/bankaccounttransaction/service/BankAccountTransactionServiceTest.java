@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.banking.bankaccounttransaction.service;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
-import com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.common.TestDataCleanerBanking;
@@ -29,6 +29,9 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
 
     @Autowired
     private BankAccountTransactionService service;
+
+    @Autowired
+    private BankAccountBalanceService balanceService;
 
     @Autowired
     private TestDataFactoryCore factoryCore;
@@ -69,328 +72,7 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         cleanerCore.cleanAll();
     }
 
-    @Nested
-    @DisplayName("calculateBalance Tests")
-    class CalculateBalanceTests {
 
-        @Test
-        @DisplayName("Should calculate balance from zero when no snapshot exists")
-        void shouldCalculateBalanceFromZero() {
-            // Given: Create events directly
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime, new BigDecimal("1000.00"), TransactionType.DEBIT, "TEST_DOCUMENT", 1L, "Receipt 1");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(1), new BigDecimal("300.00"), TransactionType.CREDIT, "TEST_DOCUMENT", 2L, "Payment 1");
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(2));
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("700.00"));
-        }
-
-        @Test
-        @DisplayName("Should calculate balance starting from snapshot")
-        void shouldCalculateBalanceFromSnapshot() {
-            // Given: Create snapshot first
-            LocalDateTime snapshotDateTime = testDateTime.minusDays(5);
-
-            // Create some events before snapshot
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    snapshotDateTime, new BigDecimal("5000.00"), TransactionType.DEBIT, "TEST_DOCUMENT", 1L, "Initial receipt");
-
-            // Create snapshot
-            service.createSnapshot(bankAccount.getId(), snapshotDateTime);
-
-            // Create events after snapshot
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime, new BigDecimal("2000.00"), TransactionType.DEBIT, "TEST_DOCUMENT", 2L, "Receipt after snapshot");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(1), new BigDecimal("500.00"), TransactionType.CREDIT, "TEST_DOCUMENT", 3L, "Payment after snapshot");
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(2));
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("6500.00")); // 5000 + 2000 - 500
-        }
-
-        @Test
-        @DisplayName("Should return zero when no snapshot and no events")
-        void shouldReturnZeroWhenNoData() {
-            // Given: No events created
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime);
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(BigDecimal.ZERO);
-        }
-
-        @Test
-        @DisplayName("Should return snapshot balance when no events after snapshot")
-        void shouldReturnSnapshotBalanceWhenNoEventsAfter() {
-            // Given: Create snapshot with balance
-            LocalDateTime snapshotDateTime = testDateTime.minusDays(1);
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    snapshotDateTime, new BigDecimal("3000.00"), TransactionType.DEBIT, "TEST_DOCUMENT", 1L, "Initial receipt");
-
-            service.createSnapshot(bankAccount.getId(), snapshotDateTime);
-
-            // No events after snapshot
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime);
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("3000.00"));
-        }
-
-        @Test
-        @DisplayName("Should handle multiple debit transactions")
-        void shouldHandleMultipleDebits() {
-            // Given
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime, new BigDecimal("100.00"), TransactionType.DEBIT, "TEST", 1L, "Debit 1");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(1), new BigDecimal("200.00"), TransactionType.DEBIT, "TEST", 2L, "Debit 2");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(2), new BigDecimal("300.00"), TransactionType.DEBIT, "TEST", 3L, "Debit 3");
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(3));
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("600.00"));
-        }
-
-        @Test
-        @DisplayName("Should handle multiple credit transactions")
-        void shouldHandleMultipleCredits() {
-            // Given
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime, new BigDecimal("100.00"), TransactionType.CREDIT, "TEST", 1L, "Credit 1");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(1), new BigDecimal("200.00"), TransactionType.CREDIT, "TEST", 2L, "Credit 2");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(2), new BigDecimal("300.00"), TransactionType.CREDIT, "TEST", 3L, "Credit 3");
-
-            // When
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(3));
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("-600.00"));
-        }
-    }
-
-    @Nested
-    @DisplayName("getCurrentBalance Tests")
-    class GetCurrentBalanceTests {
-
-        @Test
-        @DisplayName("Should return current balance as of now")
-        void shouldReturnCurrentBalance() {
-            // Given: Create events for today
-            LocalDateTime now = LocalDateTime.now();
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    now.minusHours(1), new BigDecimal("1000.00"), TransactionType.DEBIT, "TEST", 1L, "Receipt");
-
-            // When
-            BigDecimal balance = service.getCurrentBalance(bankAccount.getId());
-
-            // Then
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("1000.00"));
-        }
-    }
-
-    @Nested
-    @DisplayName("createSnapshot Tests")
-    class CreateSnapshotTests {
-
-        @Test
-        @DisplayName("Should create snapshot successfully with events")
-        void shouldCreateSnapshotWithEvents() {
-            // Given: Create events for the day
-            LocalDateTime dayStart = testDateTime.toLocalDate().atStartOfDay();
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    dayStart.plusHours(8), new BigDecimal("1000.00"), TransactionType.DEBIT, "TEST", 1L, "Receipt 1");
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    dayStart.plusHours(10), new BigDecimal("300.00"), TransactionType.CREDIT, "TEST", 2L, "Payment 1");
-
-            LocalDateTime snapshotDateTime = dayStart.plusHours(23).plusMinutes(59);
-
-            // Snapshot will be normalized to start of next day
-            LocalDateTime expectedSnapshotDateTime = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
-
-            // When
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), snapshotDateTime);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isNotNull();
-            assertThat(result.getSnapshotDateTime()).isEqualTo(expectedSnapshotDateTime);
-            assertThat(result.getOpeningBalance()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(result.getDebitTurnover()).isEqualByComparingTo(new BigDecimal("1000.00"));
-            assertThat(result.getCreditTurnover()).isEqualByComparingTo(new BigDecimal("300.00"));
-            assertThat(result.getClosingBalance()).isEqualByComparingTo(new BigDecimal("700.00"));
-            assertThat(result.getEventsCount()).isEqualTo(2);
-            assertThat(result.getLastEventId()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("Should create snapshot with no events")
-        void shouldCreateSnapshotWithNoEvents() {
-            // Given: No events for the day
-            LocalDateTime expectedSnapshotDateTime = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
-
-            // When
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDateTime);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getSnapshotDateTime()).isEqualTo(expectedSnapshotDateTime);
-            assertThat(result.getOpeningBalance()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(result.getDebitTurnover()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(result.getCreditTurnover()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(result.getClosingBalance()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(result.getEventsCount()).isEqualTo(0);
-            assertThat(result.getLastEventId()).isNull();
-        }
-
-        @Test
-        @DisplayName("Should throw exception when snapshot already exists")
-        void shouldThrowExceptionWhenSnapshotExists() {
-            // Given: Create snapshot first time
-            service.createSnapshot(bankAccount.getId(), testDateTime);
-
-            // When/Then: Try to create again for same day
-            assertThatThrownBy(() -> service.createSnapshot(bankAccount.getId(), testDateTime))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Snapshot already exists for date: " + testDateTime.toLocalDate());
-        }
-
-        @Test
-        @DisplayName("Should throw exception when bank account not found")
-        void shouldThrowExceptionWhenBankAccountNotFound() {
-            // Given
-            Long nonExistentId = 999999L;
-
-            // When/Then
-            assertThatThrownBy(() -> service.createSnapshot(nonExistentId, testDateTime))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Bank account not found with id: 999999");
-        }
-
-        @Test
-        @DisplayName("Should create snapshot with opening balance from previous day")
-        void shouldCreateSnapshotWithOpeningBalance() {
-            // Given: Create events and snapshot for previous day
-            LocalDateTime previousDay = testDateTime.minusDays(1);
-
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    previousDay, new BigDecimal("5000.00"), TransactionType.DEBIT, "TEST", 1L, "Previous day receipt");
-
-            // Create snapshot for previous day (will be normalized to end of day)
-            service.createSnapshot(bankAccount.getId(), previousDay);
-
-            // Create event for current day
-            LocalDateTime currentDayStart = testDateTime.toLocalDate().atStartOfDay();
-            service.createTransactionEvent(bankAccount.getId(), organization.getId(), currency.getId(),
-                    currentDayStart.plusHours(10), new BigDecimal("1000.00"), TransactionType.DEBIT, "TEST", 2L, "Current day receipt");
-
-            // When: Create snapshot for current day
-            BankAccountBalanceSnapshot result = service.createSnapshot(bankAccount.getId(), testDateTime);
-
-            // Then
-            assertThat(result.getOpeningBalance()).isEqualByComparingTo(new BigDecimal("5000.00"));
-            assertThat(result.getClosingBalance()).isEqualByComparingTo(new BigDecimal("6000.00"));
-        }
-
-        @Test
-        @DisplayName("Should skip reversal events when calculating turnovers in snapshot")
-        void shouldSkipReversalEventsInSnapshot() {
-            // Given: Create normal events and a reversal event for the same day
-            LocalDateTime dayStart = testDateTime.toLocalDate().atStartOfDay();
-
-            // 1. Create a receipt event at T+1: +1000
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    dayStart.plusHours(1), new BigDecimal("1000.00"), "Receipt 1", "BankReceipt", 100L);
-
-            // 2. Create a payment event at T+2: -500
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    dayStart.plusHours(2), new BigDecimal("500.00"), "Payment 1", "BankPayment", 200L);
-
-            // 3. Reverse the receipt at T+3 (creates BankReceiptReversal event)
-            service.reverseDocument("BankReceipt", 100L, "Receipt 1");
-
-            // 4. Create another receipt event at T+4: +300
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    dayStart.plusHours(4), new BigDecimal("300.00"), "Receipt 2", "BankReceipt", 101L);
-
-            // When: Create snapshot for the day
-            BankAccountBalanceSnapshot snapshot = service.createSnapshot(bankAccount.getId(), testDateTime);
-
-            // Then: Reversal events should be excluded from turnovers
-            // The query filters events where isReversed=false, so:
-            // - BankReceipt #100: EXCLUDED (marked as isReversed=true when reversed)
-            // - BankPayment #200: -500 credit turnover (isReversed=false)
-            // - BankReceiptReversal: FETCHED by query (isReversed=false) but SKIPPED by code (ends with "Reversal")
-            // - BankReceipt #101: +300 debit turnover (isReversed=false)
-            assertThat(snapshot.getDebitTurnover()).isEqualByComparingTo(new BigDecimal("300.00")); // Only receipt #101
-            assertThat(snapshot.getCreditTurnover()).isEqualByComparingTo(new BigDecimal("500.00")); // Only payment #200
-
-            // Closing balance: 0 + 300 - 500 = -200
-            assertThat(snapshot.getClosingBalance()).isEqualByComparingTo(new BigDecimal("-200.00"));
-
-            // Events count is set to events.size() which includes ALL events fetched by query
-            // Receipt #100 is filtered out by isReversed check in query (not counted)
-            // Payment #200, BankReceiptReversal, Receipt #101 are all counted (even though reversal is skipped in turnover)
-            assertThat(snapshot.getEventsCount()).isEqualTo(3);
-        }
-    }
-
-    @Nested
-    @DisplayName("getSnapshot Tests")
-    class GetSnapshotTests {
-
-        @Test
-        @DisplayName("Should return snapshot when it exists")
-        void shouldReturnSnapshot() {
-            // Given: Create snapshot first
-            service.createSnapshot(bankAccount.getId(), testDateTime);
-
-            // Snapshot is stored at start of next day
-            LocalDateTime endOfDay = testDateTime.toLocalDate().plusDays(1).atStartOfDay();
-
-            // When
-            BankAccountBalanceSnapshot result = service.getSnapshot(bankAccount.getId(), endOfDay);
-
-            // Then
-            assertThat(result).isNotNull();
-            assertThat(result.getSnapshotDateTime()).isEqualTo(endOfDay);
-        }
-
-        @Test
-        @DisplayName("Should throw exception when snapshot not found")
-        void shouldThrowExceptionWhenSnapshotNotFound() {
-            // Given: No snapshot created
-
-            // When/Then
-            assertThatThrownBy(() -> service.getSnapshot(bankAccount.getId(), testDateTime))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Snapshot not found for account " + bankAccount.getId() + " at datetime " + testDateTime);
-        }
-    }
 
     @Nested
     @DisplayName("getAccountEvents Tests")
@@ -482,61 +164,6 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
         }
     }
 
-    @Nested
-    @DisplayName("getSnapshotsInDateTimeRange Tests")
-    class GetSnapshotsInDateTimeRangeTests {
-
-        @Test
-        @DisplayName("Should return snapshots within datetime range")
-        void shouldReturnSnapshotsInDateTimeRange() {
-            // Given
-            LocalDateTime startDateTime = testDateTime; // 2024-01-15T10:00
-            LocalDateTime endDateTime = testDateTime.plusDays(5); // 2024-01-20T10:00
-            LocalDateTime middleDateTime = testDateTime.plusDays(3); // 2024-01-18T10:00
-
-            // Create snapshots within range
-            service.createSnapshot(bankAccount.getId(), startDateTime);
-            service.createSnapshot(bankAccount.getId(), middleDateTime);
-
-            // Create snapshot outside range
-            service.createSnapshot(bankAccount.getId(), endDateTime.plusDays(10));
-
-            // Expected normalized datetimes (start of next day)
-            // 2024-01-15 -> 2024-01-16T00:00
-            // 2024-01-18 -> 2024-01-19T00:00
-            LocalDateTime expectedStart = startDateTime.toLocalDate().plusDays(1).atStartOfDay();
-            LocalDateTime expectedMiddle = middleDateTime.toLocalDate().plusDays(1).atStartOfDay();
-
-            // When: Search using inclusive range
-            LocalDateTime searchEndDateTime = endDateTime.toLocalDate().plusDays(1).atStartOfDay();
-            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateTimeRange(
-                    bankAccount.getId(), startDateTime.toLocalDate().atStartOfDay(), searchEndDateTime);
-
-            // Then
-            assertThat(result).hasSize(2);
-            assertThat(result).extracting(BankAccountBalanceSnapshot::getSnapshotDateTime)
-                    .containsExactlyInAnyOrder(expectedStart, expectedMiddle);
-        }
-
-        @Test
-        @DisplayName("Should return empty list when no snapshots in range")
-        void shouldReturnEmptyListWhenNoSnapshotsInRange() {
-            // Given
-            LocalDateTime startDateTime = testDateTime;
-            LocalDateTime endDateTime = testDateTime.plusDays(5);
-
-            // Create snapshot outside range
-            service.createSnapshot(bankAccount.getId(), endDateTime.plusDays(10));
-
-            // When
-            LocalDateTime searchEndDateTime = endDateTime.toLocalDate().atTime(23, 59, 59, 999999999);
-            List<BankAccountBalanceSnapshot> result = service.getSnapshotsInDateTimeRange(
-                    bankAccount.getId(), startDateTime.toLocalDate().atStartOfDay(), searchEndDateTime);
-
-            // Then
-            assertThat(result).isEmpty();
-        }
-    }
 
     @Nested
     @DisplayName("postDocument Tests")
@@ -982,24 +609,6 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
     class BalanceCalculationWithReversalTests {
 
         @Test
-        @DisplayName("Should exclude reversal events from balance calculation")
-        void shouldExcludeReversalEventsFromBalanceCalculation() {
-            // Given
-            // 1. Post receipt: +1000
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime, new BigDecimal("1000.00"), "Receipt", "BankReceipt", 1L);
-
-            // 2. Reverse it: creates BankReceiptReversal event
-            service.reverseDocument("BankReceipt", 1L, "Receipt");
-
-            // When: Calculate balance
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusDays(1));
-
-            // Then: Balance should be zero (original is reversed, reversal event is excluded)
-            assertThat(balance).isEqualByComparingTo(BigDecimal.ZERO);
-        }
-
-        @Test
         @DisplayName("Should handle post-unpost-repost cycle correctly in balance")
         void shouldHandlePostUnpostRepostCycleInBalance() {
             // Given
@@ -1007,53 +616,21 @@ class BankAccountTransactionServiceTest extends BaseIntegrationTest {
             service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
                     testDateTime, new BigDecimal("1000.00"), "Receipt", "BankReceipt", 1L);
 
-            BigDecimal balanceAfterPost = service.getCurrentBalance(bankAccount.getId());
+            BigDecimal balanceAfterPost = balanceService.getCurrentBalance(bankAccount.getId());
             assertThat(balanceAfterPost).isEqualByComparingTo(new BigDecimal("1000.00"));
 
             // 2. Unpost: creates reversal
             service.reverseDocument("BankReceipt", 1L, "Receipt");
 
-            BigDecimal balanceAfterUnpost = service.getCurrentBalance(bankAccount.getId());
+            BigDecimal balanceAfterUnpost = balanceService.getCurrentBalance(bankAccount.getId());
             assertThat(balanceAfterUnpost).isEqualByComparingTo(BigDecimal.ZERO);
 
             // 3. Repost: creates new event, marks reversal as reversed
             service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
                     testDateTime, new BigDecimal("1000.00"), "Receipt reposted", "BankReceipt", 1L);
 
-            BigDecimal balanceAfterRepost = service.getCurrentBalance(bankAccount.getId());
+            BigDecimal balanceAfterRepost = balanceService.getCurrentBalance(bankAccount.getId());
             assertThat(balanceAfterRepost).isEqualByComparingTo(new BigDecimal("1000.00"));
-        }
-
-        @Test
-        @DisplayName("calculateBalance should skip reversal events with endsWith Reversal check")
-        void calculateBalanceShouldSkipReversalEventsWithEndsWithCheck() {
-            // Given: Create events that will be in the query result
-            // 1. Post a receipt at T+1: +500
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(1), new BigDecimal("500.00"), "First receipt", "BankReceipt", 100L);
-
-            // 2. Post a payment at T+2: -200
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(2), new BigDecimal("200.00"), "First payment", "BankPayment", 200L);
-
-            // 3. Reverse the receipt at T+3: creates BankReceiptReversal event
-            service.reverseDocument("BankReceipt", 100L, "First receipt");
-
-            // 4. Post another receipt at T+4: +300
-            service.postDocument(bankAccount.getId(), organization.getId(), currency.getId(),
-                    testDateTime.plusHours(4), new BigDecimal("300.00"), "Second receipt", "BankReceipt", 101L);
-
-            // When: Calculate balance at T+5 (after all events)
-            // This should include:
-            // - Original receipt (+500) marked as reversed (excluded by isReversed=false in query)
-            // - Payment (-200)
-            // - BankReceiptReversal event (should be SKIPPED by endsWith("Reversal") check)
-            // - Second receipt (+300)
-            BigDecimal balance = service.calculateBalance(bankAccount.getId(), testDateTime.plusHours(5));
-
-            // Then: Balance should be 100 (0 - 200 + 300)
-            // The reversal event itself should be skipped due to endsWith("Reversal")
-            assertThat(balance).isEqualByComparingTo(new BigDecimal("100.00"));
         }
     }
 }
