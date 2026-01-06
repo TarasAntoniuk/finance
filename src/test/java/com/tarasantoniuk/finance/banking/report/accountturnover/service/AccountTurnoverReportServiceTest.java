@@ -13,6 +13,7 @@ import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurno
 import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverSummaryDto;
 import com.tarasantoniuk.finance.banking.report.accountturnover.dto.AccountTurnoverTotalDto;
 import com.tarasantoniuk.finance.common.exception.ValidationException;
+import com.tarasantoniuk.finance.common.report.dto.ReportPeriodDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
@@ -106,57 +107,7 @@ class AccountTurnoverReportServiceTest {
 
     // ==================== Validation Tests ====================
 
-    @Test
-    @DisplayName("Should throw exception when start date is null")
-    void generateReport_ShouldThrowException_WhenStartDateIsNull() {
-        // When & Then
-        ValidationException exception = assertThrows(ValidationException.class, () -> {
-            reportService.generateReport(null, endDateTime.toLocalDate(), null, null, null);
-        });
-
-        assertEquals("Start date and end date are required", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when end date is null")
-    void generateReport_ShouldThrowException_WhenEndDateIsNull() {
-        // When & Then
-        ValidationException exception = assertThrows(ValidationException.class, () -> {
-            reportService.generateReport(startDateTime.toLocalDate(), null, null, null, null);
-        });
-
-        assertEquals("Start date and end date are required", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when start date is after end date")
-    void generateReport_ShouldThrowException_WhenStartDateAfterEndDate() {
-        // Given
-        LocalDate invalidStartDate = LocalDate.of(2024, 2, 1);
-        LocalDate invalidEndDate = LocalDate.of(2024, 1, 1);
-
-        // When & Then
-        ValidationException exception = assertThrows(ValidationException.class, () -> {
-            reportService.generateReport(invalidStartDate, invalidEndDate, null, null, null);
-        });
-
-        assertEquals("Start date cannot be after end date", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when period exceeds 365 days")
-    void generateReport_ShouldThrowException_WhenPeriodExceeds365Days() {
-        // Given
-        LocalDate longStartDate = LocalDate.of(2024, 1, 1);
-        LocalDate longEndDate = LocalDate.of(2025, 1, 2); // 367 days
-
-        // When & Then
-        ValidationException exception = assertThrows(ValidationException.class, () -> {
-            reportService.generateReport(longStartDate, longEndDate, null, null, null);
-        });
-
-        assertTrue(exception.getMessage().contains("Period cannot exceed 365 days"));
-    }
+    // Note: Period validation tests removed - validation now handled by ReportPeriodService
 
     @Test
     @DisplayName("Should accept period of exactly 365 days")
@@ -169,7 +120,7 @@ class AccountTurnoverReportServiceTest {
 
         // When & Then
         assertDoesNotThrow(() -> {
-            reportService.generateReport(yearStart, yearEnd, null, null, null);
+            reportService.generateReport(new ReportPeriodDto(yearStart, yearEnd), null, null, null);
         });
     }
 
@@ -187,7 +138,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         assertNotNull(report);
@@ -223,7 +174,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), organizationId, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), organizationId, null, null);
 
         // Then
         assertNotNull(report);
@@ -246,7 +197,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, currencyId);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, currencyId);
 
         // Then
         assertNotNull(report);
@@ -268,7 +219,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, accountId, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, accountId, null);
 
         // Then
         assertNotNull(report);
@@ -285,7 +236,7 @@ class AccountTurnoverReportServiceTest {
                 .thenReturn(Optional.empty());
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, 999L, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, 999L, null);
 
         // Then
         assertNotNull(report);
@@ -317,7 +268,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         assertNotNull(report);
@@ -352,7 +303,7 @@ class AccountTurnoverReportServiceTest {
 
         // When - Request report for this counterparty account
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, 2L, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, 2L, null);
 
         // Then - Report should be empty because counterparty accounts are filtered out
         assertNotNull(report);
@@ -388,7 +339,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         AccountTurnoverSummaryDto item = report.getAccounts().get(0);
@@ -414,7 +365,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         AccountTurnoverSummaryDto item = report.getAccounts().get(0);
@@ -444,7 +395,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -480,7 +431,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -503,7 +454,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         assertNotNull(report);
@@ -529,7 +480,7 @@ class AccountTurnoverReportServiceTest {
                 .thenReturn(Collections.emptyList());
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         AccountTurnoverSummaryDto item = report.getAccounts().get(0);
@@ -554,7 +505,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -583,7 +534,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         assertNotNull(report);
@@ -615,7 +566,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -646,7 +597,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -677,7 +628,7 @@ class AccountTurnoverReportServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
 
         // When
-        AccountTurnoverReportDto report = reportService.generateReport(startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+        AccountTurnoverReportDto report = reportService.generateReport(new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -709,7 +660,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         Map<String, AccountTurnoverTotalDto> summary = report.getSummaryByCurrency();
@@ -769,7 +720,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), organizationId, null, currencyId);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), organizationId, null, currencyId);
 
         // Then
         assertNotNull(report);
@@ -797,7 +748,7 @@ class AccountTurnoverReportServiceTest {
 
         // When
         AccountTurnoverReportDto report = reportService.generateReport(
-                startDateTime.toLocalDate(), endDateTime.toLocalDate(), null, null, null);
+                new ReportPeriodDto(startDateTime.toLocalDate(), endDateTime.toLocalDate()), null, null, null);
 
         // Then
         AccountTurnoverSummaryDto item = report.getAccounts().get(0);
