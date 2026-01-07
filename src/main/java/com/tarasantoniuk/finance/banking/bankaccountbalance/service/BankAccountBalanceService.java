@@ -10,6 +10,8 @@ import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankA
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,25 +19,31 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
 public class BankAccountBalanceService {
 
+    private static final Logger log = LoggerFactory.getLogger(BankAccountBalanceService.class);
+
     private final BankAccountBalanceSnapshotRepository balanceSnapshotRepository;
     private final BankAccountRepository bankAccountRepository;
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionEventRepository transactionEventRepository;
+    private final BankAccountSnapshotValidityService validityService;
 
     public BankAccountBalanceService(
             BankAccountBalanceSnapshotRepository balanceSnapshotRepository,
             BankAccountRepository bankAccountRepository,
             OrganizationRepository organizationRepository,
-            BankAccountTransactionEventRepository transactionEventRepository) {
+            BankAccountTransactionEventRepository transactionEventRepository,
+            BankAccountSnapshotValidityService validityService) {
         this.balanceSnapshotRepository = balanceSnapshotRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.organizationRepository = organizationRepository;
         this.transactionEventRepository = transactionEventRepository;
+        this.validityService = validityService;
     }
 
     /**
@@ -48,9 +56,27 @@ public class BankAccountBalanceService {
      */
     @Transactional(readOnly = true)
     public BigDecimal calculateBalance(Long bankAccountId, LocalDateTime atDateTime) {
-        // Try to find latest snapshot before the datetime
+        // Check if there are invalid snapshots
+        Optional<LocalDate> invalidFromDateOpt = validityService.getInvalidFromDate(bankAccountId);
+
+        LocalDateTime snapshotSearchLimit = atDateTime;
+
+        if (invalidFromDateOpt.isPresent()) {
+            LocalDate invalidFromDate = invalidFromDateOpt.get();
+            LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
+
+            // If invalidation date is before our target datetime,
+            // we can only use snapshots before invalidation date
+            if (invalidFromDateTime.isBefore(atDateTime)) {
+                snapshotSearchLimit = invalidFromDateTime;
+                log.debug("Snapshots are invalid from {}, limiting snapshot search to this date",
+                        invalidFromDateTime);
+            }
+        }
+
+        // Try to find latest valid snapshot before the datetime
         var snapshotOpt = balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
-                bankAccountId, atDateTime);
+                bankAccountId, snapshotSearchLimit);
 
         BigDecimal balance;
         LocalDateTime startDateTime;
@@ -61,15 +87,20 @@ public class BankAccountBalanceService {
             balance = snapshot.getClosingBalance();
             // FIX: Start AFTER snapshot datetime to avoid duplicating events already included in snapshot
             startDateTime = snapshot.getSnapshotDateTime().plusNanos(1);
+            log.debug("Using snapshot from {} with balance {}, calculating from {}",
+                    snapshot.getSnapshotDateTime(), balance, startDateTime);
         } else {
             // No snapshot, start from zero
             balance = BigDecimal.ZERO;
             startDateTime = LocalDateTime.of(1900, 1, 1, 0, 0, 0);
+            log.debug("No valid snapshot found, calculating from scratch starting at {}", startDateTime);
         }
 
         // Get all events after snapshot up to (but not including) the specified datetime
         List<BankAccountTransactionEvent> events = transactionEventRepository
                 .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime.minusNanos(1));
+
+        log.debug("Found {} events between {} and {}", events.size(), startDateTime, atDateTime);
 
         // Apply events to balance
         // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
@@ -172,6 +203,9 @@ public class BankAccountBalanceService {
         snapshot.setLastEventId(lastEventId);
         snapshot.setEventsCount(events.size());
 
+        log.info("Created snapshot for account {} on date {}: opening={}, debit={}, credit={}, closing={}",
+                bankAccountId, snapshotDate, openingBalance, debitTurnover, creditTurnover, closingBalance);
+
         return balanceSnapshotRepository.save(snapshot);
     }
 
@@ -193,5 +227,20 @@ public class BankAccountBalanceService {
             Long bankAccountId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         return balanceSnapshotRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
                 bankAccountId, startDateTime, endDateTime);
+    }
+
+    /**
+     * Delete snapshots starting from given datetime.
+     * Used during recalculation of invalid snapshots.
+     *
+     * @param bankAccountId bank account ID
+     * @param fromDateTime  datetime from which to delete snapshots (inclusive)
+     */
+    public void deleteSnapshotsFrom(Long bankAccountId, LocalDateTime fromDateTime) {
+        int deletedCount = balanceSnapshotRepository
+                .deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(bankAccountId, fromDateTime);
+
+        log.info("Deleted {} invalid snapshots for account {} from date {}",
+                deletedCount, bankAccountId, fromDateTime);
     }
 }

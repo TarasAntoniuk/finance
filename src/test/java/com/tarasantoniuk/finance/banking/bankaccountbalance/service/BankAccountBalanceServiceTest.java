@@ -45,6 +45,9 @@ class BankAccountBalanceServiceTest {
     @Mock
     private BankAccountTransactionEventRepository transactionEventRepository;
 
+    @Mock
+    private BankAccountSnapshotValidityService validityService;
+
     @InjectMocks
     private BankAccountBalanceService balanceService;
 
@@ -70,6 +73,9 @@ class BankAccountBalanceServiceTest {
         bankAccount.setId(1L);
         bankAccount.setCurrency(currency);
         bankAccount.setHolderId(organization.getId());
+
+        // Default stub: all snapshots are valid (no invalidation)
+        lenient().when(validityService.getInvalidFromDate(anyLong())).thenReturn(Optional.empty());
     }
 
     @Nested

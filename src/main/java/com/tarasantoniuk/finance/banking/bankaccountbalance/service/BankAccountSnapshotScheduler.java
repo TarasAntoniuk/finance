@@ -1,7 +1,6 @@
 package com.tarasantoniuk.finance.banking.bankaccountbalance.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
-import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.common.snapshot.entity.SnapshotValidity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,17 +56,14 @@ public class BankAccountSnapshotScheduler {
     private final BankAccountBalanceService balanceService;
     private final BankAccountSnapshotValidityService validityService;
     private final BankAccountRepository bankAccountRepository;
-    private final BankAccountBalanceSnapshotRepository snapshotRepository;
 
     public BankAccountSnapshotScheduler(
             BankAccountBalanceService balanceService,
             BankAccountSnapshotValidityService validityService,
-            BankAccountRepository bankAccountRepository,
-            BankAccountBalanceSnapshotRepository snapshotRepository) {
+            BankAccountRepository bankAccountRepository) {
         this.balanceService = balanceService;
         this.validityService = validityService;
         this.bankAccountRepository = bankAccountRepository;
-        this.snapshotRepository = snapshotRepository;
     }
 
     /**
@@ -191,7 +187,7 @@ public class BankAccountSnapshotScheduler {
 
         // Delete invalid snapshots (from invalidFromDate to today, inclusive)
         LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
-        snapshotRepository.deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(bankAccountId, invalidFromDateTime);
+        balanceService.deleteSnapshotsFrom(bankAccountId, invalidFromDateTime);
 
         // Recalculate snapshots from invalidFromDate to today
         int recalculatedCount = 0;
