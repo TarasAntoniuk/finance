@@ -115,4 +115,22 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             @Param("bankAccountId") Long bankAccountId,
             @Param("afterDateTime") LocalDateTime afterDateTime
     );
+
+    /**
+     * Delete snapshots for bank account from given datetime (inclusive).
+     * Used during recalculation of invalid snapshots.
+     *
+     * @param bankAccountId bank account ID
+     * @param fromDateTime datetime from which to delete snapshots (inclusive)
+     * @return count of deleted snapshots
+     */
+    @Modifying
+    @Query("""
+            DELETE FROM BankAccountBalanceSnapshot s
+            WHERE s.bankAccount.id = :bankAccountId
+            AND s.snapshotDateTime >= :fromDateTime
+            """)
+    int deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+            @Param("bankAccountId") Long bankAccountId,
+            @Param("fromDateTime") LocalDateTime fromDateTime);
 }

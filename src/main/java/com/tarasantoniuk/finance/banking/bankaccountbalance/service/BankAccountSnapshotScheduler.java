@@ -189,9 +189,9 @@ public class BankAccountSnapshotScheduler {
         log.info("Recalculating snapshots for account {} from {} to {}",
                 bankAccountId, invalidFromDate, today);
 
-        // Delete invalid snapshots (from invalidFromDate to today)
-        LocalDateTime invalidFromDateTime = invalidFromDate.plusDays(1).atStartOfDay();
-        snapshotRepository.deleteByBankAccountIdAfterDateTime(bankAccountId, invalidFromDateTime);
+        // Delete invalid snapshots (from invalidFromDate to today, inclusive)
+        LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
+        snapshotRepository.deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(bankAccountId, invalidFromDateTime);
 
         // Recalculate snapshots from invalidFromDate to today
         int recalculatedCount = 0;
