@@ -1,6 +1,5 @@
 package com.tarasantoniuk.finance.banking.bankaccountbalance.service;
 
-import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.common.snapshot.entity.SnapshotValidity;
@@ -89,10 +88,7 @@ public class BankAccountSnapshotScheduler {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         LocalDateTime snapshotDateTime = yesterday.atStartOfDay();
 
-        List<Long> activeAccountIds = bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE)
-                .stream()
-                .map(account -> account.getId())
-                .toList();
+        List<Long> activeAccountIds = bankAccountRepository.findAllActiveAccountIds();
         log.info("Found {} active bank accounts", activeAccountIds.size());
 
         int successCount = 0;
@@ -185,7 +181,7 @@ public class BankAccountSnapshotScheduler {
      * @param validity the validity record containing account ID and invalidation date
      * @throws Exception if snapshot creation fails during recalculation
      */
-    private void recalculateSnapshotsForAccount(SnapshotValidity validity) {
+    private void recalculateSnapshotsForAccount(SnapshotValidity validity) throws Exception {
         Long bankAccountId = validity.getEntityId();
         LocalDate invalidFromDate = validity.getInvalidFromDate();
         LocalDate today = LocalDate.now().minusDays(1); // Yesterday, as today's snapshot will be created tonight
@@ -258,9 +254,13 @@ public class BankAccountSnapshotScheduler {
             return;
         }
 
-        validityService.markAsRecalculating(validity);
-        recalculateSnapshotsForAccount(validity);
-
-        log.info("Manual recalculation completed for account {}", bankAccountId);
+        try {
+            validityService.markAsRecalculating(validity);
+            recalculateSnapshotsForAccount(validity);
+            log.info("Manual recalculation completed for account {}", bankAccountId);
+        } catch (Exception e) {
+            log.error("Failed to manually recalculate snapshots for account {}", bankAccountId, e);
+            throw new RuntimeException("Failed to recalculate snapshots for account " + bankAccountId, e);
+        }
     }
 }

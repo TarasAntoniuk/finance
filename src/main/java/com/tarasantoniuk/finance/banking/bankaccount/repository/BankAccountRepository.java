@@ -220,4 +220,13 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     List<BankAccount> findOrganizationAccountsByHolderIdAndCurrencyIdWithRelations(
             @Param("holderId") Long holderId,
             @Param("currencyId") Long currencyId);
+
+    /**
+     * Find all active bank account IDs.
+     * Used by scheduler for batch snapshot creation.
+     *
+     * @return list of active bank account IDs
+     */
+    @Query("SELECT ba.id FROM BankAccount ba WHERE ba.status = 'ACTIVE'")
+    List<Long> findAllActiveAccountIds();
 }
