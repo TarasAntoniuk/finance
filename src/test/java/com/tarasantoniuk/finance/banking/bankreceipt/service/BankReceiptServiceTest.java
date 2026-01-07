@@ -2,7 +2,9 @@ package com.tarasantoniuk.finance.banking.bankreceipt.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountSnapshotValidityService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
@@ -65,6 +67,12 @@ class BankReceiptServiceTest {
 
     @Mock
     private BankAccountTransactionService transactionService;
+
+    @Mock
+    private BankAccountTransactionEventRepository transactionEventRepository;
+
+    @Mock
+    private BankAccountSnapshotValidityService snapshotValidityService;
 
     @InjectMocks
     private BankReceiptService bankReceiptService;
@@ -345,6 +353,9 @@ class BankReceiptServiceTest {
                 anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                 any(BigDecimal.class), anyString(), anyString(), anyLong()))
                 .thenReturn(mockEvent);
+
+        when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                .thenReturn(Optional.of(mockEvent));
 
         when(bankReceiptRepository.save(any(BankReceipt.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));

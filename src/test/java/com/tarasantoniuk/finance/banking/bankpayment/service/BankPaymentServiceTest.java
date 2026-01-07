@@ -3,7 +3,9 @@ package com.tarasantoniuk.finance.banking.bankpayment.service;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountSnapshotValidityService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
@@ -72,6 +74,12 @@ class BankPaymentServiceTest {
 
     @Mock
     private BankAccountBalanceService balanceService;
+
+    @Mock
+    private BankAccountTransactionEventRepository transactionEventRepository;
+
+    @Mock
+    private BankAccountSnapshotValidityService snapshotValidityService;
 
     @InjectMocks
     private BankPaymentService bankPaymentService;
@@ -630,6 +638,8 @@ class BankPaymentServiceTest {
                     anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                     any(BigDecimal.class), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
@@ -724,6 +734,8 @@ class BankPaymentServiceTest {
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
