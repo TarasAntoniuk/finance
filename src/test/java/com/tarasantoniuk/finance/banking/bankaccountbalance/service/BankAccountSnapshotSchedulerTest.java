@@ -339,6 +339,31 @@ class BankAccountSnapshotSchedulerTest {
             verify(validityService).markAsRecalculating(any(SnapshotValidity.class));
             verify(validityService, never()).deleteValidity(any(SnapshotValidity.class));
         }
+
+        @Test
+        @DisplayName("Should handle IllegalStateException when snapshot already exists during recalculation")
+        void shouldHandleIllegalStateExceptionWhenSnapshotAlreadyExists() throws Exception {
+            // Given
+            LocalDate invalidFromDate = LocalDate.now().minusDays(3);
+            SnapshotValidity validity = createValidityRecord(1L, invalidFromDate);
+            when(validityService.getAllInvalidRecords()).thenReturn(List.of(validity));
+
+            // Setup: First snapshot creation succeeds, second throws IllegalStateException, then succeeds again
+            when(balanceService.createSnapshot(eq(1L), any(LocalDateTime.class)))
+                    .thenReturn(null) // First call succeeds
+                    .thenThrow(new IllegalStateException("Snapshot already exists for date: 2024-01-15")) // Second call fails
+                    .thenReturn(null); // Subsequent calls succeed
+
+            // When - should complete without throwing exception (catches and logs warning)
+            assertThatCode(() -> scheduler.triggerRecalculationForAccount(1L))
+                    .doesNotThrowAnyException();
+
+            // Then
+            verify(validityService).markAsRecalculating(any(SnapshotValidity.class));
+            verify(balanceService).deleteSnapshotsFrom(eq(1L), any(LocalDateTime.class));
+            verify(balanceService, atLeast(2)).createSnapshot(eq(1L), any(LocalDateTime.class));
+            verify(validityService).deleteValidity(any(SnapshotValidity.class));
+        }
     }
 
     @Nested

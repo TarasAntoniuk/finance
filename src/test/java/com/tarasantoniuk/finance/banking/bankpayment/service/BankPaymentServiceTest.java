@@ -749,6 +749,37 @@ class BankPaymentServiceTest {
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
         }
+
+        @Test
+        @DisplayName("Should throw exception when transaction event not found after posting payment")
+        void shouldThrowExceptionWhenTransactionEventNotFoundAfterPosting() {
+            // Arrange
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            // Set payment as backdated (older than 1 hour) to trigger snapshot invalidation logic
+            payment.setTransactionDateTime(LocalDateTime.now().minusHours(2));
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()
+            )).thenReturn(mockEvent);
+            // Transaction event not found - simulates data inconsistency
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> bankPaymentService.post(10L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Transaction event not found after posting payment " + 10L);
+
+            verify(transactionService).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
+            );
+            verify(transactionEventRepository).findActiveByDocumentTypeAndDocumentId("BankPayment", 10L);
+        }
     }
 
     @Nested

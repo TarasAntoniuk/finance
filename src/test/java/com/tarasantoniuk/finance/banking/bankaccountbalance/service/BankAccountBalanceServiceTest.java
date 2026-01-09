@@ -293,6 +293,45 @@ class BankAccountBalanceServiceTest {
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("-600.00"));
         }
+
+        @Test
+        @DisplayName("Should handle events with null document type during balance calculation")
+        void shouldHandleEventsWithNullDocumentType() {
+            // Given
+            List<BankAccountTransactionEvent> events = new ArrayList<>();
+
+            // Event with null documentType (should not be skipped)
+            BankAccountTransactionEvent event1 = new BankAccountTransactionEvent();
+            event1.setId(1L);
+            event1.setAmount(new BigDecimal("1000.00"));
+            event1.setTransactionType(TransactionType.DEBIT);
+            event1.setDocumentType(null); // NULL document type
+            event1.setIsReversed(false);
+            events.add(event1);
+
+            // Event with reversal type (should be skipped)
+            BankAccountTransactionEvent event2 = new BankAccountTransactionEvent();
+            event2.setId(2L);
+            event2.setAmount(new BigDecimal("500.00"));
+            event2.setTransactionType(TransactionType.CREDIT);
+            event2.setDocumentType("BankPaymentReversal");
+            event2.setIsReversed(false);
+            events.add(event2);
+
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    eq(1L), any(LocalDateTime.class)))
+                    .thenReturn(Optional.empty());
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(events);
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("1000.00"));
+            // Only event1 should be applied (event2 is reversal and should be skipped)
+        }
     }
 
     @Nested

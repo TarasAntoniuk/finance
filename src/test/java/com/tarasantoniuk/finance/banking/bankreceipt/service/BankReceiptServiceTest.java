@@ -40,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -413,6 +414,36 @@ class BankReceiptServiceTest {
         assertThrows(ResourceAlreadyExistsException.class, () -> {
             bankReceiptService.post(receipt.getId());
         });
+    }
+
+    @Test
+    @DisplayName("Should throw exception when transaction event not found after posting receipt")
+    void shouldThrowExceptionWhenTransactionEventNotFoundAfterPosting() {
+        // Given
+        BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+        mockEvent.setId(1L);
+
+        // Set receipt as backdated (older than 1 hour) to trigger snapshot invalidation logic
+        receipt.setTransactionDateTime(LocalDateTime.now().minusHours(2));
+
+        when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(transactionService.postDocument(
+                anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                .thenReturn(mockEvent);
+        // Transaction event not found - simulates data inconsistency
+        when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> bankReceiptService.post(receipt.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Transaction event not found after posting receipt " + receipt.getId());
+
+        verify(transactionService).postDocument(
+                anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
+        );
+        verify(transactionEventRepository).findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId());
     }
 
     // ==================== UNPOST Tests ====================
