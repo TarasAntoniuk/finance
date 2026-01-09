@@ -43,6 +43,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.Nested;
 
 @ExtendWith(MockitoExtension.class)
 class BankReceiptServiceTest {
@@ -663,5 +665,164 @@ class BankReceiptServiceTest {
         });
 
         verify(bankReceiptRepository, never()).save(any());
+    }
+
+    // ==================== SNAPSHOT INVALIDATION Tests ====================
+
+    @Nested
+    @DisplayName("Snapshot Invalidation Tests")
+    class SnapshotInvalidationTests {
+
+        @Test
+        @DisplayName("Should invalidate snapshots when posting backdated receipt (> 1 hour old)")
+        void shouldInvalidateSnapshotsWhenPostingBackdatedReceipt() {
+            // Given - receipt with transaction date older than 1 hour
+            LocalDateTime backdatedDateTime = LocalDateTime.now().minusHours(2);
+            receipt.setTransactionDateTime(backdatedDateTime);
+            receipt.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankReceiptRepository.save(any(BankReceipt.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                    .thenReturn(responseDto);
+
+            // When
+            bankReceiptService.post(receipt.getId());
+
+            // Then - verify invalidation was called
+            verify(snapshotValidityService).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+        }
+
+        @Test
+        @DisplayName("Should not invalidate snapshots when posting current receipt (< 1 hour old)")
+        void shouldNotInvalidateSnapshotsWhenPostingCurrentReceipt() {
+            // Given - receipt with transaction date less than 1 hour old
+            LocalDateTime currentDateTime = LocalDateTime.now().minusMinutes(30);
+            receipt.setTransactionDateTime(currentDateTime);
+            receipt.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankReceiptRepository.save(any(BankReceipt.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                    .thenReturn(responseDto);
+
+            // When
+            bankReceiptService.post(receipt.getId());
+
+            // Then - verify invalidation was NOT called
+            verify(snapshotValidityService, never()).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+        }
+
+        @Test
+        @DisplayName("Should use correct parameters when invalidating snapshots")
+        void shouldUseCorrectParametersForInvalidation() {
+            // Given - backdated receipt
+            LocalDateTime backdatedDateTime = LocalDateTime.of(2024, 1, 10, 14, 30, 0);
+            receipt.setTransactionDateTime(backdatedDateTime);
+            receipt.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankReceiptRepository.save(any(BankReceipt.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                    .thenReturn(responseDto);
+
+            // When
+            bankReceiptService.post(receipt.getId());
+
+            // Then - verify correct parameters
+            ArgumentCaptor<Long> accountIdCaptor = ArgumentCaptor.forClass(Long.class);
+            ArgumentCaptor<LocalDateTime> dateTimeCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+            ArgumentCaptor<Long> eventIdCaptor = ArgumentCaptor.forClass(Long.class);
+
+            verify(snapshotValidityService).invalidateSnapshots(
+                    accountIdCaptor.capture(),
+                    dateTimeCaptor.capture(),
+                    eventIdCaptor.capture()
+            );
+
+            // Verify account ID
+            assertEquals(receipt.getAccount().getId(), accountIdCaptor.getValue(),
+                    "Should use receipt's account ID");
+
+            // Verify invalidation date (start of day after transaction date)
+            LocalDateTime expectedInvalidFromDateTime = backdatedDateTime.toLocalDate()
+                    .plusDays(1)
+                    .atStartOfDay();
+            assertEquals(expectedInvalidFromDateTime, dateTimeCaptor.getValue(),
+                    "Should invalidate from start of day after transaction date");
+
+            // Verify event ID
+            assertEquals(mockEvent.getId(), eventIdCaptor.getValue(),
+                    "Should use transaction event ID");
+        }
+
+        @Test
+        @DisplayName("Should log invalidation for backdated receipt")
+        void shouldLogInvalidationForBackdatedReceipt() {
+            // Given - backdated receipt
+            LocalDateTime backdatedDateTime = LocalDateTime.now().minusHours(3);
+            receipt.setTransactionDateTime(backdatedDateTime);
+            receipt.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId()))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankReceiptRepository.save(any(BankReceipt.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
+                    .thenReturn(responseDto);
+
+            // When
+            BankReceiptResponseDto result = bankReceiptService.post(receipt.getId());
+
+            // Then - verify method completed successfully (logging happens inside)
+            assertNotNull(result);
+            verify(snapshotValidityService).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+            // Note: Logging verification would require LogCaptor or similar, but we verify
+            // the invalidation was called which triggers the log statement
+        }
     }
 }

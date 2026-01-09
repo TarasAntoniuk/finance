@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccou
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepository;
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
+import com.tarasantoniuk.finance.common.snapshot.repository.SnapshotValidityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,6 +26,9 @@ public class TestDataCleanerBanking {
     private BankAccountBalanceSnapshotRepository balanceSnapshotRepository;
 
     @Autowired
+    private SnapshotValidityRepository snapshotValidityRepository;
+
+    @Autowired
     private BankPaymentRepository bankPaymentRepository;
 
     @Autowired
@@ -41,16 +45,18 @@ public class TestDataCleanerBanking {
      * CRITICAL ORDER (most dependent first):
      * 1. TransactionEvents (→ BankAccount, Organization, Currency)
      * 2. BalanceSnapshots (→ BankAccount, Organization, Currency)
-     * 3. Payments (→ BankAccount)
-     * 4. Receipts (→ BankAccount)
-     * 5. BankAccounts (→ Bank, Currency)
-     * 6. Banks (→ Country)
+     * 3. SnapshotValidity (→ independent of other tables)
+     * 4. Payments (→ BankAccount)
+     * 5. Receipts (→ BankAccount)
+     * 6. BankAccounts (→ Bank, Currency)
+     * 7. Banks (→ Country)
      */
     //@Transactional
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanAll() {
         transactionEventRepository.deleteAllInBatch();
         balanceSnapshotRepository.deleteAllInBatch();
+        snapshotValidityRepository.deleteAllInBatch();
         bankPaymentRepository.deleteAllInBatch();
         bankReceiptRepository.deleteAllInBatch();
         bankAccountRepository.deleteAllInBatch();
