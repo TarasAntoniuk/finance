@@ -31,7 +31,9 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
     );
 
     /**
-     * Find latest snapshot for bank account before or at specific datetime
+     * Find latest snapshot for bank account strictly before specific datetime (exclusive boundary).
+     * This ensures that transactions with exact snapshotDateTime are not double-counted
+     * in both opening balance and period transactions.
      */
     @Query("""
             SELECT s FROM BankAccountBalanceSnapshot s
@@ -39,7 +41,7 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
             LEFT JOIN FETCH s.organization
             LEFT JOIN FETCH s.currency
             WHERE s.bankAccount.id = :bankAccountId
-            AND s.snapshotDateTime <= :beforeDateTime
+            AND s.snapshotDateTime < :beforeDateTime
             ORDER BY s.snapshotDateTime DESC
             LIMIT 1
             """)

@@ -97,8 +97,9 @@ public class BankAccountBalanceService {
         }
 
         // Get all events after snapshot up to (but not including) the specified datetime
+        // Query uses "< endDateTime" so we don't need to subtract anything - it's already exclusive
         List<BankAccountTransactionEvent> events = transactionEventRepository
-                .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime.minusNanos(1));
+                .findByBankAccountIdAndDateTimeRangeWithRelations(bankAccountId, startDateTime, atDateTime);
 
         log.debug("Found {} events between {} and {}", events.size(), startDateTime, atDateTime);
 
@@ -160,11 +161,12 @@ public class BankAccountBalanceService {
         BigDecimal openingBalance = calculateBalance(bankAccountId, startOfDay);
 
         // Get events for this day (from start to end of day - exclusive end)
+        // Query uses < endDateTime so endOfDay (start of next day) is the exclusive boundary
         List<BankAccountTransactionEvent> events = transactionEventRepository
                 .findByBankAccountIdAndDateTimeRangeWithRelations(
                         bankAccountId,
                         startOfDay,
-                        endOfDay.minusNanos(1));
+                        endOfDay);
 
         // Calculate turnovers
         // Exclude reversal events (BankReceiptReversal, BankPaymentReversal)
