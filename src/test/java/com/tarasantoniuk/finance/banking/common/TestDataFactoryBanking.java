@@ -4,6 +4,7 @@ import com.tarasantoniuk.finance.banking.bank.entity.Bank;
 import com.tarasantoniuk.finance.banking.bank.repository.BankRepository;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
 import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
@@ -203,6 +204,7 @@ public class TestDataFactoryBanking {
         account.setHolderId(organization.getId());
         account.setAccountNumber(accountNumber);
         account.setHolderType(AccountHolderType.ORGANIZATION);
+        account.setStatus(AccountStatus.ACTIVE);
         account.setIsDefault(true);
         return bankAccountRepository.save(account);
     }
@@ -240,6 +242,7 @@ public class TestDataFactoryBanking {
         account.setHolderId(counterparty.getId());
         account.setAccountNumber(accountNumber);
         account.setHolderType(AccountHolderType.COUNTERPARTY);
+        account.setStatus(AccountStatus.ACTIVE);
         account.setIsDefault(true);
         return bankAccountRepository.save(account);
     }

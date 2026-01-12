@@ -3,7 +3,9 @@ package com.tarasantoniuk.finance.banking.bankpayment.service;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountSnapshotValidityService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
+import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
@@ -44,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BankPaymentService Unit Tests")
@@ -72,6 +75,12 @@ class BankPaymentServiceTest {
 
     @Mock
     private BankAccountBalanceService balanceService;
+
+    @Mock
+    private BankAccountTransactionEventRepository transactionEventRepository;
+
+    @Mock
+    private BankAccountSnapshotValidityService snapshotValidityService;
 
     @InjectMocks
     private BankPaymentService bankPaymentService;
@@ -630,6 +639,8 @@ class BankPaymentServiceTest {
                     anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                     any(BigDecimal.class), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
@@ -724,6 +735,8 @@ class BankPaymentServiceTest {
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             )).thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
             when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
@@ -735,6 +748,37 @@ class BankPaymentServiceTest {
             verify(transactionService).postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
             );
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction event not found after posting payment")
+        void shouldThrowExceptionWhenTransactionEventNotFoundAfterPosting() {
+            // Arrange
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            // Set payment as backdated (older than 1 hour) to trigger snapshot invalidation logic
+            payment.setTransactionDateTime(LocalDateTime.now().minusHours(2));
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()
+            )).thenReturn(mockEvent);
+            // Transaction event not found - simulates data inconsistency
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.empty());
+
+            // Act & Assert
+            assertThatThrownBy(() -> bankPaymentService.post(10L))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Transaction event not found after posting payment " + 10L);
+
+            verify(transactionService).postDocument(
+                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
+            );
+            verify(transactionEventRepository).findActiveByDocumentTypeAndDocumentId("BankPayment", 10L);
         }
     }
 
@@ -943,6 +987,162 @@ class BankPaymentServiceTest {
             assertThat(result.getMetadata().getTotalElements()).isEqualTo(25);
             assertThat(result.getMetadata().isHasNext()).isTrue();
             assertThat(result.getMetadata().isHasPrevious()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Snapshot Invalidation Tests")
+    class SnapshotInvalidationTests {
+
+        @Test
+        @DisplayName("Should invalidate snapshots when posting backdated payment (> 1 hour old)")
+        void shouldInvalidateSnapshotsWhenPostingBackdatedPayment() {
+            // Arrange - payment with transaction date older than 1 hour
+            LocalDateTime backdatedDateTime = LocalDateTime.now().minusHours(2);
+            payment.setTransactionDateTime(backdatedDateTime);
+            payment.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+
+            // Act
+            bankPaymentService.post(10L);
+
+            // Assert - verify invalidation was called
+            verify(snapshotValidityService).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+        }
+
+        @Test
+        @DisplayName("Should not invalidate snapshots when posting current payment (< 1 hour old)")
+        void shouldNotInvalidateSnapshotsWhenPostingCurrentPayment() {
+            // Arrange - payment with transaction date less than 1 hour old
+            LocalDateTime currentDateTime = LocalDateTime.now().minusMinutes(30);
+            payment.setTransactionDateTime(currentDateTime);
+            payment.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+
+            // Act
+            bankPaymentService.post(10L);
+
+            // Assert - verify invalidation was NOT called
+            verify(snapshotValidityService, never()).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+        }
+
+        @Test
+        @DisplayName("Should use correct parameters when invalidating snapshots")
+        void shouldUseCorrectParametersForInvalidation() {
+            // Arrange - backdated payment
+            LocalDateTime backdatedDateTime = LocalDateTime.of(2024, 1, 10, 14, 30, 0);
+            payment.setTransactionDateTime(backdatedDateTime);
+            payment.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+
+            // Act
+            bankPaymentService.post(10L);
+
+            // Assert - verify correct parameters
+            ArgumentCaptor<Long> accountIdCaptor = ArgumentCaptor.forClass(Long.class);
+            ArgumentCaptor<LocalDateTime> dateTimeCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+            ArgumentCaptor<Long> eventIdCaptor = ArgumentCaptor.forClass(Long.class);
+
+            verify(snapshotValidityService).invalidateSnapshots(
+                    accountIdCaptor.capture(),
+                    dateTimeCaptor.capture(),
+                    eventIdCaptor.capture()
+            );
+
+            // Verify account ID
+            assertThat(accountIdCaptor.getValue())
+                    .isEqualTo(payment.getAccount().getId())
+                    .withFailMessage("Should use payment's account ID");
+
+            // Verify invalidation date (start of day after transaction date)
+            LocalDateTime expectedInvalidFromDateTime = backdatedDateTime.toLocalDate()
+                    .plusDays(1)
+                    .atStartOfDay();
+            assertThat(dateTimeCaptor.getValue())
+                    .isEqualTo(expectedInvalidFromDateTime)
+                    .withFailMessage("Should invalidate from start of day after transaction date");
+
+            // Verify event ID
+            assertThat(eventIdCaptor.getValue())
+                    .isEqualTo(mockEvent.getId())
+                    .withFailMessage("Should use transaction event ID");
+        }
+
+        @Test
+        @DisplayName("Should log invalidation for backdated payment")
+        void shouldLogInvalidationForBackdatedPayment() {
+            // Arrange - backdated payment
+            LocalDateTime backdatedDateTime = LocalDateTime.now().minusHours(3);
+            payment.setTransactionDateTime(backdatedDateTime);
+            payment.setStatus(DocumentStatus.DRAFT);
+
+            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
+            mockEvent.setId(100L);
+
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
+            when(transactionService.postDocument(
+                    anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
+                    any(BigDecimal.class), anyString(), anyString(), anyLong()))
+                    .thenReturn(mockEvent);
+            when(transactionEventRepository.findActiveByDocumentTypeAndDocumentId("BankPayment", 10L))
+                    .thenReturn(Optional.of(mockEvent));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+
+            // Act
+            BankPaymentResponseDto result = bankPaymentService.post(10L);
+
+            // Assert - verify method completed successfully (logging happens inside)
+            assertThat(result).isNotNull();
+            verify(snapshotValidityService).invalidateSnapshots(
+                    anyLong(), any(LocalDateTime.class), anyLong()
+            );
+            // Note: Logging verification would require LogCaptor or similar, but we verify
+            // the invalidation was called which triggers the log statement
         }
     }
 }

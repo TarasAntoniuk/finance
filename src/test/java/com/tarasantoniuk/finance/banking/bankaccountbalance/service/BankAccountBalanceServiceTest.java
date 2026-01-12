@@ -18,12 +18,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -44,6 +46,9 @@ class BankAccountBalanceServiceTest {
 
     @Mock
     private BankAccountTransactionEventRepository transactionEventRepository;
+
+    @Mock
+    private BankAccountSnapshotValidityService validityService;
 
     @InjectMocks
     private BankAccountBalanceService balanceService;
@@ -70,6 +75,9 @@ class BankAccountBalanceServiceTest {
         bankAccount.setId(1L);
         bankAccount.setCurrency(currency);
         bankAccount.setHolderId(organization.getId());
+
+        // Default stub: all snapshots are valid (no invalidation)
+        lenient().when(validityService.getInvalidFromDate(anyLong())).thenReturn(Optional.empty());
     }
 
     @Nested
@@ -285,6 +293,45 @@ class BankAccountBalanceServiceTest {
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("-600.00"));
         }
+
+        @Test
+        @DisplayName("Should handle events with null document type during balance calculation")
+        void shouldHandleEventsWithNullDocumentType() {
+            // Given
+            List<BankAccountTransactionEvent> events = new ArrayList<>();
+
+            // Event with null documentType (should not be skipped)
+            BankAccountTransactionEvent event1 = new BankAccountTransactionEvent();
+            event1.setId(1L);
+            event1.setAmount(new BigDecimal("1000.00"));
+            event1.setTransactionType(TransactionType.DEBIT);
+            event1.setDocumentType(null); // NULL document type
+            event1.setIsReversed(false);
+            events.add(event1);
+
+            // Event with reversal type (should be skipped)
+            BankAccountTransactionEvent event2 = new BankAccountTransactionEvent();
+            event2.setId(2L);
+            event2.setAmount(new BigDecimal("500.00"));
+            event2.setTransactionType(TransactionType.CREDIT);
+            event2.setDocumentType("BankPaymentReversal");
+            event2.setIsReversed(false);
+            events.add(event2);
+
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    eq(1L), any(LocalDateTime.class)))
+                    .thenReturn(Optional.empty());
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    eq(1L), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(events);
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("1000.00"));
+            // Only event1 should be applied (event2 is reversal and should be skipped)
+        }
     }
 
     @Nested
@@ -423,6 +470,29 @@ class BankAccountBalanceServiceTest {
             assertThatThrownBy(() -> balanceService.createSnapshot(nonExistentId, testDateTime))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Bank account not found with id: 999999");
+        }
+
+        @Test
+        @DisplayName("Should throw exception when organization not found during snapshot creation")
+        void shouldThrowExceptionWhenOrganizationNotFoundDuringSnapshotCreation() {
+            // Given
+            LocalDateTime snapshotDateTime = LocalDateTime.of(2024, 1, 15, 23, 59, 59);
+            LocalDateTime endOfDay = LocalDate.of(2024, 1, 16).atStartOfDay();
+
+            when(bankAccountRepository.findByIdWithRelations(1L))
+                    .thenReturn(Optional.of(bankAccount));
+            when(balanceSnapshotRepository.existsByBankAccountIdAndSnapshotDateTime(1L, endOfDay))
+                    .thenReturn(false);
+            when(organizationRepository.findById(1L))
+                    .thenReturn(Optional.empty()); // Organization not found
+
+            // When & Then
+            assertThatThrownBy(() -> balanceService.createSnapshot(1L, snapshotDateTime))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Organization not found with id: 1");
+
+            verify(organizationRepository).findById(1L);
+            verifyNoInteractions(transactionEventRepository);
         }
 
         @Test
@@ -735,6 +805,219 @@ class BankAccountBalanceServiceTest {
             // Then: Balance should be 100 (0 - 200 + 300)
             // The reversal event itself should be skipped due to endsWith("Reversal")
             assertThat(balance).isEqualByComparingTo(new BigDecimal("100.00"));
+        }
+    }
+
+    @Nested
+    @DisplayName("deleteSnapshotsFrom Tests")
+    class DeleteSnapshotsFromTests {
+
+        @Test
+        @DisplayName("Should delete snapshots from specified date")
+        void shouldDeleteSnapshotsFromSpecifiedDate() {
+            // Given
+            LocalDateTime fromDateTime = testDateTime.minusDays(5);
+            when(balanceSnapshotRepository.deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+                    1L, fromDateTime)).thenReturn(5);
+
+            // When
+            balanceService.deleteSnapshotsFrom(1L, fromDateTime);
+
+            // Then
+            verify(balanceSnapshotRepository).deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+                    1L, fromDateTime);
+        }
+
+        @Test
+        @DisplayName("Should handle zero deletions")
+        void shouldHandleZeroDeletions() {
+            // Given
+            LocalDateTime fromDateTime = testDateTime;
+            when(balanceSnapshotRepository.deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+                    1L, fromDateTime)).thenReturn(0);
+
+            // When/Then - should complete without error
+            assertThatCode(() -> balanceService.deleteSnapshotsFrom(1L, fromDateTime))
+                    .doesNotThrowAnyException();
+
+            verify(balanceSnapshotRepository).deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+                    1L, fromDateTime);
+        }
+
+        @Test
+        @DisplayName("Should propagate exceptions from repository")
+        void shouldPropagateExceptionsFromRepository() {
+            // Given
+            LocalDateTime fromDateTime = testDateTime;
+            when(balanceSnapshotRepository.deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
+                    anyLong(), any(LocalDateTime.class)))
+                    .thenThrow(new RuntimeException("Database error"));
+
+            // When/Then
+            assertThatThrownBy(() -> balanceService.deleteSnapshotsFrom(1L, fromDateTime))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Database error");
+        }
+    }
+
+    @Nested
+    @DisplayName("calculateBalance with Invalid Snapshots Tests")
+    class CalculateBalanceWithInvalidSnapshotsTests {
+
+        @Test
+        @DisplayName("Should limit snapshot search when snapshots are invalid")
+        void shouldLimitSnapshotSearchWhenSnapshotsAreInvalid() {
+            // Given
+            LocalDate invalidFromDate = testDateTime.toLocalDate().minusDays(3);
+            LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
+
+            // Mock validity service to return invalid date
+            when(validityService.getInvalidFromDate(1L)).thenReturn(Optional.of(invalidFromDate));
+
+            // Create a snapshot before invalid date (this should NOT be used)
+            BankAccountBalanceSnapshot oldSnapshot = new BankAccountBalanceSnapshot();
+            oldSnapshot.setId(1L);
+            oldSnapshot.setSnapshotDateTime(testDateTime.minusDays(5).toLocalDate().atStartOfDay());
+            oldSnapshot.setClosingBalance(new BigDecimal("10000.00"));
+            oldSnapshot.setBankAccount(bankAccount);
+
+            // Mock: when searching with limited datetime, no snapshot found
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    eq(1L), eq(invalidFromDateTime))).thenReturn(Optional.empty());
+
+            // Create events after invalid date
+            List<BankAccountTransactionEvent> events = new ArrayList<>();
+            BankAccountTransactionEvent event = new BankAccountTransactionEvent();
+            event.setId(2L);
+            event.setAmount(new BigDecimal("500.00"));
+            event.setTransactionType(TransactionType.DEBIT);
+            event.setDocumentType("TEST");
+            event.setIsReversed(false);
+            events.add(event);
+
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    any(Long.class), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(events);
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            // Balance should be calculated from zero (not from old snapshot)
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("500.00"));
+
+            // Verify snapshot search was limited to invalidFromDateTime
+            verify(balanceSnapshotRepository).findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    1L, invalidFromDateTime);
+        }
+
+        @Test
+        @DisplayName("Should calculate from zero when all snapshots are invalid")
+        void shouldCalculateFromZeroWhenAllSnapshotsAreInvalid() {
+            // Given
+            LocalDate veryOldInvalidDate = testDateTime.toLocalDate().minusYears(1);
+            when(validityService.getInvalidFromDate(1L)).thenReturn(Optional.of(veryOldInvalidDate));
+
+            // No snapshot found before invalid date
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    anyLong(), any(LocalDateTime.class))).thenReturn(Optional.empty());
+
+            // All events
+            List<BankAccountTransactionEvent> events = new ArrayList<>();
+            BankAccountTransactionEvent event1 = new BankAccountTransactionEvent();
+            event1.setId(1L);
+            event1.setAmount(new BigDecimal("1000.00"));
+            event1.setTransactionType(TransactionType.DEBIT);
+            event1.setDocumentType("TEST");
+            event1.setIsReversed(false);
+            events.add(event1);
+
+            BankAccountTransactionEvent event2 = new BankAccountTransactionEvent();
+            event2.setId(2L);
+            event2.setAmount(new BigDecimal("300.00"));
+            event2.setTransactionType(TransactionType.CREDIT);
+            event2.setDocumentType("TEST");
+            event2.setIsReversed(false);
+            events.add(event2);
+
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    any(Long.class), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(events);
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("700.00")); // 0 + 1000 - 300
+        }
+
+        @Test
+        @DisplayName("Should ignore invalidFromDate when it's after calculation date")
+        void shouldIgnoreInvalidFromDateWhenAfterCalculationDate() {
+            // Given
+            LocalDate futureInvalidDate = testDateTime.toLocalDate().plusDays(10);
+            when(validityService.getInvalidFromDate(1L)).thenReturn(Optional.of(futureInvalidDate));
+
+            // Create valid snapshot
+            BankAccountBalanceSnapshot snapshot = new BankAccountBalanceSnapshot();
+            snapshot.setId(1L);
+            snapshot.setSnapshotDateTime(testDateTime.minusDays(1).toLocalDate().atStartOfDay());
+            snapshot.setClosingBalance(new BigDecimal("2000.00"));
+            snapshot.setBankAccount(bankAccount);
+
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    eq(1L), any(LocalDateTime.class))).thenReturn(Optional.of(snapshot));
+
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    any(Long.class), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(new ArrayList<>());
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            // Should use the snapshot normally since invalidFromDate is in the future
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("2000.00"));
+        }
+
+        @Test
+        @DisplayName("Should calculate balance when invalid date is between snapshot and query date")
+        void shouldCalculateBalanceWhenInvalidDateBetweenSnapshotAndQueryDate() {
+            // Given
+            LocalDate invalidFromDate = testDateTime.toLocalDate().minusDays(1);
+            LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
+
+            when(validityService.getInvalidFromDate(1L)).thenReturn(Optional.of(invalidFromDate));
+
+            // Snapshot before invalid date (should be used)
+            BankAccountBalanceSnapshot validSnapshot = new BankAccountBalanceSnapshot();
+            validSnapshot.setId(1L);
+            validSnapshot.setSnapshotDateTime(testDateTime.minusDays(3).toLocalDate().atStartOfDay());
+            validSnapshot.setClosingBalance(new BigDecimal("1000.00"));
+            validSnapshot.setBankAccount(bankAccount);
+
+            when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(
+                    eq(1L), eq(invalidFromDateTime))).thenReturn(Optional.of(validSnapshot));
+
+            // Events after the invalid date
+            List<BankAccountTransactionEvent> events = new ArrayList<>();
+            BankAccountTransactionEvent event = new BankAccountTransactionEvent();
+            event.setId(2L);
+            event.setAmount(new BigDecimal("200.00"));
+            event.setTransactionType(TransactionType.DEBIT);
+            event.setDocumentType("TEST");
+            event.setIsReversed(false);
+            events.add(event);
+
+            when(transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
+                    any(Long.class), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(events);
+
+            // When
+            BigDecimal balance = balanceService.calculateBalance(1L, testDateTime);
+
+            // Then
+            assertThat(balance).isEqualByComparingTo(new BigDecimal("1200.00")); // 1000 + 200
         }
     }
 }

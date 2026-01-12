@@ -106,6 +106,22 @@ abstract class com.tarasantoniuk.finance.common.entity.BaseEntity {
 }
 
 
+class com.tarasantoniuk.finance.common.snapshot.entity.SnapshotValidity {
+	{field} +causedByEventId : Long
+	{field} +createdAt : java.time.LocalDateTime
+	{field} +entityId : Long
+	{field} +id : Long
+	{field} +invalidFromDate : java.time.LocalDate
+	{field} +invalidationReason : String
+	{field} +snapshotType : String
+	{field} +status : com.tarasantoniuk.finance.common.snapshot.enums.ValidityStatus
+	{field} +updatedAt : java.time.LocalDateTime
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
 class com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy {
 	{field} +depreciationMethod : String
 	{field} +fiscalYearStartMonth : Integer
