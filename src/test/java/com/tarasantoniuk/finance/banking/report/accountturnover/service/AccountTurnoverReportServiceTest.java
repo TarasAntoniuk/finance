@@ -1137,4 +1137,122 @@ class AccountTurnoverReportServiceTest {
         assertEquals(2L, details.getMovements().get(1).getEventId());
         assertEquals(3L, details.getMovements().get(2).getEventId());
     }
+
+    // ==================== Boundary Condition Tests ====================
+
+    @Test
+    @DisplayName("Should not double-count transaction at exact start of period (00:00:00)")
+    void generateReport_ShouldNotDoubleCountTransactionAtMidnight() {
+        // Given: Transaction with exact timestamp at start of period
+        LocalDate reportStartDate = LocalDate.of(2025, 1, 1);
+        LocalDate reportEndDate = LocalDate.of(2025, 1, 31);
+        LocalDateTime midnightTransaction = reportStartDate.atStartOfDay(); // 2025-01-01 00:00:00
+
+        // Opening balance: 0 (no transactions before midnight)
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(balanceService.calculateBalance(eq(testAccount.getId()), eq(midnightTransaction)))
+                .thenReturn(BigDecimal.ZERO); // No balance before midnight
+
+        // Period has one transaction at exact midnight
+        BankAccountTransactionEvent midnightEvent = createEvent(TransactionType.DEBIT, new BigDecimal("10000.00"), false);
+        midnightEvent.setTransactionDateTime(midnightTransaction);
+        midnightEvent.setDocumentType("BankReceipt");
+
+        when(transactionService.getAccountEventsInDateTimeRange(
+                eq(testAccount.getId()),
+                eq(midnightTransaction),
+                any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(midnightEvent));
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                new ReportPeriodDto(reportStartDate, reportEndDate), null, null, null);
+
+        // Then
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        assertEquals(BigDecimal.ZERO, item.getOpeningBalance(), "Opening balance should be 0");
+        assertEquals(new BigDecimal("10000.00"), item.getDebitTurnover(), "Debit turnover should be 10000");
+        assertEquals(BigDecimal.ZERO, item.getCreditTurnover(), "Credit turnover should be 0");
+        assertEquals(new BigDecimal("10000.00"), item.getClosingBalance(),
+                "Closing balance should be 10000 (not 20000 - transaction counted once, not twice)");
+        assertEquals(1, item.getTransactionCount(), "Should count transaction only once");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle transaction at end of day (23:59:59)")
+    void generateReport_ShouldHandleTransactionAtEndOfDay() {
+        // Given: Transaction at end of period day
+        LocalDate reportStartDate = LocalDate.of(2025, 1, 1);
+        LocalDate reportEndDate = LocalDate.of(2025, 1, 1); // Single day report
+        LocalDateTime endOfDay = reportStartDate.atTime(23, 59, 59);
+
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
+        when(balanceService.calculateBalance(eq(testAccount.getId()), eq(reportStartDate.atStartOfDay())))
+                .thenReturn(BigDecimal.ZERO);
+
+        BankAccountTransactionEvent endOfDayEvent = createEvent(TransactionType.DEBIT, new BigDecimal("5000.00"), false);
+        endOfDayEvent.setTransactionDateTime(endOfDay);
+        endOfDayEvent.setDocumentType("BankReceipt");
+
+        when(transactionService.getAccountEventsInDateTimeRange(
+                eq(testAccount.getId()),
+                any(LocalDateTime.class),
+                any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(endOfDayEvent));
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                new ReportPeriodDto(reportStartDate, reportEndDate), null, null, null);
+
+        // Then
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        assertEquals(BigDecimal.ZERO, item.getOpeningBalance());
+        assertEquals(new BigDecimal("5000.00"), item.getDebitTurnover());
+        assertEquals(new BigDecimal("5000.00"), item.getClosingBalance());
+    }
+
+    @Test
+    @DisplayName("Should correctly separate transactions before and at period boundary")
+    void generateReport_ShouldSeparateTransactionsAtBoundary() {
+        // Given: One transaction before period, one at exact period start
+        LocalDate reportStartDate = LocalDate.of(2025, 1, 2);
+        LocalDate reportEndDate = LocalDate.of(2025, 1, 31);
+
+        LocalDateTime beforePeriod = LocalDate.of(2025, 1, 1).atTime(23, 59, 59);
+        LocalDateTime atPeriodStart = reportStartDate.atStartOfDay(); // 2025-01-02 00:00:00
+
+        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Arrays.asList(testAccount));
+
+        // Opening balance includes transaction before period
+        when(balanceService.calculateBalance(eq(testAccount.getId()), eq(atPeriodStart)))
+                .thenReturn(new BigDecimal("1000.00")); // Result of transaction before period
+
+        // Period includes only transaction at period start
+        BankAccountTransactionEvent periodStartEvent = createEvent(TransactionType.DEBIT, new BigDecimal("2000.00"), false);
+        periodStartEvent.setTransactionDateTime(atPeriodStart);
+        periodStartEvent.setDocumentType("BankReceipt");
+
+        when(transactionService.getAccountEventsInDateTimeRange(
+                eq(testAccount.getId()),
+                eq(atPeriodStart),
+                any(LocalDateTime.class)))
+                .thenReturn(Arrays.asList(periodStartEvent));
+
+        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(testOrganization));
+
+        // When
+        AccountTurnoverReportDto report = reportService.generateReport(
+                new ReportPeriodDto(reportStartDate, reportEndDate), null, null, null);
+
+        // Then
+        AccountTurnoverSummaryDto item = report.getAccounts().get(0);
+        assertEquals(new BigDecimal("1000.00"), item.getOpeningBalance(), "Opening should include transaction before period");
+        assertEquals(new BigDecimal("2000.00"), item.getDebitTurnover(), "Period should include only transaction at start");
+        assertEquals(new BigDecimal("3000.00"), item.getClosingBalance(), "Closing = 1000 + 2000");
+        assertEquals(1, item.getTransactionCount(), "Should count only period transaction");
+    }
 }

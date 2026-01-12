@@ -27,7 +27,9 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
     List<BankAccountTransactionEvent> findByBankAccountIdWithRelations(@Param("bankAccountId") Long bankAccountId);
 
     /**
-     * Find events for a bank account within datetime range with all relations loaded
+     * Find events for a bank account within datetime range with all relations loaded.
+     * Uses >= startDateTime AND < endDateTime for precise boundary control.
+     * This ensures transactions at exact endDateTime are excluded (for opening balance calculation).
      */
     @Query("""
             SELECT e FROM BankAccountTransactionEvent e
@@ -35,7 +37,8 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
             LEFT JOIN FETCH e.organization
             LEFT JOIN FETCH e.currency
             WHERE e.bankAccount.id = :bankAccountId
-            AND e.transactionDateTime BETWEEN :startDateTime AND :endDateTime
+            AND e.transactionDateTime >= :startDateTime
+            AND e.transactionDateTime < :endDateTime
             AND e.isReversed = false
             ORDER BY e.transactionDateTime ASC, e.createdAt ASC
             """)

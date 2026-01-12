@@ -159,7 +159,8 @@ public class AccountTurnoverReportService {
         }
 
         // Get events in period (from start of startDate to end of endDate)
-        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        // Use start of next day as exclusive end boundary (query uses < endDateTime)
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
         List<BankAccountTransactionEvent> eventsInPeriod = transactionService
                 .getAccountEventsInDateTimeRange(account.getId(), startDateTime, endDateTime);
 
@@ -303,7 +304,8 @@ public class AccountTurnoverReportService {
         }
 
         // Get events in period (from start of startDate to end of endDate)
-        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        // Use start of next day as exclusive end boundary (query uses < endDateTime)
+        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay();
         List<BankAccountTransactionEvent> eventsInPeriod = transactionService
                 .getAccountEventsInDateTimeRange(accountId, startDateTime, endDateTime);
 
