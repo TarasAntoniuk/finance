@@ -79,21 +79,51 @@ The project follows modular development: **Core Module** (foundation) and **Bank
 
 ---
 
-### Banking Module (In Development)
+### Banking Module (Production)
 
-#### [0.0.4] - December 2024 🚧
+#### [0.0.5] - 2025-01-13 ✅
+**Snapshot Validity & Bug Fixes**
+
+**Added:**
+- Snapshot validity tracking system (7 new files in `common/snapshot/`)
+  - `SnapshotValidity.java` — Entity for tracking invalid snapshots
+  - `ValidityStatus.java` — Enum for validity states
+  - `SnapshotValidityRepository.java` — Repository with query methods
+  - `AbstractSnapshotScheduler.java` — Base scheduler for recalculation
+  - `AbstractSnapshotValidityService.java` — Base service for validity lifecycle
+- Backdated transaction detection and auto-invalidation
+  - Transactions older than 1 hour trigger snapshot invalidation
+  - Integrated into `BankReceiptService` and `BankPaymentService`
+- `BankAccountBalanceService.java` — Extracted from transaction service (197 lines)
+- `BankAccountSnapshotValidityService.java` — Account-specific validity handling
+
+**Fixed:**
+- N+1 query issue in `BankReceiptRepository` and `BankPaymentRepository`
+  - Added `LEFT JOIN FETCH b.country` and `LEFT JOIN FETCH b.counterparty`
+  - 12 query methods updated
+  - Performance: 41 queries → 1 query (~40x improvement)
+- Boundary condition bug causing double-counted opening balance
+  - Problem: Transactions at exact period start (00:00:00) counted twice
+  - Fix: Changed query logic from `BETWEEN` to `>= AND <`
+  - Removed unreliable `.minusNanos(1)` workarounds
+  - Files: `BankAccountTransactionEventRepository`, `BankAccountBalanceSnapshotRepository`, `BankAccountBalanceService`, `AccountTurnoverReportService`
+
+**Changed:**
+- Refactored balance calculation logic into separate `BankAccountBalanceService`
+- Renamed `common/report/` directory to `common/period/`
+- Reorganized swagger config into `common/swagger/`
+
+**Technical Details:**
+- +1,627 lines / -211 lines
+- 7 new Java files, 16 files modified
+- 903 test methods across 55 test files
+
+---
+
+#### [0.0.4] - December 2024 ✅
 **Banking Module: Event Sourcing Implementation** ⭐
 
-**Status**: Feature complete, documentation in progress
-
 **Pull Request**: [#10](https://github.com/TarasAntoniuk/finance/pull/10)
-
-**Completed:**
-- ✅ Bank Receipts & Payments implementation
-- ✅ Event Sourcing architecture
-- ✅ 193 comprehensive tests with 97% line & 95% branch coverage
-- ✅ API with Swagger documentation
-- 🚧 Documentation (README, CHANGELOG, ROADMAP, ARCHITECTURE)
 
 **Added:**
 
@@ -123,9 +153,6 @@ The project follows modular development: **Core Module** (foundation) and **Bank
 - Flexible filtering (organization, account, currency, date range)
 
 **Technical Achievements:**
-- 193 comprehensive tests (unit + integration)
-- 97% line coverage, 95% branch coverage (JaCoCo verified)
-- N+1 query prevention with `@EntityGraph`
 - Testcontainers for isolated integration tests
 - PostgreSQL sequence synchronization
 - Comprehensive Swagger documentation with request/response examples
@@ -136,8 +163,6 @@ The project follows modular development: **Core Module** (foundation) and **Bank
 - Financial Reports (balance, turnover)
 
 *Complete API documentation: [Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html)*
-
-**Target Release**: Q1 2025 (after documentation completion)
 
 ---
 

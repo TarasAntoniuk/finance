@@ -21,9 +21,9 @@
 
 ## 🌐 Live Demo
 
-**API**: https://api.tarasantoniuk.com  
-**Swagger**: [Interactive Docs](https://api.tarasantoniuk.com/swagger-ui/index.html)  
-**Exchange Rates**: https://tarasantoniuk.com/exchange-rates.html
+**Frontend**: https://finance.tarasantoniuk.com/
+**API**: https://api.tarasantoniuk.com
+**Swagger**: [Interactive Docs](https://api.tarasantoniuk.com/swagger-ui/index.html)
 
 ![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)
 ![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/branches.svg)
@@ -43,12 +43,12 @@
 ✅ **Bank Receipts & Payments** — 10+ transaction types each  
 ✅ **Document Lifecycle** — DRAFT → POST → UNPOST  
 ✅ **Financial Reports** — Balance & Turnover with filters  
-✅ **Comprehensive Test Coverage** — 193 tests with 97% line & 95% branch coverage
+✅ **Comprehensive Test Coverage** — 903 test methods in 55 test files
 
 ### 🔧 Technical Excellence
-✅ **PostgreSQL 17** with optimized queries  
-✅ **Testcontainers** for integration tests  
-✅ **N+1 Prevention** with `@EntityGraph`  
+✅ **PostgreSQL 17** with optimized queries
+✅ **Testcontainers** for integration tests
+✅ **N+1 Prevention** with `JOIN FETCH`
 ✅ **CI/CD** with GitHub Actions
 
 ---
@@ -122,25 +122,29 @@ mvn spring-boot:run
 
 ## 💻 Technology Stack
 
-**Backend**: Java 21, Spring Boot 3.5.5  
-**Database**: PostgreSQL 17, Flyway migrations  
-**Testing**: JUnit 5, Testcontainers, JaCoCo (97% line, 95% branch coverage)  
-**API**: REST, Swagger/OpenAPI 3, MapStruct  
+**Backend**: Java 21, Spring Boot 3.5.5
+**Frontend**: Vanilla JavaScript (separate deployment)
+**Database**: PostgreSQL 17
+**Testing**: JUnit 5, Testcontainers, JaCoCo
+**API**: REST, Swagger/OpenAPI 3, MapStruct
 **DevOps**: Docker, GitHub Actions
 
 ---
 
 ## 📦 Latest Release
 
-**v0.0.4** (December 2024) — Banking Module with Event Sourcing 🚧  
-[Pull Request #10](https://github.com/TarasAntoniuk/finance/pull/10)
+**v0.0.5** (2025-01-13) — Snapshot Validity & Bug Fixes ✅
 
-**Key Features**:
-- Bank Receipts & Payments with full lifecycle
-- Event Sourcing architecture
-- Financial reports (Balance, Turnover)
-- 193 tests with 97% line & 95% branch coverage
-- Documentation in progress
+**Added**:
+- Snapshot validity tracking system (7 new files)
+- Backdated transaction detection with auto-invalidation
+- `BankAccountBalanceService` extracted for cleaner architecture
+
+**Fixed**:
+- N+1 query issue: 41 → 1 query using `JOIN FETCH` (~40x faster)
+- Boundary condition bug: double-counted opening balance at period start
+
+**Stats**: +1,627 / -211 lines | 903 test methods in 55 files
 
 [Complete changelog](docs/CHANGELOG.md) | [Roadmap](docs/ROADMAP.md)
 

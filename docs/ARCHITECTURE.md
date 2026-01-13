@@ -330,5 +330,5 @@ All endpoints documented in [Swagger UI](https://api.tarasantoniuk.com/swagger-u
 
 ---
 
-**Version**: 0.0.4  
-**Last Updated**: December 2024
+**Version**: 0.0.5
+**Last Updated**: January 2025

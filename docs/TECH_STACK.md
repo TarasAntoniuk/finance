@@ -97,9 +97,9 @@
 
 ### Containerization
 - **Docker**
-    - Required for Testcontainers
-    - Integration testing only
-    - **Note**: Not used for deployment yet
+    - Production deployment with Docker Compose
+    - Required for Testcontainers (integration testing)
+    - Multi-container orchestration (app + database)
 
 ---
 
@@ -143,6 +143,17 @@
 
 ---
 
+## Frontend
+
+- **Vanilla JavaScript** (separate deployment)
+    - No frameworks (plain JS, HTML, CSS)
+    - Basic UI implementation by backend developer
+    - Not included in this repository
+    - Features: Exchange rates display, basic navigation
+    - Live: https://finance.tarasantoniuk.com/
+
+---
+
 ## Notable Decisions
 
 ### What We DON'T Use
@@ -152,9 +163,9 @@
 - Better debugging
 - Plain Java getters/setters
 
-❌ **Frontend Framework** (currently)
-- Backend-first approach
-- Planned for future
+❌ **Frontend Framework**
+- Vanilla JS chosen for simplicity
+- Full React/Vue frontend planned for future
 
 ❌ **Kubernetes** (currently)
 - Prototype phase
@@ -222,5 +233,5 @@ jacoco-maven-plugin (0.8.10)
 
 ---
 
-**Document Version**: 0.0.4  
-**Last Updated**: November 2025
+**Document Version**: 0.0.5
+**Last Updated**: January 2025
