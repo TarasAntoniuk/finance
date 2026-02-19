@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>3.5.10</version>
         <relativePath/>
     </parent>
     <groupId>com.tarasantoniuk</groupId>
@@ -113,7 +113,6 @@
         </dependency>
 
 
-
     </dependencies>
 
     <build>
@@ -210,31 +209,31 @@
                     <whitelistRegexp>.*\.entity\..*</whitelistRegexp>
                 </configuration>
             </plugin>
-<!--            &lt;!&ndash; PlantUML Renderer: Converts .puml files to PNG/SVG images.-->
-<!--     Run: mvn net.sourceforge.plantuml:plantuml-maven-plugin:generate &ndash;&gt;-->
-<!--            <plugin>-->
-<!--                <groupId>net.sourceforge.plantuml</groupId>-->
-<!--                <artifactId>plantuml-maven-plugin</artifactId>-->
-<!--                <version>1.2</version>-->
-<!--                <configuration>-->
-<!--                    <sourceFiles>-->
-<!--                        <directory>${project.basedir}/docs/uml</directory>-->
-<!--                        <includes>-->
-<!--                            <include>**/*.puml</include>-->
-<!--                        </includes>-->
-<!--                    </sourceFiles>-->
-<!--                    <outputDirectory>${project.basedir}/docs/uml/images</outputDirectory>-->
-<!--                    <format>png</format>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <phase>generate-resources</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>generate</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
+            <!--            &lt;!&ndash; PlantUML Renderer: Converts .puml files to PNG/SVG images.-->
+            <!--     Run: mvn net.sourceforge.plantuml:plantuml-maven-plugin:generate &ndash;&gt;-->
+            <!--            <plugin>-->
+            <!--                <groupId>net.sourceforge.plantuml</groupId>-->
+            <!--                <artifactId>plantuml-maven-plugin</artifactId>-->
+            <!--                <version>1.2</version>-->
+            <!--                <configuration>-->
+            <!--                    <sourceFiles>-->
+            <!--                        <directory>${project.basedir}/docs/uml</directory>-->
+            <!--                        <includes>-->
+            <!--                            <include>**/*.puml</include>-->
+            <!--                        </includes>-->
+            <!--                    </sourceFiles>-->
+            <!--                    <outputDirectory>${project.basedir}/docs/uml/images</outputDirectory>-->
+            <!--                    <format>png</format>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <phase>generate-resources</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>generate</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
 
@@ -290,27 +289,5 @@
             </activation>
         </profile>
     </profiles>
-
-    <repositories>
-        <repository>
-            <id>spring-snapshots</id>
-            <name>Spring Snapshots</name>
-            <url>https://repo.spring.io/snapshot</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-snapshots</id>
-            <name>Spring Snapshots</name>
-            <url>https://repo.spring.io/snapshot</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
 
 </project>
