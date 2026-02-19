@@ -63,4 +63,8 @@ public class JwtService {
             return false;
         }
     }
+
+    public long getRefreshTokenExpiration() {
+        return jwtProperties.getRefreshTokenExpiration();
+    }
 }
