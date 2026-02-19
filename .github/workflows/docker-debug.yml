@@ -1,0 +1,23 @@
+name: Docker Debug
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Docker version
+        run: docker version
+
+      - name: Docker info
+        run: docker info
+
+      - name: Docker socket
+        run: ls -la /var/run/docker.sock
+
+      - name: OS info
+        run: |
+          uname -a
+          cat /etc/os-release
