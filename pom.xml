@@ -22,16 +22,9 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <jacoco.version>0.8.12</jacoco.version>
-        <jjwt.version>0.12.5</jjwt.version>
-        <spring-security.version>6.4.2</spring-security.version>
         <!-- Test coverage thresholds -->
         <jacoco.line.coverage>0.80</jacoco.line.coverage>
         <jacoco.branch.coverage>0.75</jacoco.branch.coverage>
-        <!-- Override vulnerable dependencies -->
-        <spring-framework.version>6.2.11</spring-framework.version>
-        <logback.version>1.5.20</logback.version>
-        <tomcat.version>10.1.47</tomcat.version>
-
     </properties>
 
     <dependencies>
@@ -118,6 +111,9 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+
+
+
     </dependencies>
 
     <build>
@@ -214,6 +210,31 @@
                     <whitelistRegexp>.*\.entity\..*</whitelistRegexp>
                 </configuration>
             </plugin>
+<!--            &lt;!&ndash; PlantUML Renderer: Converts .puml files to PNG/SVG images.-->
+<!--     Run: mvn net.sourceforge.plantuml:plantuml-maven-plugin:generate &ndash;&gt;-->
+<!--            <plugin>-->
+<!--                <groupId>net.sourceforge.plantuml</groupId>-->
+<!--                <artifactId>plantuml-maven-plugin</artifactId>-->
+<!--                <version>1.2</version>-->
+<!--                <configuration>-->
+<!--                    <sourceFiles>-->
+<!--                        <directory>${project.basedir}/docs/uml</directory>-->
+<!--                        <includes>-->
+<!--                            <include>**/*.puml</include>-->
+<!--                        </includes>-->
+<!--                    </sourceFiles>-->
+<!--                    <outputDirectory>${project.basedir}/docs/uml/images</outputDirectory>-->
+<!--                    <format>png</format>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>generate-resources</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>generate</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
