@@ -21,5 +21,9 @@ jobs:
       - name: Docker info
         run: docker info
 
+      - name: Configure Testcontainers for Docker 29
+        run: |
+          echo "docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy" >> $HOME/.testcontainers.properties
+
       - name: Run single integration test
         run: mvn test -Dtest=BankRepositoryTest#save_ShouldPersistBankWithAllFields -Dsurefire.failIfNoSpecifiedTests=false
