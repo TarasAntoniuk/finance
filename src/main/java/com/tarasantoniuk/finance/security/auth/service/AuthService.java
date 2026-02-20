@@ -9,8 +9,10 @@ import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepositor
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
+import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
+import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,14 +59,14 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
         if (!user.getIsActive()) {
-            throw new BadCredentialsException("Account is disabled");
+            throw new AccountDisabledException("Account is disabled");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
         refreshTokenRepository.revokeAllByUserId(user.getId());
@@ -77,10 +79,10 @@ public class AuthService {
         String tokenHash = hashToken(rawRefreshToken);
 
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
         if (refreshToken.isRevoked() || refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new BadCredentialsException("Refresh token is expired or revoked");
+            throw new InvalidTokenException("Refresh token is expired or revoked");
         }
 
         refreshToken.setRevoked(true);
