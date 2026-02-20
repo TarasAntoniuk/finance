@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.common;
 
 import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
+import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
@@ -142,6 +143,14 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException ex, HttpServletRequest request) {
         String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    // ========== SECURITY EXCEPTIONS ==========
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(
+            UserAlreadyExistsException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     // ========== GLOBAL EXCEPTION ==========
