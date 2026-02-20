@@ -1,6 +1,9 @@
 package com.tarasantoniuk.finance.common;
 
 import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
+import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
+import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
+import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
@@ -151,6 +154,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(
             UserAlreadyExistsException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(
+            InvalidCredentialsException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AccountDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleAccountDisabledException(
+            AccountDisabledException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTokenException(
+            InvalidTokenException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
     // ========== GLOBAL EXCEPTION ==========
