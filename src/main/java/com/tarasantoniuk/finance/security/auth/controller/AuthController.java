@@ -5,10 +5,11 @@ import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
 import com.tarasantoniuk.finance.security.user.entity.User;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,7 +38,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@AuthenticationPrincipal User user) {
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Void> logout() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         authService.logout(user.getId());
         return ResponseEntity.noContent().build();
     }
