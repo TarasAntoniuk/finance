@@ -121,7 +121,7 @@ public class AuthService {
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to hash token", e);
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
         }
     }
 }
