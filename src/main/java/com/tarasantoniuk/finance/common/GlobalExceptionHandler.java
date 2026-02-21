@@ -1,10 +1,6 @@
 package com.tarasantoniuk.finance.common;
 
 import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
-import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
-import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
-import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
-import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
@@ -20,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -28,6 +25,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
  * Global exception handler for all REST controllers
  */
 @RestControllerAdvice(basePackages = "com.tarasantoniuk.finance")
+@Order(100)
 public class GlobalExceptionHandler {
 
     // ========== GENERIC EXCEPTIONS ==========
@@ -146,32 +144,6 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException ex, HttpServletRequest request) {
         String message = String.format("Required parameter '%s' is missing", ex.getParameterName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
-    }
-
-    // ========== SECURITY EXCEPTIONS ==========
-
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(
-            UserAlreadyExistsException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(
-            InvalidCredentialsException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(AccountDisabledException.class)
-    public ResponseEntity<ErrorResponse> handleAccountDisabledException(
-            AccountDisabledException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTokenException(
-            InvalidTokenException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
     // ========== GLOBAL EXCEPTION ==========
