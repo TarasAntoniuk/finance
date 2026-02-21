@@ -3,8 +3,11 @@ package com.tarasantoniuk.finance.security.jwt.service;
 import com.tarasantoniuk.finance.security.jwt.JwtProperties;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -14,6 +17,8 @@ import java.util.UUID;
 
 @Service
 public class JwtService {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
 
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
@@ -62,7 +67,8 @@ public class JwtService {
     public boolean isTokenValid(String token) {
         try {
             return extractClaims(token).getExpiration().after(new Date());
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
+            log.debug("JWT validation failed: {}", e.getMessage());
             return false;
         }
     }

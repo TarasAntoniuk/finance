@@ -76,6 +76,10 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refresh(String rawRefreshToken) {
+        if (!jwtService.isTokenValid(rawRefreshToken)) {
+            throw new InvalidTokenException("Invalid refresh token");
+        }
+
         String tokenHash = hashToken(rawRefreshToken);
 
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
