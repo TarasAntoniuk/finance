@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.banking.bank.dto.BankRequestDto;
 import com.tarasantoniuk.finance.banking.bank.dto.BankResponseDto;
 import com.tarasantoniuk.finance.banking.bank.service.BankService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -21,6 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BankController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class BankControllerTest {
 
     @Autowired
@@ -31,6 +34,9 @@ class BankControllerTest {
 
     @MockitoBean
     private BankService bankService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getAllBanks_ShouldReturnListOfBanks() throws Exception {

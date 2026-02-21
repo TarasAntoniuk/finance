@@ -8,8 +8,10 @@ import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRat
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ExchangeRateNotFoundException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.InvalidExchangeRateException;
 import com.tarasantoniuk.finance.core.externalexchangerate.service.ExternalExchangeRateService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Тести для помилкових сценаріїв ExchangeRate
  */
 @WebMvcTest(ExternalExchangeRateController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ExchangeRateErrorTest {
 
     @Autowired
@@ -40,6 +43,9 @@ class ExchangeRateErrorTest {
 
     @MockitoBean
     private ExternalExchangeRateService exchangeRateService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getExchangeRateById_WhenNotFound_ShouldReturn404() throws Exception {

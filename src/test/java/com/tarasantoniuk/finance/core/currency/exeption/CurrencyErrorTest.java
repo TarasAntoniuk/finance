@@ -6,8 +6,10 @@ import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.service.CurrencyService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -24,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Тести для помилкових сценаріїв Currency
  */
 @WebMvcTest(CurrencyController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CurrencyErrorTest {
 
     @Autowired
@@ -34,6 +37,9 @@ class CurrencyErrorTest {
 
     @MockitoBean
     private CurrencyService currencyService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getCurrencyById_WhenNotFound_ShouldReturn404() throws Exception {
