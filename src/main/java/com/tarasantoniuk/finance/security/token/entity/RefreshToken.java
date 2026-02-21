@@ -31,7 +31,7 @@ public class RefreshToken extends BaseEntity {
     private LocalDateTime expiresAt;
 
     @Column(nullable = false)
-    private Boolean revoked = false;
+    private boolean revoked = false;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,6 +41,6 @@ public class RefreshToken extends BaseEntity {
     public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
     public LocalDateTime getExpiresAt() { return expiresAt; }
     public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
-    public Boolean isRevoked() { return revoked; }
-    public void setRevoked(Boolean revoked) { this.revoked = revoked; }
+    public boolean isRevoked() { return revoked; }
+    public void setRevoked(boolean revoked) { this.revoked = revoked; }
 }
