@@ -1,9 +1,7 @@
 package com.tarasantoniuk.finance.security.jwt;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Component
 @ConfigurationProperties(prefix = "app.jwt")
 public class JwtProperties {
 
