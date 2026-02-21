@@ -5,8 +5,10 @@ import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException
 import com.tarasantoniuk.finance.core.organization.controller.OrganizationController;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Тести для помилкових сценаріїв Organization
  */
 @WebMvcTest(OrganizationController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class OrganizationErrorTest {
 
     @Autowired
@@ -33,6 +36,9 @@ class OrganizationErrorTest {
 
     @MockitoBean
     private OrganizationService organizationService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getOrganizationById_WhenNotFound_ShouldReturn404() throws Exception {

@@ -6,8 +6,10 @@ import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
 import com.tarasantoniuk.finance.core.country.exception.CountryAlreadyExistsException;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.country.service.CountryService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -25,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Тести для помилкових сценаріїв Country
  */
 @WebMvcTest(CountryController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CountryErrorTest {
 
     @Autowired
@@ -35,6 +38,9 @@ class CountryErrorTest {
 
     @MockitoBean
     private CountryService countryService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getCountryById_WhenNotFound_ShouldReturn404() throws Exception {
