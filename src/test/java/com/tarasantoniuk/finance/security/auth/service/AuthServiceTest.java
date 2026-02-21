@@ -181,6 +181,7 @@ class AuthServiceTest {
         storedToken.setRevoked(false);
         storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
 
+        when(jwtService.isTokenValid("raw-refresh-token")).thenReturn(true);
         when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
         when(jwtService.generateAccessToken(user)).thenReturn("new-access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh-token");
@@ -197,13 +198,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void refresh_WhenInvalidToken_ShouldThrowInvalidTokenException() {
-        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.empty());
+    void refresh_WhenInvalidJwt_ShouldThrowInvalidTokenException() {
+        when(jwtService.isTokenValid("invalid-token")).thenReturn(false);
 
         InvalidTokenException exception = assertThrows(InvalidTokenException.class,
                 () -> authService.refresh("invalid-token"));
 
         assertEquals("Invalid refresh token", exception.getMessage());
+        verify(refreshTokenRepository, never()).findByTokenHash(anyString());
     }
 
     @Test
@@ -213,6 +215,7 @@ class AuthServiceTest {
         storedToken.setRevoked(true);
         storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
 
+        when(jwtService.isTokenValid("revoked-token")).thenReturn(true);
         when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
 
         InvalidTokenException exception = assertThrows(InvalidTokenException.class,
@@ -229,6 +232,7 @@ class AuthServiceTest {
         storedToken.setRevoked(false);
         storedToken.setExpiresAt(LocalDateTime.now().minusDays(1));
 
+        when(jwtService.isTokenValid("expired-token")).thenReturn(true);
         when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
 
         InvalidTokenException exception = assertThrows(InvalidTokenException.class,
