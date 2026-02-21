@@ -5,6 +5,8 @@ import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
 import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,22 +25,36 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Register a new user", description = "Creates a new user account and returns access and refresh tokens")
+    @ApiResponse(responseCode = "201", description = "User registered successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input data")
+    @ApiResponse(responseCode = "409", description = "User with this email already exists")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Authenticate user", description = "Validates credentials and returns access and refresh tokens")
+    @ApiResponse(responseCode = "200", description = "Login successful")
+    @ApiResponse(responseCode = "401", description = "Invalid email or password")
+    @ApiResponse(responseCode = "403", description = "Account is disabled")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token", description = "Exchanges a valid refresh token for a new access and refresh token pair")
+    @ApiResponse(responseCode = "200", description = "Tokens refreshed successfully")
+    @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
     public ResponseEntity<AuthResponse> refresh(@RequestHeader("X-Refresh-Token") String refreshToken) {
         return ResponseEntity.ok(authService.refresh(refreshToken));
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "Logout user", description = "Revokes all refresh tokens for the authenticated user")
     @SecurityRequirement(name = "bearerAuth")
+    @ApiResponse(responseCode = "204", description = "Logout successful")
+    @ApiResponse(responseCode = "403", description = "Not authenticated")
     public ResponseEntity<Void> logout() {
         JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         authService.logout(principal.userId());
