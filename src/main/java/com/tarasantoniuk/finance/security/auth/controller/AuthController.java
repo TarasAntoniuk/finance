@@ -4,7 +4,7 @@ import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
-import com.tarasantoniuk.finance.security.user.entity.User;
+import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -40,8 +40,8 @@ public class AuthController {
     @PostMapping("/logout")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> logout() {
-        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        authService.logout(user.getId());
+        JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        authService.logout(principal.userId());
         return ResponseEntity.noContent().build();
     }
 }

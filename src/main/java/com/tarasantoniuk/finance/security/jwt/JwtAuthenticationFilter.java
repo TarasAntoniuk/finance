@@ -1,8 +1,8 @@
 package com.tarasantoniuk.finance.security.jwt;
 
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
-import com.tarasantoniuk.finance.security.user.entity.User;
-import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,11 +21,9 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -52,18 +50,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Long userId = jwtService.extractUserId(token);
-        User user = userRepository.findById(userId).orElse(null);
+        Claims claims = jwtService.extractClaims(token);
+        Long userId = Long.parseLong(claims.getSubject());
+        String email = claims.get("email", String.class);
+        UserRole role = UserRole.valueOf(claims.get("role", String.class));
 
-        if (user == null || !user.getIsActive()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        JwtPrincipal principal = new JwtPrincipal(userId, email, role);
 
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                user,
+                principal,
                 null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
         );
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
