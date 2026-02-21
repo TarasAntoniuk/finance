@@ -17,11 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
-import java.util.Base64;
 
 @Service
 public class AuthService {
@@ -80,7 +76,7 @@ public class AuthService {
             throw new InvalidTokenException("Invalid refresh token");
         }
 
-        String tokenHash = hashToken(rawRefreshToken);
+        String tokenHash = jwtService.hashToken(rawRefreshToken);
 
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
@@ -106,7 +102,7 @@ public class AuthService {
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
-        refreshToken.setTokenHash(hashToken(rawRefreshToken));
+        refreshToken.setTokenHash(jwtService.hashToken(rawRefreshToken));
         refreshToken.setExpiresAt(LocalDateTime.now().plusSeconds(
                 jwtService.getRefreshTokenExpiration() / 1000
         ));
@@ -115,13 +111,4 @@ public class AuthService {
         return new AuthResponse(accessToken, rawRefreshToken);
     }
 
-    private String hashToken(String token) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 algorithm not available", e);
-        }
-    }
 }

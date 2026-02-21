@@ -77,6 +77,7 @@ class AuthServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
         when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
 
         AuthResponse response = authService.register(registerRequest);
@@ -95,6 +96,7 @@ class AuthServiceTest {
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
         when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
 
         authService.register(registerRequest);
@@ -126,6 +128,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
         when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
 
         AuthResponse response = authService.login(loginRequest);
@@ -182,9 +185,11 @@ class AuthServiceTest {
         storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
 
         when(jwtService.isTokenValid("raw-refresh-token")).thenReturn(true);
-        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
+        when(jwtService.hashToken("raw-refresh-token")).thenReturn("hashed-token");
+        when(refreshTokenRepository.findByTokenHash("hashed-token")).thenReturn(Optional.of(storedToken));
         when(jwtService.generateAccessToken(user)).thenReturn("new-access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh-token");
+        when(jwtService.hashToken("new-refresh-token")).thenReturn("new-hashed-token");
         when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
 
         AuthResponse response = authService.refresh("raw-refresh-token");
@@ -216,7 +221,8 @@ class AuthServiceTest {
         storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
 
         when(jwtService.isTokenValid("revoked-token")).thenReturn(true);
-        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
+        when(jwtService.hashToken("revoked-token")).thenReturn("hashed-token");
+        when(refreshTokenRepository.findByTokenHash("hashed-token")).thenReturn(Optional.of(storedToken));
 
         InvalidTokenException exception = assertThrows(InvalidTokenException.class,
                 () -> authService.refresh("revoked-token"));
@@ -233,7 +239,8 @@ class AuthServiceTest {
         storedToken.setExpiresAt(LocalDateTime.now().minusDays(1));
 
         when(jwtService.isTokenValid("expired-token")).thenReturn(true);
-        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedToken));
+        when(jwtService.hashToken("expired-token")).thenReturn("hashed-token");
+        when(refreshTokenRepository.findByTokenHash("hashed-token")).thenReturn(Optional.of(storedToken));
 
         InvalidTokenException exception = assertThrows(InvalidTokenException.class,
                 () -> authService.refresh("expired-token"));
