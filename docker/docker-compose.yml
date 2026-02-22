@@ -10,6 +10,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://shared-postgres:5432/finance
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: ${FINANCE_DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
     ports:
       - "127.0.0.1:8080:8080"
     networks:
