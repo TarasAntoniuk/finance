@@ -249,6 +249,45 @@ class AuthServiceTest {
         verify(refreshTokenRepository, never()).save(any(RefreshToken.class));
     }
 
+    @Test
+    void refresh_WhenTokenHashNotFound_ShouldThrowInvalidTokenException() {
+        when(jwtService.isTokenValid("unknown-token")).thenReturn(true);
+        when(jwtService.hashToken("unknown-token")).thenReturn("unknown-hash");
+        when(refreshTokenRepository.findByTokenHash("unknown-hash")).thenReturn(Optional.empty());
+
+        InvalidTokenException exception = assertThrows(InvalidTokenException.class,
+                () -> authService.refresh("unknown-token"));
+
+        assertEquals("Invalid refresh token", exception.getMessage());
+    }
+
+    @Test
+    void refresh_ShouldSaveNewRefreshTokenWithCorrectExpiration() {
+        RefreshToken storedToken = new RefreshToken();
+        storedToken.setUser(user);
+        storedToken.setRevoked(false);
+        storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        when(jwtService.isTokenValid("raw-token")).thenReturn(true);
+        when(jwtService.hashToken("raw-token")).thenReturn("hashed");
+        when(refreshTokenRepository.findByTokenHash("hashed")).thenReturn(Optional.of(storedToken));
+        when(jwtService.generateAccessToken(user)).thenReturn("new-access");
+        when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh");
+        when(jwtService.hashToken("new-refresh")).thenReturn("new-hashed");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        authService.refresh("raw-token");
+
+        ArgumentCaptor<RefreshToken> tokenCaptor = ArgumentCaptor.forClass(RefreshToken.class);
+        verify(refreshTokenRepository, times(2)).save(tokenCaptor.capture());
+
+        // The second saved token is the new one
+        RefreshToken newToken = tokenCaptor.getAllValues().get(1);
+        assertEquals("new-hashed", newToken.getTokenHash());
+        assertEquals(user, newToken.getUser());
+        assertFalse(newToken.isRevoked());
+    }
+
     // ========== LOGOUT ==========
 
     @Test
