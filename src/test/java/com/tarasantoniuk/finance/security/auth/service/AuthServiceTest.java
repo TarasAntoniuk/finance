@@ -56,7 +56,7 @@ class AuthServiceTest {
         user.setId(1L);
         user.setEmail("test@example.com");
         user.setPassword("encodedPassword");
-        user.setRole(UserRole.USER);
+        user.setRole(UserRole.GUEST);
         user.setIsActive(true);
 
         registerRequest = new RegisterRequest();
@@ -107,7 +107,7 @@ class AuthServiceTest {
         User savedUser = userCaptor.getValue();
         assertEquals("test@example.com", savedUser.getEmail());
         assertEquals("encodedPassword", savedUser.getPassword());
-        assertEquals(UserRole.USER, savedUser.getRole());
+        assertEquals(UserRole.GUEST, savedUser.getRole());
     }
 
     @Test
