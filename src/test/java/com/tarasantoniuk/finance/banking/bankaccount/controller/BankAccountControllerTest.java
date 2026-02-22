@@ -6,8 +6,10 @@ import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.banking.bankaccount.service.BankAccountService;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BankAccountController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class BankAccountControllerTest {
 
     @Autowired
@@ -33,6 +36,9 @@ class BankAccountControllerTest {
 
     @MockitoBean
     private BankAccountService bankAccountService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getAllBankAccounts_ShouldReturnListOfBankAccounts() throws Exception {

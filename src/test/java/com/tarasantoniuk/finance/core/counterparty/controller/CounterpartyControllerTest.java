@@ -10,9 +10,11 @@ import com.tarasantoniuk.finance.core.counterparty.exception.CounterpartyNotFoun
 import com.tarasantoniuk.finance.core.counterparty.exception.DuplicateCounterpartyException;
 import com.tarasantoniuk.finance.core.counterparty.service.CounterpartyService;
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CounterpartyController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class CounterpartyControllerTest {
 
     @Autowired
@@ -37,6 +40,9 @@ class CounterpartyControllerTest {
 
     @MockitoBean
     private CounterpartyService counterpartyService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private CounterpartyRequestDto requestDto;
     private CounterpartyResponseDto responseDto;

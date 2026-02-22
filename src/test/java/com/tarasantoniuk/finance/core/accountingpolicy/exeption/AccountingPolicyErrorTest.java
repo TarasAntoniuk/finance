@@ -8,8 +8,10 @@ import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolic
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
+import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Тести для помилкових сценаріїв AccountingPolicy
  */
 @WebMvcTest(AccountingPolicyController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class AccountingPolicyErrorTest {
 
     @Autowired
@@ -37,6 +40,9 @@ class AccountingPolicyErrorTest {
 
     @MockitoBean
     private AccountingPolicyService accountingPolicyService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Test
     void getAccountingPolicyById_WhenNotFound_ShouldReturn404() throws Exception {
