@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.security.jwt;
 
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
+import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -21,9 +22,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -51,6 +54,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Claims claims = jwtService.extractClaims(token);
+
+        String jti = claims.getId();
+        if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         Long userId = Long.parseLong(claims.getSubject());
         String email = claims.get("email", String.class);
         UserRole role = UserRole.valueOf(claims.get("role", String.class));

@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.entity.RefreshToken;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
+import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
@@ -13,6 +14,8 @@ import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsExcep
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.impl.DefaultClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +26,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,6 +47,9 @@ class AuthServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
 
     @InjectMocks
     private AuthService authService;
@@ -288,12 +296,75 @@ class AuthServiceTest {
         assertFalse(newToken.isRevoked());
     }
 
+    // ========== REFRESH - REUSE DETECTION ==========
+
+    @Test
+    void refresh_WhenTokenAlreadyUsed_ShouldRevokeAllAndThrow() {
+        RefreshToken storedToken = new RefreshToken();
+        storedToken.setUser(user);
+        storedToken.setRevoked(false);
+        storedToken.setUsed(true);
+        storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        when(jwtService.isTokenValid("reused-token")).thenReturn(true);
+        when(jwtService.hashToken("reused-token")).thenReturn("hashed-token");
+        when(refreshTokenRepository.findByTokenHash("hashed-token")).thenReturn(Optional.of(storedToken));
+
+        InvalidTokenException exception = assertThrows(InvalidTokenException.class,
+                () -> authService.refresh("reused-token"));
+
+        assertEquals("Token reuse detected", exception.getMessage());
+        verify(refreshTokenRepository).revokeAllByUserId(user.getId());
+    }
+
+    @Test
+    void refresh_WhenValidToken_ShouldMarkAsUsed() {
+        RefreshToken storedToken = new RefreshToken();
+        storedToken.setUser(user);
+        storedToken.setRevoked(false);
+        storedToken.setUsed(false);
+        storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        when(jwtService.isTokenValid("raw-token")).thenReturn(true);
+        when(jwtService.hashToken("raw-token")).thenReturn("hashed");
+        when(refreshTokenRepository.findByTokenHash("hashed")).thenReturn(Optional.of(storedToken));
+        when(jwtService.generateAccessToken(user)).thenReturn("new-access");
+        when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh");
+        when(jwtService.hashToken("new-refresh")).thenReturn("new-hashed");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        authService.refresh("raw-token");
+
+        assertTrue(storedToken.isUsed());
+        assertTrue(storedToken.isRevoked());
+    }
+
     // ========== LOGOUT ==========
 
     @Test
-    void logout_ShouldRevokeAllUserTokens() {
-        authService.logout(1L);
+    void logout_ShouldBlacklistAccessTokenAndRevokeAllRefreshTokens() {
+        Map<String, Object> claimMap = new HashMap<>();
+        claimMap.put("jti", "test-jti");
+        Claims claims = new DefaultClaims(claimMap);
 
+        when(jwtService.extractClaims("access-token")).thenReturn(claims);
+
+        authService.logout(1L, "access-token");
+
+        verify(tokenBlacklistService).blacklist("test-jti");
+        verify(refreshTokenRepository).revokeAllByUserId(1L);
+    }
+
+    @Test
+    void logout_WhenJtiIsNull_ShouldStillRevokeRefreshTokens() {
+        Map<String, Object> claimMap = new HashMap<>();
+        Claims claims = new DefaultClaims(claimMap);
+
+        when(jwtService.extractClaims("access-token")).thenReturn(claims);
+
+        authService.logout(1L, "access-token");
+
+        verify(tokenBlacklistService, never()).blacklist(anyString());
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 }

@@ -376,6 +376,21 @@ class AuthControllerTest extends BaseIntegrationTest {
     }
 
     @Test
+    void logout_WhenAccessTokenUsedAfterLogout_ShouldReturn403() throws Exception {
+        AuthResponse tokens = registerUser("blacklist@example.com", "password123");
+
+        // Logout - blacklists the access token
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                .andExpect(status().isNoContent());
+
+        // Try to use blacklisted access token - should fail
+        mockMvc.perform(get("/api/v1/currencies")
+                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void logout_WhenTokenAfterLogout_RefreshShouldFail() throws Exception {
         AuthResponse tokens = registerUser("logout-refresh@example.com", "password123");
 

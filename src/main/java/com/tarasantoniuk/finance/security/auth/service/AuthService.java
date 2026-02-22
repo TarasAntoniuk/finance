@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.entity.RefreshToken;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
+import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
@@ -26,15 +27,18 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
                        JwtService jwtService,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       TokenBlacklistService tokenBlacklistService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Transactional
@@ -81,10 +85,16 @@ public class AuthService {
         RefreshToken refreshToken = refreshTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
+        if (refreshToken.isUsed()) {
+            refreshTokenRepository.revokeAllByUserId(refreshToken.getUser().getId());
+            throw new InvalidTokenException("Token reuse detected");
+        }
+
         if (refreshToken.isRevoked() || refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new InvalidTokenException("Refresh token is expired or revoked");
         }
 
+        refreshToken.setUsed(true);
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
@@ -92,7 +102,11 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(Long userId) {
+    public void logout(Long userId, String accessToken) {
+        String jti = jwtService.extractClaims(accessToken).getId();
+        if (jti != null) {
+            tokenBlacklistService.blacklist(jti);
+        }
         refreshTokenRepository.revokeAllByUserId(userId);
     }
 

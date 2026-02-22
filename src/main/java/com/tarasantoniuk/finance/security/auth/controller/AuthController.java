@@ -5,6 +5,7 @@ import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
 import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,19 +26,23 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @RateLimiter(name = "auth")
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns access and refresh tokens")
     @ApiResponse(responseCode = "201", description = "User registered successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input data")
     @ApiResponse(responseCode = "409", description = "User with this email already exists")
+    @ApiResponse(responseCode = "429", description = "Too many requests")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @PostMapping("/login")
+    @RateLimiter(name = "auth")
     @Operation(summary = "Authenticate user", description = "Validates credentials and returns access and refresh tokens")
     @ApiResponse(responseCode = "200", description = "Login successful")
     @ApiResponse(responseCode = "401", description = "Invalid email or password")
     @ApiResponse(responseCode = "403", description = "Account is disabled")
+    @ApiResponse(responseCode = "429", description = "Too many requests")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
@@ -51,13 +56,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout user", description = "Revokes all refresh tokens for the authenticated user")
+    @Operation(summary = "Logout user", description = "Revokes all refresh tokens and blacklists the access token")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponse(responseCode = "204", description = "Logout successful")
     @ApiResponse(responseCode = "403", description = "Not authenticated")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorizationHeader) {
         JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        authService.logout(principal.userId());
+        String accessToken = authorizationHeader.substring(7);
+        authService.logout(principal.userId(), accessToken);
         return ResponseEntity.noContent().build();
     }
 }
