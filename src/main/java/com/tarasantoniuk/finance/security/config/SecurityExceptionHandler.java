@@ -5,6 +5,7 @@ import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledExceptio
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,12 @@ public class SecurityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidTokenException(
             InvalidTokenException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ErrorResponse> handleRequestNotPermitted(
+            RequestNotPermitted ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please try again later.", request);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(
