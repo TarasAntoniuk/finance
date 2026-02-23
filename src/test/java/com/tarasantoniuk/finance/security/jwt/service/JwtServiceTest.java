@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.jwt.service;
 
+import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.security.jwt.JwtProperties;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
@@ -29,6 +30,7 @@ class JwtServiceTest {
         jwtProperties.setSecret(VALID_SECRET);
         jwtProperties.setAccessTokenExpiration(900000L);
         jwtProperties.setRefreshTokenExpiration(604800000L);
+        jwtProperties.setIssuer("finance-api");
 
         jwtService = new JwtService(jwtProperties);
 
@@ -88,6 +90,57 @@ class JwtServiceTest {
         assertNotNull(claims.getId());
         assertNotNull(claims.getIssuedAt());
         assertNotNull(claims.getExpiration());
+    }
+
+    @Test
+    void generateAccessToken_ShouldContainIssuerClaim() {
+        String token = jwtService.generateAccessToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertEquals("finance-api", claims.getIssuer());
+    }
+
+    @Test
+    void generateRefreshToken_ShouldContainIssuerClaim() {
+        String token = jwtService.generateRefreshToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertEquals("finance-api", claims.getIssuer());
+    }
+
+    @Test
+    void extractClaims_WhenWrongIssuer_ShouldThrowException() {
+        // Build a token with a different issuer
+        SecretKey key = Keys.hmacShaKeyFor(VALID_SECRET.getBytes(StandardCharsets.UTF_8));
+        String wrongIssuerToken = Jwts.builder()
+                .issuer("other-service")
+                .subject("1")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 900000))
+                .signWith(key)
+                .compact();
+
+        assertFalse(jwtService.isTokenValid(wrongIssuerToken));
+    }
+
+    @Test
+    void generateAccessToken_WhenUserHasOrganization_ShouldContainOrgIdClaim() {
+        Organization org = new Organization();
+        org.setId(42L);
+        user.setOrganization(org);
+
+        String token = jwtService.generateAccessToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertEquals(42L, claims.get("orgId", Long.class));
+    }
+
+    @Test
+    void generateAccessToken_WhenUserHasNoOrganization_ShouldNotContainOrgIdClaim() {
+        String token = jwtService.generateAccessToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertNull(claims.get("orgId", Long.class));
     }
 
     // ========== GENERATE REFRESH TOKEN ==========

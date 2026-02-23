@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.security.jwt;
 
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
+import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.impl.DefaultClaims;
@@ -30,6 +31,9 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
 
     @Mock
     private FilterChain filterChain;
@@ -96,12 +100,14 @@ class JwtAuthenticationFilterTest {
         when(jwtService.isTokenValid("valid-token")).thenReturn(true);
 
         Map<String, Object> claimMap = new HashMap<>();
+        claimMap.put("jti", "test-jti");
         claimMap.put("sub", "1");
         claimMap.put("email", "test@example.com");
         claimMap.put("role", "USER");
         Claims claims = new DefaultClaims(claimMap);
 
         when(jwtService.extractClaims("valid-token")).thenReturn(claims);
+        when(tokenBlacklistService.isBlacklisted("test-jti")).thenReturn(false);
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -112,6 +118,30 @@ class JwtAuthenticationFilterTest {
         assertEquals(1L, principal.userId());
         assertEquals("test@example.com", principal.email());
         assertEquals(UserRole.USER, principal.role());
+        assertNull(principal.organizationId());
+    }
+
+    @Test
+    void doFilterInternal_WhenTokenBlacklisted_ShouldNotSetAuthentication() throws ServletException, IOException {
+        request.setRequestURI("/api/v1/currencies");
+        request.addHeader("Authorization", "Bearer blacklisted-token");
+
+        when(jwtService.isTokenValid("blacklisted-token")).thenReturn(true);
+
+        Map<String, Object> claimMap = new HashMap<>();
+        claimMap.put("jti", "blacklisted-jti");
+        claimMap.put("sub", "1");
+        claimMap.put("email", "test@example.com");
+        claimMap.put("role", "USER");
+        Claims claims = new DefaultClaims(claimMap);
+
+        when(jwtService.extractClaims("blacklisted-token")).thenReturn(claims);
+        when(tokenBlacklistService.isBlacklisted("blacklisted-jti")).thenReturn(true);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test
