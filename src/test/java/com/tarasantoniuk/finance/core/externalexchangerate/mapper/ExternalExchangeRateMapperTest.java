@@ -1,12 +1,15 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateResponseDto;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -17,7 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class ExternalExchangeRateMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({ExternalExchangeRateMapperImpl.class, CurrencyMapperImpl.class})
+class ExternalExchangeRateMapperTest {
 
     @Autowired
     private ExternalExchangeRateMapper exchangeRateMapper;

@@ -1,12 +1,15 @@
 package com.tarasantoniuk.finance.core.country.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.country.dto.CountryRequestDto;
 import com.tarasantoniuk.finance.core.country.dto.CountryResponseDto;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -15,7 +18,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class CountryMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({CountryMapperImpl.class, CurrencyMapperImpl.class})
+class CountryMapperTest {
 
     @Autowired
     private CountryMapper countryMapper;

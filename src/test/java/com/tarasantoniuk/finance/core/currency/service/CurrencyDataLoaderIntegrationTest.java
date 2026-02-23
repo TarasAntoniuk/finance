@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.currency.service;
 
+import com.tarasantoniuk.finance.banking.common.TestDataCleanerBanking;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -18,23 +20,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 //@SpringBootTest
 //@Testcontainers
 @DisplayName("Currency Data Loader Integration Tests")
+@Transactional
 class CurrencyDataLoaderIntegrationTest extends BaseIntegrationTest {
-
-    @Autowired
-    private CurrencyRepository currencyRepository;
 
     @Autowired
     private ExternalExchangeRateRepository externalExchangeRateRepository;
 
     @Autowired
+    private CurrencyRepository currencyRepository;
+
+    @Autowired
     private CurrencyDataLoader currencyDataLoader;
+
+    @Autowired
+    private TestDataCleanerBanking cleanerBanking;
 
     @BeforeEach
     void setUp() {
-
-        externalExchangeRateRepository.deleteAll();
-
-        currencyRepository.deleteAll();
+        // Banking data must be cleaned first (transaction_events reference currencies via FK)
+        cleanerBanking.cleanAll();
+        externalExchangeRateRepository.deleteAllInBatch();
+        currencyRepository.deleteAllInBatch();
     }
 
     @Test

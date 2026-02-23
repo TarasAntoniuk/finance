@@ -5,13 +5,15 @@ import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
 import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,7 +21,9 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BankPaymentMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({BankPaymentMapperImpl.class})
+class BankPaymentMapperTest {
 
     @Autowired
     private BankPaymentMapper mapper;
