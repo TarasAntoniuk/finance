@@ -38,11 +38,18 @@ public class JwtService {
     }
 
     public String generateAccessToken(User user) {
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .id(UUID.randomUUID().toString())
+                .issuer(jwtProperties.getIssuer())
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
+                .claim("role", user.getRole().name());
+
+        if (user.getOrganization() != null) {
+            builder.claim("orgId", user.getOrganization().getId());
+        }
+
+        return builder
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpiration()))
                 .signWith(secretKey)
@@ -52,6 +59,7 @@ public class JwtService {
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
+                .issuer(jwtProperties.getIssuer())
                 .subject(user.getId().toString())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getRefreshTokenExpiration()))
@@ -62,6 +70,7 @@ public class JwtService {
     public Claims extractClaims(String token) {
         return Jwts.parser()
                 .verifyWith(secretKey)
+                .requireIssuer(jwtProperties.getIssuer())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

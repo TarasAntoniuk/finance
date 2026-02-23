@@ -6,13 +6,19 @@ import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.entity.RefreshToken;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
+import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
+import com.tarasantoniuk.finance.security.auth.exception.AccountLockedException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.audit.ClientIpResolver;
+import io.jsonwebtoken.Claims;
+import org.springframework.context.ApplicationEventPublisher;
+import io.jsonwebtoken.impl.DefaultClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,6 +51,15 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private ClientIpResolver clientIpResolver;
+
     @InjectMocks
     private AuthService authService;
 
@@ -61,11 +78,11 @@ class AuthServiceTest {
 
         registerRequest = new RegisterRequest();
         registerRequest.setEmail("test@example.com");
-        registerRequest.setPassword("password123");
+        registerRequest.setPassword("SecureP@ss1");
 
         loginRequest = new LoginRequest();
         loginRequest.setEmail("test@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
     }
 
     // ========== REGISTER ==========
@@ -73,7 +90,7 @@ class AuthServiceTest {
     @Test
     void register_WhenValidRequest_ShouldReturnAuthResponse() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+        when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -92,7 +109,7 @@ class AuthServiceTest {
     @Test
     void register_ShouldSaveUserWithCorrectFields() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+        when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -125,7 +142,7 @@ class AuthServiceTest {
     @Test
     void login_WhenValidCredentials_ShouldReturnAuthResponse() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
         when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
@@ -154,12 +171,14 @@ class AuthServiceTest {
     @Test
     void login_WhenWrongPassword_ShouldThrowInvalidCredentialsException() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(false);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(false);
 
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
                 () -> authService.login(loginRequest));
 
         assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals(1, user.getFailedLoginAttempts());
+        verify(userRepository).save(user);
         verify(refreshTokenRepository, never()).revokeAllByUserId(anyLong());
     }
 
@@ -173,6 +192,60 @@ class AuthServiceTest {
 
         assertEquals("Account is disabled", exception.getMessage());
         verify(refreshTokenRepository, never()).revokeAllByUserId(anyLong());
+    }
+
+    // ========== LOGIN - ACCOUNT LOCKOUT ==========
+
+    @Test
+    void login_WhenAccountLocked_ShouldThrowAccountLockedException() {
+        user.setLockedUntil(LocalDateTime.now().plusMinutes(30));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    void login_WhenMaxFailedAttemptsReached_ShouldLockAccount() {
+        user.setFailedLoginAttempts(4);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(false);
+
+        assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
+        assertEquals(5, user.getFailedLoginAttempts());
+        assertNotNull(user.getLockedUntil());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void login_WhenSuccessfulAfterFailedAttempts_ShouldResetCounter() {
+        user.setFailedLoginAttempts(3);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        authService.login(loginRequest);
+
+        assertEquals(0, user.getFailedLoginAttempts());
+        assertNull(user.getLockedUntil());
+    }
+
+    @Test
+    void login_WhenLockExpired_ShouldAllowLogin() {
+        user.setLockedUntil(LocalDateTime.now().minusMinutes(1));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        AuthResponse response = authService.login(loginRequest);
+
+        assertNotNull(response);
     }
 
     // ========== REFRESH ==========
@@ -288,12 +361,110 @@ class AuthServiceTest {
         assertFalse(newToken.isRevoked());
     }
 
+    // ========== REFRESH - REUSE DETECTION ==========
+
+    @Test
+    void refresh_WhenTokenAlreadyUsed_ShouldRevokeAllAndThrow() {
+        RefreshToken storedToken = new RefreshToken();
+        storedToken.setUser(user);
+        storedToken.setRevoked(false);
+        storedToken.setUsed(true);
+        storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        when(jwtService.isTokenValid("reused-token")).thenReturn(true);
+        when(jwtService.hashToken("reused-token")).thenReturn("hashed-token");
+        when(refreshTokenRepository.findByTokenHash("hashed-token")).thenReturn(Optional.of(storedToken));
+
+        InvalidTokenException exception = assertThrows(InvalidTokenException.class,
+                () -> authService.refresh("reused-token"));
+
+        assertEquals("Token reuse detected", exception.getMessage());
+        verify(refreshTokenRepository).revokeAllByUserId(user.getId());
+    }
+
+    @Test
+    void refresh_WhenValidToken_ShouldMarkAsUsed() {
+        RefreshToken storedToken = new RefreshToken();
+        storedToken.setUser(user);
+        storedToken.setRevoked(false);
+        storedToken.setUsed(false);
+        storedToken.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        when(jwtService.isTokenValid("raw-token")).thenReturn(true);
+        when(jwtService.hashToken("raw-token")).thenReturn("hashed");
+        when(refreshTokenRepository.findByTokenHash("hashed")).thenReturn(Optional.of(storedToken));
+        when(jwtService.generateAccessToken(user)).thenReturn("new-access");
+        when(jwtService.generateRefreshToken(user)).thenReturn("new-refresh");
+        when(jwtService.hashToken("new-refresh")).thenReturn("new-hashed");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        authService.refresh("raw-token");
+
+        assertTrue(storedToken.isUsed());
+        assertTrue(storedToken.isRevoked());
+    }
+
+    // ========== CHANGE PASSWORD ==========
+
+    @Test
+    void changePassword_WhenValidCurrentPassword_ShouldUpdateAndRevokeTokens() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldP@ss1", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.encode("NewP@ss1")).thenReturn("newEncodedPassword");
+
+        authService.changePassword(1L, "OldP@ss1", "NewP@ss1");
+
+        assertEquals("newEncodedPassword", user.getPassword());
+        verify(userRepository).save(user);
+        verify(refreshTokenRepository).revokeAllByUserId(1L);
+    }
+
+    @Test
+    void changePassword_WhenWrongCurrentPassword_ShouldThrowInvalidCredentials() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("WrongP@ss1", "encodedPassword")).thenReturn(false);
+
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                () -> authService.changePassword(1L, "WrongP@ss1", "NewP@ss1"));
+
+        assertEquals("Current password is incorrect", exception.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void changePassword_WhenUserNotFound_ShouldThrowInvalidCredentials() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.changePassword(99L, "OldP@ss1", "NewP@ss1"));
+    }
+
     // ========== LOGOUT ==========
 
     @Test
-    void logout_ShouldRevokeAllUserTokens() {
-        authService.logout(1L);
+    void logout_ShouldBlacklistAccessTokenAndRevokeAllRefreshTokens() {
+        Map<String, Object> claimMap = new HashMap<>();
+        claimMap.put("jti", "test-jti");
+        Claims claims = new DefaultClaims(claimMap);
 
+        when(jwtService.extractClaims("access-token")).thenReturn(claims);
+
+        authService.logout(1L, "test@example.com", "access-token");
+
+        verify(tokenBlacklistService).blacklist("test-jti");
+        verify(refreshTokenRepository).revokeAllByUserId(1L);
+    }
+
+    @Test
+    void logout_WhenJtiIsNull_ShouldStillRevokeRefreshTokens() {
+        Map<String, Object> claimMap = new HashMap<>();
+        Claims claims = new DefaultClaims(claimMap);
+
+        when(jwtService.extractClaims("access-token")).thenReturn(claims);
+
+        authService.logout(1L, "test@example.com", "access-token");
+
+        verify(tokenBlacklistService, never()).blacklist(anyString());
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 }

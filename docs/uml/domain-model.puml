@@ -1,7 +1,276 @@
 @startuml
 
+class com.tarasantoniuk.finance.banking.bank.entity.Bank {
+	{field} +address : String
+	{field} +id : Long
+	{field} +isActive : Boolean
+	{field} +name : String
+	{field} +phoneNumber : String
+	{field} +swiftCode : String
+	{field} +website : String
+}
 
 
+class com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount {
+	{field} +accountName : String
+	{field} +accountNumber : String
+	{field} +holderId : Long
+	{field} +holderType : com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType
+	{field} +id : Long
+	{field} +isDefault : Boolean
+	{field} +status : com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus
+}
+
+
+class com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot {
+	{field} +closingBalance : java.math.BigDecimal
+	{field} +createdAt : java.time.LocalDateTime
+	{field} +creditTurnover : java.math.BigDecimal
+	{field} +debitTurnover : java.math.BigDecimal
+	{field} +eventsCount : Integer
+	{field} +id : Long
+	{field} +lastEventId : Long
+	{field} +openingBalance : java.math.BigDecimal
+	{field} +snapshotDateTime : java.time.LocalDateTime
+	{field} +updatedAt : java.time.LocalDateTime
+	{method} #onCreate () : void
+	{method} #onUpdate () : void
+}
+
+
+class com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent {
+	{field} +amount : java.math.BigDecimal
+	{field} +balanceAfter : java.math.BigDecimal
+	{field} +createdAt : java.time.LocalDateTime
+	{field} +description : String
+	{field} +documentId : Long
+	{field} +documentType : String
+	{field} +id : Long
+	{field} +isReversed : Boolean
+	{field} +reversedByEventId : Long
+	{field} +transactionDateTime : java.time.LocalDateTime
+	{field} +transactionType : com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType
+	{method} #onCreate () : void
+}
+
+
+class com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment {
+	{field} +id : Long
+	{field} +outgoingDocumentNumber : String
+	{field} +paymentType : com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType
+	{method} +getTransactionType () : com.tarasantoniuk.finance.banking.common.enums.TransactionType
+}
+
+
+class com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt {
+	{field} +id : Long
+	{field} +incomingDocumentNumber : String
+	{field} +receiptType : com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType
+	{method} +getTransactionType () : com.tarasantoniuk.finance.banking.common.enums.TransactionType
+}
+
+
+abstract class com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument {
+	{field} +amount : java.math.BigDecimal
+	{field} +bankCommission : java.math.BigDecimal
+	{field} +bankReference : String
+	{field} +externalTransactionId : String
+	{field} +paymentPurpose : String
+	{field} +paymentReference : String
+	{field} +valueDate : java.time.LocalDate
+	{method} +getTotalAmount () : java.math.BigDecimal
+	{method}  {abstract} +getTransactionType () : com.tarasantoniuk.finance.banking.common.enums.TransactionType
+	{method} +hasBankCommission () : boolean
+}
+
+
+abstract class com.tarasantoniuk.finance.common.document.entity.BaseDocument {
+	{field} +cancelledAt : java.time.LocalDateTime
+	{field} +description : String
+	{field} +postedAt : java.time.LocalDateTime
+	{field} +status : com.tarasantoniuk.finance.common.document.enums.DocumentStatus
+	{field} +transactionDateTime : java.time.LocalDateTime
+	{method} +isCancelled () : boolean
+	{method} +isMutable () : boolean
+	{method} +isPosted () : boolean
+	{method} +markAsCancelled () : void
+	{method} +markAsPosted () : void
+}
+
+
+abstract class com.tarasantoniuk.finance.common.entity.BaseEntity {
+	{field} +createdAt : java.time.LocalDateTime
+	{field} +updatedAt : java.time.LocalDateTime
+	{method} #onCreate () : void
+	{method} #onUpdate () : void
+}
+
+
+class com.tarasantoniuk.finance.common.snapshot.entity.SnapshotValidity {
+	{field} +causedByEventId : Long
+	{field} +createdAt : java.time.LocalDateTime
+	{field} +entityId : Long
+	{field} +id : Long
+	{field} +invalidFromDate : java.time.LocalDate
+	{field} +invalidationReason : String
+	{field} +snapshotType : String
+	{field} +status : com.tarasantoniuk.finance.common.snapshot.enums.ValidityStatus
+	{field} +updatedAt : java.time.LocalDateTime
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy {
+	{field} +depreciationMethod : String
+	{field} +fiscalYearStartMonth : Integer
+	{field} +id : Long
+	{field} +inventoryValuationMethod : String
+	{field} +isActive : Boolean
+	{field} +notes : String
+	{field} +revenueRecognitionMethod : String
+	{field} +vatAccountingMethod : String
+	{field} +year : Integer
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.core.counterparty.entity.Counterparty {
+	{field} +address : String
+	{field} +code : String
+	{field} +email : String
+	{field} +id : Long
+	{field} +isActive : Boolean
+	{field} +name : String
+	{field} +notes : String
+	{field} +phone : String
+	{field} +taxNumber : String
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+enum com.tarasantoniuk.finance.core.counterparty.entity.Counterparty$CounterpartyType {
+	{field} +BOTH
+	{field} +CUSTOMER
+	{field} +SUPPLIER
+}
+
+
+class com.tarasantoniuk.finance.core.country.entity.Country {
+	{field} +id : Long
+	{field} +isoCode : String
+	{field} +name : String
+	{field} +phoneCode : String
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.core.currency.entity.Currency {
+	{field} +code : String
+	{field} +id : Long
+	{field} +isActive : Boolean
+	{field} +minorUnit : Integer
+	{field} +name : String
+	{field} +numericCode : String
+	{field} +symbol : String
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate {
+	{field} +exchangeDate : java.time.LocalDate
+	{field} +id : Long
+	{field} +isActive : Boolean
+	{field} +rate : java.math.BigDecimal
+	{field} +source : String
+	{field} +sourceUrl : String
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.core.organization.entity.Organization {
+	{field} +address : String
+	{field} +email : String
+	{field} +id : Long
+	{field} +name : String
+	{field} +phone : String
+	{field} +registrationNumber : String
+	{field} +vatNumber : String
+	{method} +equals ( paramObject1 : Object ) : boolean
+	{method} +hashCode () : int
+	{method} +toString () : String
+}
+
+
+class com.tarasantoniuk.finance.security.token.entity.RefreshToken {
+	{field} +expiresAt : java.time.LocalDateTime
+	{field} +id : Long
+	{field} +revoked : boolean
+	{field} +tokenHash : String
+	{field} +used : boolean
+}
+
+
+class com.tarasantoniuk.finance.security.user.entity.User {
+	{field} +email : String
+	{field} +id : Long
+	{field} +isActive : Boolean
+	{field} +password : String
+	{field} +role : com.tarasantoniuk.finance.security.user.enums.UserRole
+}
+
+
+
+
+com.tarasantoniuk.finance.banking.bank.entity.Bank -->  com.tarasantoniuk.finance.core.counterparty.entity.Counterparty : counterparty
+com.tarasantoniuk.finance.banking.bank.entity.Bank -->  com.tarasantoniuk.finance.core.country.entity.Country : country
+com.tarasantoniuk.finance.banking.bank.entity.Bank --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount -->  com.tarasantoniuk.finance.banking.bank.entity.Bank : bank
+com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot -->  com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount : bankAccount
+com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot -->  com.tarasantoniuk.finance.core.organization.entity.Organization : organization
+com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent -->  com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount : bankAccount
+com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent -->  com.tarasantoniuk.finance.core.organization.entity.Organization : organization
+com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment --|>  com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument
+com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt --|>  com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument
+com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument -->  com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount : account
+com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument -->  com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount : counterpartyBankAccount
+com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument -->  com.tarasantoniuk.finance.core.counterparty.entity.Counterparty : counterparty
+com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument --|>  com.tarasantoniuk.finance.common.document.entity.BaseDocument
+com.tarasantoniuk.finance.common.document.entity.BaseDocument -->  com.tarasantoniuk.finance.core.organization.entity.Organization : organization
+com.tarasantoniuk.finance.common.document.entity.BaseDocument --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy -->  com.tarasantoniuk.finance.core.organization.entity.Organization : organization
+com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.counterparty.entity.Counterparty -->  com.tarasantoniuk.finance.core.counterparty.entity.Counterparty$CounterpartyType : type
+com.tarasantoniuk.finance.core.counterparty.entity.Counterparty -->  com.tarasantoniuk.finance.core.country.entity.Country : country
+com.tarasantoniuk.finance.core.counterparty.entity.Counterparty --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.country.entity.Country -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currency
+com.tarasantoniuk.finance.core.country.entity.Country --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.currency.entity.Currency --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currencyFrom
+com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate -->  com.tarasantoniuk.finance.core.currency.entity.Currency : currencyTo
+com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.core.organization.entity.Organization -->  com.tarasantoniuk.finance.core.country.entity.Country : country
+com.tarasantoniuk.finance.core.organization.entity.Organization --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.security.token.entity.RefreshToken -->  com.tarasantoniuk.finance.security.user.entity.User : user
+com.tarasantoniuk.finance.security.token.entity.RefreshToken --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.security.user.entity.User --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 
 
 @enduml

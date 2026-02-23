@@ -33,6 +33,9 @@ public class RefreshToken extends BaseEntity {
     @Column(nullable = false)
     private boolean revoked = false;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean used = false;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
@@ -43,4 +46,6 @@ public class RefreshToken extends BaseEntity {
     public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
     public boolean isRevoked() { return revoked; }
     public void setRevoked(boolean revoked) { this.revoked = revoked; }
+    public boolean isUsed() { return used; }
+    public void setUsed(boolean used) { this.used = used; }
 }
