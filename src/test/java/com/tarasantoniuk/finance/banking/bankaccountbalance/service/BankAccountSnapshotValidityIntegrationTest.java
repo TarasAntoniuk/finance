@@ -22,7 +22,6 @@ import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -109,12 +108,6 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
         // Create banking test data
         bank = factoryBanking.createPrivatBank(country);
         bankAccount = factoryBanking.createOrganizationBankAccount(bank, currency, organization);
-    }
-
-    @AfterEach
-    void tearDown() {
-        cleanerBanking.cleanAll();
-        cleanerCore.cleanAll();
     }
 
     @Nested

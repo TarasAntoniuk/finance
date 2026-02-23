@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.common.TestDataCleaner;
 import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;

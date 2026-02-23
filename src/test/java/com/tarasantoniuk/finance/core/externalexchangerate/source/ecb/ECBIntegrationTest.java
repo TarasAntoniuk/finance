@@ -37,21 +37,17 @@ class ECBIntegrationTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        rateRepo.deleteAll();
-        currencyRepo.deleteAll();
+        // Use deleteAllInBatch for immediate SQL DELETE (avoids Hibernate flush-order issues)
+        rateRepo.deleteAllInBatch();
+        currencyRepo.deleteAllInBatch();
 
         currencyRepo.save(createCurrency("EUR", "Euro"));
         currencyRepo.save(createCurrency("USD", "US Dollar"));
         currencyRepo.save(createCurrency("GBP", "British Pound"));
     }
 
-    @BeforeEach
-    void cleanDatabase() {
-        rateRepo.flush();
-        currencyRepo.flush();
-        rateRepo.deleteAllInBatch();
-        currencyRepo.deleteAllInBatch();
-    }
+    // Removed redundant second @BeforeEach cleanDatabase() — setUp() already handles cleanup
+    // and @Transactional rolls back after each test
 
     @Test
     void syncDaily_EndToEnd_Success() {
