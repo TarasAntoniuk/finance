@@ -55,7 +55,8 @@ public class SecurityConfig {
                         "/v3/api-docs",
                         "/api-docs/**",
                         "/api-docs",
-                        "/webjars/**"
+                        "/webjars/**",
+                        "/actuator/health"
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
