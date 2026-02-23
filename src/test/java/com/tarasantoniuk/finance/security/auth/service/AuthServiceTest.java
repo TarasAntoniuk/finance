@@ -10,11 +10,14 @@ import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
+import com.tarasantoniuk.finance.security.auth.exception.AccountLockedException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.audit.ClientIpResolver;
 import io.jsonwebtoken.Claims;
+import org.springframework.context.ApplicationEventPublisher;
 import io.jsonwebtoken.impl.DefaultClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +53,12 @@ class AuthServiceTest {
 
     @Mock
     private TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private ClientIpResolver clientIpResolver;
 
     @InjectMocks
     private AuthService authService;
@@ -168,6 +177,8 @@ class AuthServiceTest {
                 () -> authService.login(loginRequest));
 
         assertEquals("Invalid email or password", exception.getMessage());
+        assertEquals(1, user.getFailedLoginAttempts());
+        verify(userRepository).save(user);
         verify(refreshTokenRepository, never()).revokeAllByUserId(anyLong());
     }
 
@@ -181,6 +192,60 @@ class AuthServiceTest {
 
         assertEquals("Account is disabled", exception.getMessage());
         verify(refreshTokenRepository, never()).revokeAllByUserId(anyLong());
+    }
+
+    // ========== LOGIN - ACCOUNT LOCKOUT ==========
+
+    @Test
+    void login_WhenAccountLocked_ShouldThrowAccountLockedException() {
+        user.setLockedUntil(LocalDateTime.now().plusMinutes(30));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    void login_WhenMaxFailedAttemptsReached_ShouldLockAccount() {
+        user.setFailedLoginAttempts(4);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(false);
+
+        assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
+        assertEquals(5, user.getFailedLoginAttempts());
+        assertNotNull(user.getLockedUntil());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void login_WhenSuccessfulAfterFailedAttempts_ShouldResetCounter() {
+        user.setFailedLoginAttempts(3);
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        authService.login(loginRequest);
+
+        assertEquals(0, user.getFailedLoginAttempts());
+        assertNull(user.getLockedUntil());
+    }
+
+    @Test
+    void login_WhenLockExpired_ShouldAllowLogin() {
+        user.setLockedUntil(LocalDateTime.now().minusMinutes(1));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.getRefreshTokenExpiration()).thenReturn(604800000L);
+
+        AuthResponse response = authService.login(loginRequest);
+
+        assertNotNull(response);
     }
 
     // ========== REFRESH ==========
@@ -349,7 +414,7 @@ class AuthServiceTest {
 
         when(jwtService.extractClaims("access-token")).thenReturn(claims);
 
-        authService.logout(1L, "access-token");
+        authService.logout(1L, "test@example.com", "access-token");
 
         verify(tokenBlacklistService).blacklist("test-jti");
         verify(refreshTokenRepository).revokeAllByUserId(1L);
@@ -362,7 +427,7 @@ class AuthServiceTest {
 
         when(jwtService.extractClaims("access-token")).thenReturn(claims);
 
-        authService.logout(1L, "access-token");
+        authService.logout(1L, "test@example.com", "access-token");
 
         verify(tokenBlacklistService, never()).blacklist(anyString());
         verify(refreshTokenRepository).revokeAllByUserId(1L);
