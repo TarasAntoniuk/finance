@@ -148,6 +148,55 @@ class AuthControllerTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));
     }
 
+    // ========== LOGIN - ACCOUNT LOCKOUT ==========
+
+    @Test
+    void login_WhenAccountLocked_ShouldReturn403() throws Exception {
+        registerUser("locked@example.com", "password123");
+
+        // Lock the account
+        User user = userRepository.findByEmail("locked@example.com").orElseThrow();
+        user.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(30));
+        user.setFailedLoginAttempts(5);
+        userRepository.save(user);
+
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("locked@example.com");
+        loginRequest.setPassword("password123");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("Account is locked")));
+    }
+
+    @Test
+    void login_WhenMaxFailedAttempts_ShouldLockAccount() throws Exception {
+        registerUser("lockme@example.com", "password123");
+
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("lockme@example.com");
+        loginRequest.setPassword("wrongpassword");
+
+        // 4 failed attempts - should still get 401
+        for (int i = 0; i < 4; i++) {
+            mockMvc.perform(post("/api/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(loginRequest)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        // 5th failed attempt - account gets locked, should get 403
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("Account locked for")));
+    }
+
     // ========== REFRESH ==========
 
     @Test
@@ -195,9 +244,9 @@ class AuthControllerTest extends BaseIntegrationTest {
     }
 
     @Test
-    void logout_WhenNoToken_ShouldReturn403() throws Exception {
+    void logout_WhenNoToken_ShouldReturn401() throws Exception {
         mockMvc.perform(post("/api/auth/logout"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ========== LOGIN - DISABLED ACCOUNT ==========
@@ -294,9 +343,9 @@ class AuthControllerTest extends BaseIntegrationTest {
     // ========== ROLE-BASED ACCESS CONTROL ==========
 
     @Test
-    void getEndpoint_WhenUnauthenticated_ShouldReturn403() throws Exception {
+    void getEndpoint_WhenUnauthenticated_ShouldReturn401() throws Exception {
         mockMvc.perform(get("/api/v1/currencies"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -376,7 +425,7 @@ class AuthControllerTest extends BaseIntegrationTest {
     }
 
     @Test
-    void logout_WhenAccessTokenUsedAfterLogout_ShouldReturn403() throws Exception {
+    void logout_WhenAccessTokenUsedAfterLogout_ShouldReturn401() throws Exception {
         AuthResponse tokens = registerUser("blacklist@example.com", "password123");
 
         // Logout - blacklists the access token
@@ -384,10 +433,10 @@ class AuthControllerTest extends BaseIntegrationTest {
                         .header("Authorization", "Bearer " + tokens.getAccessToken()))
                 .andExpect(status().isNoContent());
 
-        // Try to use blacklisted access token - should fail
+        // Try to use blacklisted access token - should fail with 401 (no authentication)
         mockMvc.perform(get("/api/v1/currencies")
                         .header("Authorization", "Bearer " + tokens.getAccessToken()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

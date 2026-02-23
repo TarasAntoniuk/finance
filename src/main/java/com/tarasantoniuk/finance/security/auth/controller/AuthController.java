@@ -63,7 +63,7 @@ public class AuthController {
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorizationHeader) {
         JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String accessToken = authorizationHeader.substring(7);
-        authService.logout(principal.userId(), accessToken);
+        authService.logout(principal.userId(), principal.email(), accessToken);
         return ResponseEntity.noContent().build();
     }
 }
