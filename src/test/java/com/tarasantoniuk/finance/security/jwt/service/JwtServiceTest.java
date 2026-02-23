@@ -30,6 +30,7 @@ class JwtServiceTest {
         jwtProperties.setSecret(VALID_SECRET);
         jwtProperties.setAccessTokenExpiration(900000L);
         jwtProperties.setRefreshTokenExpiration(604800000L);
+        jwtProperties.setIssuer("finance-api");
 
         jwtService = new JwtService(jwtProperties);
 
@@ -89,6 +90,37 @@ class JwtServiceTest {
         assertNotNull(claims.getId());
         assertNotNull(claims.getIssuedAt());
         assertNotNull(claims.getExpiration());
+    }
+
+    @Test
+    void generateAccessToken_ShouldContainIssuerClaim() {
+        String token = jwtService.generateAccessToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertEquals("finance-api", claims.getIssuer());
+    }
+
+    @Test
+    void generateRefreshToken_ShouldContainIssuerClaim() {
+        String token = jwtService.generateRefreshToken(user);
+        Claims claims = jwtService.extractClaims(token);
+
+        assertEquals("finance-api", claims.getIssuer());
+    }
+
+    @Test
+    void extractClaims_WhenWrongIssuer_ShouldThrowException() {
+        // Build a token with a different issuer
+        SecretKey key = Keys.hmacShaKeyFor(VALID_SECRET.getBytes(StandardCharsets.UTF_8));
+        String wrongIssuerToken = Jwts.builder()
+                .issuer("other-service")
+                .subject("1")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 900000))
+                .signWith(key)
+                .compact();
+
+        assertFalse(jwtService.isTokenValid(wrongIssuerToken));
     }
 
     @Test
