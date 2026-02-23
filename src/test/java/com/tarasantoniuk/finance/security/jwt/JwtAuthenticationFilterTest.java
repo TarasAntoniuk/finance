@@ -118,6 +118,7 @@ class JwtAuthenticationFilterTest {
         assertEquals(1L, principal.userId());
         assertEquals("test@example.com", principal.email());
         assertEquals(UserRole.USER, principal.role());
+        assertNull(principal.organizationId());
     }
 
     @Test

@@ -38,11 +38,17 @@ public class JwtService {
     }
 
     public String generateAccessToken(User user) {
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
+                .claim("role", user.getRole().name());
+
+        if (user.getOrganization() != null) {
+            builder.claim("orgId", user.getOrganization().getId());
+        }
+
+        return builder
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpiration()))
                 .signWith(secretKey)
