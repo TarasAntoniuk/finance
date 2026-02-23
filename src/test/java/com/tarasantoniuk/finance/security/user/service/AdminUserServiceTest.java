@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.user.service;
 
+import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.security.user.dto.UserDetailDto;
@@ -101,6 +102,30 @@ class AdminUserServiceTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> adminUserService.setActive(99L, false));
+    }
+
+    @Test
+    void getUser_WhenUserHasOrganization_ShouldReturnOrgId() {
+        User user = createUser(1L, "user@example.com", UserRole.USER, true);
+        Organization org = new Organization();
+        org.setId(42L);
+        user.setOrganization(org);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UserDetailDto dto = adminUserService.getUser(1L);
+
+        assertEquals(42L, dto.getOrganizationId());
+    }
+
+    @Test
+    void getUser_WhenUserHasNoOrganization_ShouldReturnNullOrgId() {
+        User user = createUser(1L, "user@example.com", UserRole.USER, true);
+        user.setOrganization(null);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UserDetailDto dto = adminUserService.getUser(1L);
+
+        assertNull(dto.getOrganizationId());
     }
 
     private User createUser(Long id, String email, UserRole role, boolean active) {
