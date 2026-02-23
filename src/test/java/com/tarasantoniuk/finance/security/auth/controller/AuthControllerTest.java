@@ -2,13 +2,14 @@ package com.tarasantoniuk.finance.security.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
-import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
+import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @AutoConfigureMockMvc
 class AuthControllerTest extends BaseIntegrationTest {
+
+    private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,24 +48,27 @@ class AuthControllerTest extends BaseIntegrationTest {
     // ========== REGISTER ==========
 
     @Test
-    void register_WhenValidRequest_ShouldReturn201WithTokens() throws Exception {
+    void register_WhenValidRequest_ShouldReturn201WithAccessTokenAndRefreshCookie() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("new@example.com");
-        request.setPassword("password123");
+        request.setPassword("SecureP@ss1");
 
-        mockMvc.perform(post("/api/auth/register")
+        MvcResult result = mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andReturn();
+
+        assertRefreshTokenCookiePresent(result);
     }
 
     @Test
     void register_WhenDuplicateEmail_ShouldReturn409() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("duplicate@example.com");
-        request.setPassword("password123");
+        request.setPassword("SecureP@ss1");
 
         // Register first time
         mockMvc.perform(post("/api/auth/register")
@@ -82,7 +88,7 @@ class AuthControllerTest extends BaseIntegrationTest {
     void register_WhenInvalidEmail_ShouldReturn400() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("not-an-email");
-        request.setPassword("password123");
+        request.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -102,27 +108,42 @@ class AuthControllerTest extends BaseIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void register_WhenWeakPassword_ShouldReturn400() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("valid@example.com");
+        request.setPassword("alllowercase1");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
     // ========== LOGIN ==========
 
     @Test
-    void login_WhenValidCredentials_ShouldReturn200WithTokens() throws Exception {
-        registerUser("login@example.com", "password123");
+    void login_WhenValidCredentials_ShouldReturn200WithAccessTokenAndRefreshCookie() throws Exception {
+        registerUser("login@example.com", "SecureP@ss1");
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("login@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
 
-        mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andReturn();
+
+        assertRefreshTokenCookiePresent(result);
     }
 
     @Test
     void login_WhenWrongPassword_ShouldReturn401() throws Exception {
-        registerUser("wrongpass@example.com", "password123");
+        registerUser("wrongpass@example.com", "SecureP@ss1");
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("wrongpass@example.com");
@@ -139,7 +160,7 @@ class AuthControllerTest extends BaseIntegrationTest {
     void login_WhenNonExistentEmail_ShouldReturn401() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("nonexistent@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -152,7 +173,7 @@ class AuthControllerTest extends BaseIntegrationTest {
 
     @Test
     void login_WhenAccountLocked_ShouldReturn403() throws Exception {
-        registerUser("locked@example.com", "password123");
+        registerUser("locked@example.com", "SecureP@ss1");
 
         // Lock the account
         User user = userRepository.findByEmail("locked@example.com").orElseThrow();
@@ -162,7 +183,7 @@ class AuthControllerTest extends BaseIntegrationTest {
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("locked@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,7 +195,7 @@ class AuthControllerTest extends BaseIntegrationTest {
 
     @Test
     void login_WhenMaxFailedAttempts_ShouldLockAccount() throws Exception {
-        registerUser("lockme@example.com", "password123");
+        registerUser("lockme@example.com", "SecureP@ss1");
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("lockme@example.com");
@@ -197,50 +218,116 @@ class AuthControllerTest extends BaseIntegrationTest {
                         org.hamcrest.Matchers.containsString("Account locked for")));
     }
 
+    // ========== CHANGE PASSWORD ==========
+
+    @Test
+    void changePassword_WhenValidRequest_ShouldReturn204() throws Exception {
+        TokenPair tokens = registerUser("changepass@example.com", "SecureP@ss1");
+
+        String body = objectMapper.writeValueAsString(java.util.Map.of(
+                "currentPassword", "SecureP@ss1",
+                "newPassword", "NewSecureP@ss2"
+        ));
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + tokens.accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isNoContent());
+
+        // Login with new password should succeed
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("changepass@example.com");
+        loginRequest.setPassword("NewSecureP@ss2");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void changePassword_WhenWrongCurrentPassword_ShouldReturn401() throws Exception {
+        TokenPair tokens = registerUser("changepass2@example.com", "SecureP@ss1");
+
+        String body = objectMapper.writeValueAsString(java.util.Map.of(
+                "currentPassword", "WrongP@ss1",
+                "newPassword", "NewSecureP@ss2"
+        ));
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + tokens.accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void changePassword_WhenNotAuthenticated_ShouldReturn401() throws Exception {
+        String body = objectMapper.writeValueAsString(java.util.Map.of(
+                "currentPassword", "SecureP@ss1",
+                "newPassword", "NewSecureP@ss2"
+        ));
+
+        mockMvc.perform(post("/api/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized());
+    }
+
     // ========== REFRESH ==========
 
     @Test
-    void refresh_WhenValidToken_ShouldReturn200WithNewTokens() throws Exception {
-        AuthResponse tokens = registerUser("refresh@example.com", "password123");
+    void refresh_WhenValidCookie_ShouldReturn200WithNewTokens() throws Exception {
+        TokenPair tokens = registerUser("refresh@example.com", "SecureP@ss1");
 
-        mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Refresh-Token", tokens.getRefreshToken()))
+        MvcResult result = mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+                .andReturn();
+
+        assertRefreshTokenCookiePresent(result);
     }
 
     @Test
     void refresh_WhenInvalidToken_ShouldReturn401() throws Exception {
         mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Refresh-Token", "invalid-token"))
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, "invalid-token")))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void refresh_WhenTokenUsedTwice_ShouldReturn401OnSecondUse() throws Exception {
-        AuthResponse tokens = registerUser("reuse@example.com", "password123");
+        TokenPair tokens = registerUser("reuse@example.com", "SecureP@ss1");
 
         // First refresh succeeds
         mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Refresh-Token", tokens.getRefreshToken()))
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken)))
                 .andExpect(status().isOk());
 
         // Second refresh with same token fails (already revoked)
         mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Refresh-Token", tokens.getRefreshToken()))
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken)))
                 .andExpect(status().isUnauthorized());
     }
 
     // ========== LOGOUT ==========
 
     @Test
-    void logout_WhenAuthenticated_ShouldReturn204() throws Exception {
-        AuthResponse tokens = registerUser("logout@example.com", "password123");
+    void logout_WhenAuthenticated_ShouldReturn204AndClearCookie() throws Exception {
+        TokenPair tokens = registerUser("logout@example.com", "SecureP@ss1");
 
-        mockMvc.perform(post("/api/auth/logout")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
-                .andExpect(status().isNoContent());
+        MvcResult result = mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + tokens.accessToken))
+                .andExpect(status().isNoContent())
+                .andReturn();
+
+        // Verify refresh token cookie is cleared
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertNotNull(setCookieHeader);
+        assertTrue(setCookieHeader.contains(REFRESH_TOKEN_COOKIE));
+        assertTrue(setCookieHeader.contains("Max-Age=0"));
     }
 
     @Test
@@ -254,14 +341,14 @@ class AuthControllerTest extends BaseIntegrationTest {
     @Test
     void login_WhenAccountDisabled_ShouldReturn403() throws Exception {
         // Register a user then disable them
-        registerUser("disabled@example.com", "password123");
+        registerUser("disabled@example.com", "SecureP@ss1");
         User user = userRepository.findByEmail("disabled@example.com").orElseThrow();
         user.setIsActive(false);
         userRepository.save(user);
 
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("disabled@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -276,7 +363,7 @@ class AuthControllerTest extends BaseIntegrationTest {
     void register_WhenEmptyEmail_ShouldReturn400() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail("");
-        request.setPassword("password123");
+        request.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -310,7 +397,7 @@ class AuthControllerTest extends BaseIntegrationTest {
     void login_WhenEmptyEmail_ShouldReturn400() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail("");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -333,9 +420,9 @@ class AuthControllerTest extends BaseIntegrationTest {
     // ========== REFRESH - EDGE CASES ==========
 
     @Test
-    void refresh_WhenMissingHeader_ShouldReturnError() throws Exception {
+    void refresh_WhenMissingCookie_ShouldReturnError() throws Exception {
         mockMvc.perform(post("/api/auth/refresh"))
-                .andExpect(result -> org.junit.jupiter.api.Assertions.assertTrue(
+                .andExpect(result -> assertTrue(
                         result.getResponse().getStatus() >= 400,
                         "Expected error status but got " + result.getResponse().getStatus()));
     }
@@ -350,114 +437,116 @@ class AuthControllerTest extends BaseIntegrationTest {
 
     @Test
     void getEndpoint_WhenGuestRole_ShouldNotReturn403() throws Exception {
-        AuthResponse tokens = registerUser("guest-get@example.com", "password123");
+        TokenPair tokens = registerUser("guest-get@example.com", "SecureP@ss1");
         // New registrations default to GUEST role - GUEST can read but may get 404/200 depending on data
 
         mockMvc.perform(get("/api/v1/currencies")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(result -> assertNotEquals(403, result.getResponse().getStatus()));
     }
 
     @Test
     void postEndpoint_WhenGuestRole_ShouldReturn403() throws Exception {
-        AuthResponse tokens = registerUser("guest-post@example.com", "password123");
+        TokenPair tokens = registerUser("guest-post@example.com", "SecureP@ss1");
         // GUEST role should not be able to POST to /api/v1/**
 
         mockMvc.perform(post("/api/v1/currencies")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void deleteEndpoint_WhenGuestRole_ShouldReturn403() throws Exception {
-        AuthResponse tokens = registerUser("guest-delete@example.com", "password123");
+        TokenPair tokens = registerUser("guest-delete@example.com", "SecureP@ss1");
 
         mockMvc.perform(delete("/api/v1/currencies/1")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void deleteEndpoint_WhenUserRole_ShouldReturn403() throws Exception {
         // Create a user with USER role
-        AuthResponse tokens = registerUserWithRole("user-delete@example.com", "password123", UserRole.USER);
+        TokenPair tokens = registerUserWithRole("user-delete@example.com", "SecureP@ss1", UserRole.USER);
 
         mockMvc.perform(delete("/api/v1/currencies/1")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void postEndpoint_WhenUserRole_ShouldNotReturn403() throws Exception {
-        AuthResponse tokens = registerUserWithRole("user-post@example.com", "password123", UserRole.USER);
+        TokenPair tokens = registerUserWithRole("user-post@example.com", "SecureP@ss1", UserRole.USER);
 
         // USER should be allowed to POST - we don't check for 200 since body may be invalid,
         // but it should not be 403
         mockMvc.perform(post("/api/v1/banks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Test\",\"swiftCode\":\"TESTCODE\",\"countryId\":1}")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(result -> assertNotEquals(403, result.getResponse().getStatus()));
     }
 
     @Test
     void deleteEndpoint_WhenAdminRole_ShouldNotReturn403() throws Exception {
-        AuthResponse tokens = registerUserWithRole("admin-delete@example.com", "password123", UserRole.ADMIN);
+        TokenPair tokens = registerUserWithRole("admin-delete@example.com", "SecureP@ss1", UserRole.ADMIN);
 
         // ADMIN should be allowed to DELETE - we don't check for 200 since resource may not exist,
         // but it should not be 403
         mockMvc.perform(delete("/api/v1/currencies/99999")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(result -> assertNotEquals(403, result.getResponse().getStatus()));
     }
 
     @Test
     void putEndpoint_WhenGuestRole_ShouldReturn403() throws Exception {
-        AuthResponse tokens = registerUser("guest-put@example.com", "password123");
+        TokenPair tokens = registerUser("guest-put@example.com", "SecureP@ss1");
 
         mockMvc.perform(put("/api/v1/currencies/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void logout_WhenAccessTokenUsedAfterLogout_ShouldReturn401() throws Exception {
-        AuthResponse tokens = registerUser("blacklist@example.com", "password123");
+        TokenPair tokens = registerUser("blacklist@example.com", "SecureP@ss1");
 
         // Logout - blacklists the access token
         mockMvc.perform(post("/api/auth/logout")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isNoContent());
 
         // Try to use blacklisted access token - should fail with 401 (no authentication)
         mockMvc.perform(get("/api/v1/currencies")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void logout_WhenTokenAfterLogout_RefreshShouldFail() throws Exception {
-        AuthResponse tokens = registerUser("logout-refresh@example.com", "password123");
+        TokenPair tokens = registerUser("logout-refresh@example.com", "SecureP@ss1");
 
         // Logout
         mockMvc.perform(post("/api/auth/logout")
-                        .header("Authorization", "Bearer " + tokens.getAccessToken()))
+                        .header("Authorization", "Bearer " + tokens.accessToken))
                 .andExpect(status().isNoContent());
 
         // Try to refresh with the old refresh token - should fail because all tokens are revoked
         mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Refresh-Token", tokens.getRefreshToken()))
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, tokens.refreshToken)))
                 .andExpect(status().isUnauthorized());
     }
 
     // ========== HELPER METHODS ==========
 
-    private AuthResponse registerUserWithRole(String email, String password, UserRole role) throws Exception {
-        AuthResponse tokens = registerUser(email, password);
+    private record TokenPair(String accessToken, String refreshToken) {}
+
+    private TokenPair registerUserWithRole(String email, String password, UserRole role) throws Exception {
+        registerUser(email, password);
 
         // Update role directly in DB
         User user = userRepository.findByEmail(email).orElseThrow();
@@ -465,20 +554,10 @@ class AuthControllerTest extends BaseIntegrationTest {
         userRepository.save(user);
 
         // Re-login to get tokens with updated role
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setEmail(email);
-        loginRequest.setPassword(password);
-
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andReturn();
-
-        return objectMapper.readValue(result.getResponse().getContentAsString(), AuthResponse.class);
+        return loginUser(email, password);
     }
 
-    private AuthResponse registerUser(String email, String password) throws Exception {
+    private TokenPair registerUser(String email, String password) throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setEmail(email);
         request.setPassword(password);
@@ -489,6 +568,48 @@ class AuthControllerTest extends BaseIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        return objectMapper.readValue(result.getResponse().getContentAsString(), AuthResponse.class);
+        return extractTokenPair(result);
+    }
+
+    private TokenPair loginUser(String email, String password) throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setPassword(password);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        return extractTokenPair(result);
+    }
+
+    private TokenPair extractTokenPair(MvcResult result) throws Exception {
+        AccessTokenResponse tokenResponse = objectMapper.readValue(
+                result.getResponse().getContentAsString(), AccessTokenResponse.class);
+        String refreshToken = extractRefreshTokenFromCookie(result);
+        return new TokenPair(tokenResponse.getAccessToken(), refreshToken);
+    }
+
+    private String extractRefreshTokenFromCookie(MvcResult result) {
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertNotNull(setCookieHeader, "Set-Cookie header should be present");
+        assertTrue(setCookieHeader.contains(REFRESH_TOKEN_COOKIE + "="),
+                "Cookie should contain refresh_token");
+
+        // Extract token value from "refresh_token=<value>; ..."
+        String cookiePart = setCookieHeader.split(";")[0];
+        return cookiePart.substring(cookiePart.indexOf("=") + 1);
+    }
+
+    private void assertRefreshTokenCookiePresent(MvcResult result) {
+        String setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        assertNotNull(setCookieHeader, "Set-Cookie header should be present");
+        assertTrue(setCookieHeader.contains(REFRESH_TOKEN_COOKIE + "="));
+        assertTrue(setCookieHeader.contains("HttpOnly"));
+        assertTrue(setCookieHeader.contains("Secure"));
+        assertTrue(setCookieHeader.contains("SameSite=Strict"));
+        assertTrue(setCookieHeader.contains("Path=/api/auth/refresh"));
     }
 }

@@ -164,6 +164,21 @@ public class AuthService {
         eventPublisher.publishEvent(SecurityAuditEvent.logout(email, clientIpResolver.resolve()));
     }
 
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidCredentialsException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new InvalidCredentialsException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        refreshTokenRepository.revokeAllByUserId(userId);
+    }
+
     private AuthResponse generateTokenPair(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String rawRefreshToken = jwtService.generateRefreshToken(user);

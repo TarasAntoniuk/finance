@@ -78,11 +78,11 @@ class AuthServiceTest {
 
         registerRequest = new RegisterRequest();
         registerRequest.setEmail("test@example.com");
-        registerRequest.setPassword("password123");
+        registerRequest.setPassword("SecureP@ss1");
 
         loginRequest = new LoginRequest();
         loginRequest.setEmail("test@example.com");
-        loginRequest.setPassword("password123");
+        loginRequest.setPassword("SecureP@ss1");
     }
 
     // ========== REGISTER ==========
@@ -90,7 +90,7 @@ class AuthServiceTest {
     @Test
     void register_WhenValidRequest_ShouldReturnAuthResponse() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+        when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -109,7 +109,7 @@ class AuthServiceTest {
     @Test
     void register_ShouldSaveUserWithCorrectFields() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
+        when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -142,7 +142,7 @@ class AuthServiceTest {
     @Test
     void login_WhenValidCredentials_ShouldReturnAuthResponse() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
         when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
@@ -171,7 +171,7 @@ class AuthServiceTest {
     @Test
     void login_WhenWrongPassword_ShouldThrowInvalidCredentialsException() {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(false);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(false);
 
         InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
                 () -> authService.login(loginRequest));
@@ -209,7 +209,7 @@ class AuthServiceTest {
     void login_WhenMaxFailedAttemptsReached_ShouldLockAccount() {
         user.setFailedLoginAttempts(4);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(false);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(false);
 
         assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
         assertEquals(5, user.getFailedLoginAttempts());
@@ -221,7 +221,7 @@ class AuthServiceTest {
     void login_WhenSuccessfulAfterFailedAttempts_ShouldResetCounter() {
         user.setFailedLoginAttempts(3);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
         when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
@@ -237,7 +237,7 @@ class AuthServiceTest {
     void login_WhenLockExpired_ShouldAllowLogin() {
         user.setLockedUntil(LocalDateTime.now().minusMinutes(1));
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("password123", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.matches("SecureP@ss1", "encodedPassword")).thenReturn(true);
         when(jwtService.generateAccessToken(user)).thenReturn("access-token");
         when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
         when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
@@ -402,6 +402,41 @@ class AuthServiceTest {
 
         assertTrue(storedToken.isUsed());
         assertTrue(storedToken.isRevoked());
+    }
+
+    // ========== CHANGE PASSWORD ==========
+
+    @Test
+    void changePassword_WhenValidCurrentPassword_ShouldUpdateAndRevokeTokens() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("OldP@ss1", "encodedPassword")).thenReturn(true);
+        when(passwordEncoder.encode("NewP@ss1")).thenReturn("newEncodedPassword");
+
+        authService.changePassword(1L, "OldP@ss1", "NewP@ss1");
+
+        assertEquals("newEncodedPassword", user.getPassword());
+        verify(userRepository).save(user);
+        verify(refreshTokenRepository).revokeAllByUserId(1L);
+    }
+
+    @Test
+    void changePassword_WhenWrongCurrentPassword_ShouldThrowInvalidCredentials() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("WrongP@ss1", "encodedPassword")).thenReturn(false);
+
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class,
+                () -> authService.changePassword(1L, "WrongP@ss1", "NewP@ss1"));
+
+        assertEquals("Current password is incorrect", exception.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void changePassword_WhenUserNotFound_ShouldThrowInvalidCredentials() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.changePassword(99L, "OldP@ss1", "NewP@ss1"));
     }
 
     // ========== LOGOUT ==========
