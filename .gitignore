@@ -25,3 +25,7 @@ badges/
 /.project
 
 /.settings/
+
+# Environment files (secrets)
+.env
+!.env.example
