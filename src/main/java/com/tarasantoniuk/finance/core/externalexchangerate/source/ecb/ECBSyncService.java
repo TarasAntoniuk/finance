@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ public class ECBSyncService {
 
         long step1 = System.currentTimeMillis();
         Currency eur = currencyRepository.findByCode("EUR")
-                .orElseThrow(() -> new RuntimeException("EUR currency not found"));
+                .orElseThrow(() -> new ECBSyncException("EUR currency must exist in the database before ECB sync can run"));
         log.info("⏱️  Loading EUR: {} ms", System.currentTimeMillis() - step1);
 
         long step2 = System.currentTimeMillis();

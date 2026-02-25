@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,8 +89,8 @@ class ECBSyncServiceTest {
         ));
 
         assertThatThrownBy(() -> syncService.syncDaily())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("EUR currency not found");
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("EUR currency must exist in the database");
     }
 
     @Test
@@ -219,8 +220,8 @@ class ECBSyncServiceTest {
         ));
 
         assertThatThrownBy(() -> syncService.syncHistory())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("EUR currency not found");
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("EUR currency must exist in the database");
     }
 
     @Test
