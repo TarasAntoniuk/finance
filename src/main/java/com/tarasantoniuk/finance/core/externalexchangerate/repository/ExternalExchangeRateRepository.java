@@ -168,13 +168,18 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
             LocalDate exchangeDate, Long currencyFromId, Long currencyToId, String source);
 
     /**
-     * Find exchange rates between dates and source (for bulk operations).
+     * Find exchange rate keys (date, currencyFromId, currencyToId) between dates and source.
+     * Uses a projection query to avoid loading full entity graphs for bulk dedup operations.
      *
      * @param startDate start date
      * @param endDate   end date
      * @param source    data source
-     * @return list of exchange rates
+     * @return list of Object[] where [0]=exchangeDate (LocalDate), [1]=currencyFromId (Long), [2]=currencyToId (Long)
      */
-    List<ExternalExchangeRate> findByExchangeDateBetweenAndSource(
-            LocalDate startDate, LocalDate endDate, String source);
+    @Query("SELECT e.exchangeDate, e.currencyFrom.id, e.currencyTo.id FROM ExternalExchangeRate e " +
+            "WHERE e.exchangeDate BETWEEN :startDate AND :endDate AND e.source = :source")
+    List<Object[]> findExistingRateKeys(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            @Param("source") String source);
 }

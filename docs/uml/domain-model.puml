@@ -101,8 +101,6 @@ abstract class com.tarasantoniuk.finance.common.document.entity.BaseDocument {
 abstract class com.tarasantoniuk.finance.common.entity.BaseEntity {
 	{field} +createdAt : java.time.LocalDateTime
 	{field} +updatedAt : java.time.LocalDateTime
-	{method} #onCreate () : void
-	{method} #onUpdate () : void
 }
 
 

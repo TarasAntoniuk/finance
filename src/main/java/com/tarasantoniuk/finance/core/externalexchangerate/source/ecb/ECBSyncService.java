@@ -82,9 +82,9 @@ public class ECBSyncService {
 
         long step3 = System.currentTimeMillis();
         Set<String> existingKeys = rateRepository
-                .findByExchangeDateBetweenAndSource(minDate, maxDate, SOURCE)
+                .findExistingRateKeys(minDate, maxDate, SOURCE)
                 .stream()
-                .map(r -> buildKey(r.getExchangeDate(), r.getCurrencyFrom().getId(), r.getCurrencyTo().getId()))
+                .map(row -> buildKey((LocalDate) row[0], (Long) row[1], (Long) row[2]))
                 .collect(HashSet::new, HashSet::add, HashSet::addAll);
         log.info("Loading existing rates: {} ms, count: {} (date range: {} - {})",
                 System.currentTimeMillis() - step3, existingKeys.size(), minDate, maxDate);
