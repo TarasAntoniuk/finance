@@ -83,15 +83,13 @@ public class CounterpartyController {
 
     @PatchMapping("/{id}/activate")
     @Operation(summary = "Activate counterparty")
-    public ResponseEntity<Void> activate(@PathVariable Long id) {
-        counterpartyService.activate(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<CounterpartyResponseDto> activate(@PathVariable Long id) {
+        return ResponseEntity.ok(counterpartyService.activate(id));
     }
 
     @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate counterparty")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        counterpartyService.deactivate(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CounterpartyResponseDto> deactivate(@PathVariable Long id) {
+        return ResponseEntity.ok(counterpartyService.deactivate(id));
     }
 }

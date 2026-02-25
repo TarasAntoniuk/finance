@@ -446,13 +446,21 @@ class CounterpartyControllerTest {
     // ========== ACTIVATE TESTS ==========
 
     @Test
-    void activate_WhenExists_ShouldReturnOk() throws Exception {
+    void activate_WhenExists_ShouldReturnOkWithBody() throws Exception {
         // Given
-        doNothing().when(counterpartyService).activate(1L);
+        CounterpartyResponseDto activatedResponse = new CounterpartyResponseDto();
+        activatedResponse.setId(1L);
+        activatedResponse.setCode("CP001");
+        activatedResponse.setName("Test Counterparty");
+        activatedResponse.setIsActive(true);
+
+        when(counterpartyService.activate(1L)).thenReturn(activatedResponse);
 
         // When & Then
         mockMvc.perform(patch("/api/counterparties/1/activate"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.isActive").value(true));
 
         verify(counterpartyService, times(1)).activate(1L);
     }
@@ -460,7 +468,7 @@ class CounterpartyControllerTest {
     @Test
     void activate_WhenNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        doThrow(CounterpartyNotFoundException.byId(1L)).when(counterpartyService).activate(1L);
+        when(counterpartyService.activate(1L)).thenThrow(CounterpartyNotFoundException.byId(1L));
 
         // When & Then
         mockMvc.perform(patch("/api/counterparties/1/activate"))
@@ -472,13 +480,21 @@ class CounterpartyControllerTest {
     // ========== DEACTIVATE TESTS ==========
 
     @Test
-    void deactivate_WhenExists_ShouldReturnNoContent() throws Exception {
+    void deactivate_WhenExists_ShouldReturnOkWithBody() throws Exception {
         // Given
-        doNothing().when(counterpartyService).deactivate(1L);
+        CounterpartyResponseDto deactivatedResponse = new CounterpartyResponseDto();
+        deactivatedResponse.setId(1L);
+        deactivatedResponse.setCode("CP001");
+        deactivatedResponse.setName("Test Counterparty");
+        deactivatedResponse.setIsActive(false);
+
+        when(counterpartyService.deactivate(1L)).thenReturn(deactivatedResponse);
 
         // When & Then
         mockMvc.perform(patch("/api/counterparties/1/deactivate"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.isActive").value(false));
 
         verify(counterpartyService, times(1)).deactivate(1L);
     }
@@ -486,7 +502,7 @@ class CounterpartyControllerTest {
     @Test
     void deactivate_WhenNotExists_ShouldReturnNotFound() throws Exception {
         // Given
-        doThrow(CounterpartyNotFoundException.byId(1L)).when(counterpartyService).deactivate(1L);
+        when(counterpartyService.deactivate(1L)).thenThrow(CounterpartyNotFoundException.byId(1L));
 
         // When & Then
         mockMvc.perform(patch("/api/counterparties/1/deactivate"))
