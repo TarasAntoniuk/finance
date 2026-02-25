@@ -165,13 +165,12 @@ public class AccountingPolicy extends BaseEntity {
         if (o == null || getClass() != o.getClass()) return false;
         AccountingPolicy that = (AccountingPolicy) o;
         return Objects.equals(id, that.id) &&
-                Objects.equals(organization, that.organization) &&
                 Objects.equals(year, that.year);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, organization, year);
+        return Objects.hash(id, year);
     }
 
     @Override
