@@ -24,6 +24,8 @@ import java.util.List;
 @Tag(name = "Core - Exchange Rate", description = "External exchange rate management API")
 public class ExternalExchangeRateController {
 
+    private static final int MAX_PAGE_SIZE = 500;
+
     private final ExternalExchangeRateService exchangeRateService;
 
     public ExternalExchangeRateController(ExternalExchangeRateService exchangeRateService) {
@@ -46,13 +48,11 @@ public class ExternalExchangeRateController {
     public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getAllExchangeRates(
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =
@@ -116,13 +116,11 @@ public class ExternalExchangeRateController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =
@@ -150,13 +148,11 @@ public class ExternalExchangeRateController {
             @RequestParam Long currencyToId,
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =

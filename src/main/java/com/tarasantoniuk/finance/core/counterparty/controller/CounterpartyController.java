@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Core - Counterparty", description = "Counterparty management API")
 public class CounterpartyController {
 
+    private static final int MAX_PAGE_SIZE = 500;
+
     private final CounterpartyService counterpartyService;
 
     public CounterpartyController(CounterpartyService counterpartyService) {
@@ -52,14 +54,11 @@ public class CounterpartyController {
     public ResponseEntity<PageResponse<CounterpartyResponseDto>> getAll(
             @Parameter(description = "Page number (0-based)", example = "0")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "50")
-            @RequestParam(defaultValue = "50") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") int size) {
 
-        // Prevent abuse by limiting maximum page size
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<CounterpartyResponseDto> response =
