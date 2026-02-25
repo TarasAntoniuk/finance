@@ -8,6 +8,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -42,7 +44,7 @@ public class ECBClient {
             return parseXml(xml);
         } catch (Exception e) {
             log.error("Failed to fetch from ECB: {}", url, e);
-            throw new RuntimeException("ECB fetch failed", e);
+            throw ECBSyncException.fetchFailed(url, e);
         }
     }
 
@@ -80,7 +82,7 @@ public class ECBClient {
 
         } catch (Exception e) {
             log.error("Failed to parse ECB XML", e);
-            throw new RuntimeException("ECB parse failed", e);
+            throw ECBSyncException.parseFailed(e);
         }
     }
 

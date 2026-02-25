@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -53,7 +54,7 @@ class ECBClientTest {
                 .thenThrow(new RuntimeException("Network error"));
 
         assertThatThrownBy(() -> client.fetchDaily())
-                .isInstanceOf(RuntimeException.class);
+                .isInstanceOf(ECBSyncException.class);
     }
 
     @Test
@@ -93,8 +94,8 @@ class ECBClientTest {
 
         // When & Then
         assertThatThrownBy(() -> client.fetchHistory())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("ECB fetch failed");
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("Failed to fetch ECB data from");
     }
 
 //    @Test
