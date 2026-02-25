@@ -23,18 +23,6 @@ public abstract class BaseEntity implements Serializable {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
