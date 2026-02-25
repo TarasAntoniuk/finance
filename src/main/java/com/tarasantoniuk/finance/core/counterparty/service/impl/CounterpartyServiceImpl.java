@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class CounterpartyServiceImpl implements CounterpartyService {
 
     private final CounterpartyRepository counterpartyRepository;
@@ -39,6 +39,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
+    @Transactional
     public CounterpartyResponseDto create(CounterpartyRequestDto request) {
         validateUniqueCode(request.getCode());
 
@@ -50,14 +51,12 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public CounterpartyResponseDto getById(Long id) {
         Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         return counterpartyMapper.toResponse(counterparty);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public PageResponse<CounterpartyResponseDto> getAll(int page, int size) {
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Direction.ASC, "name", "id"));
@@ -85,6 +84,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
+    @Transactional
     public CounterpartyResponseDto update(Long id, CounterpartyRequestDto request) {
         Counterparty counterparty = findCounterpartyByIdWithCountry(id);
 
@@ -100,6 +100,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         if (!counterpartyRepository.existsById(id)) {
             throw CounterpartyNotFoundException.byId(id);
@@ -108,6 +109,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
+    @Transactional
     public void activate(Long id) {
         Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         counterparty.setIsActive(true);
@@ -115,6 +117,7 @@ public class CounterpartyServiceImpl implements CounterpartyService {
     }
 
     @Override
+    @Transactional
     public void deactivate(Long id) {
         Counterparty counterparty = findCounterpartyByIdWithCountry(id);
         counterparty.setIsActive(false);
