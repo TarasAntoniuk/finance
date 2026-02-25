@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class CurrencyService {
 
     private final CurrencyRepository currencyRepository;
@@ -24,33 +25,28 @@ public class CurrencyService {
         this.currencyMapper = currencyMapper;
     }
 
-    @Transactional(readOnly = true)
     public List<CurrencyResponseDto> getAllCurrencies() {
         List<Currency> currencies = currencyRepository.findAll();
         return currencyMapper.toResponseDTOList(currencies);
     }
 
-    @Transactional(readOnly = true)
     public List<CurrencyResponseDto> getActiveCurrencies() {
         List<Currency> currencies = currencyRepository.findByIsActive(true);
         return currencyMapper.toResponseDTOList(currencies);
     }
 
-    @Transactional(readOnly = true)
     public CurrencyResponseDto getCurrencyById(Long id) {
         Currency currency = currencyRepository.findById(id)
                 .orElseThrow(() -> CurrencyNotFoundException.byId(id));
         return currencyMapper.toResponseDTO(currency);
     }
 
-    @Transactional(readOnly = true)
     public CurrencyResponseDto getCurrencyByCode(String code) {
         Currency currency = currencyRepository.findByCode(code.toUpperCase())
                 .orElseThrow(() -> CurrencyNotFoundException.byCode(code));
         return currencyMapper.toResponseDTO(currency);
     }
 
-    @Transactional(readOnly = true)
     public CurrencyResponseDto getCurrencyByNumericCode(String numericCode) {
         Currency currency = currencyRepository.findByNumericCode(numericCode)
                 .orElseThrow(() -> CurrencyNotFoundException.byNumericCode(numericCode));
@@ -59,7 +55,6 @@ public class CurrencyService {
 
     private static final int MAX_SEARCH_RESULTS = 500;
 
-    @Transactional(readOnly = true)
     public List<CurrencyResponseDto> searchCurrenciesByName(String name) {
         List<Currency> currencies = currencyRepository.findByNameContainingIgnoreCase(name, PageRequest.of(0, MAX_SEARCH_RESULTS));
         return currencyMapper.toResponseDTOList(currencies);
