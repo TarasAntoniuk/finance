@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.core.counterparty.service.impl;
+package com.tarasantoniuk.finance.core.counterparty.service;
 
 import com.tarasantoniuk.finance.common.dto.PageMetadata;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class CounterpartyServiceImplTest {
+class CounterpartyServiceTest {
 
     @Mock
     private CounterpartyRepository counterpartyRepository;
@@ -40,7 +40,7 @@ class CounterpartyServiceImplTest {
     private CounterpartyMapper counterpartyMapper;
 
     @InjectMocks
-    private CounterpartyServiceImpl counterpartyService;
+    private CounterpartyService counterpartyService;
 
     private Counterparty counterparty;
     private CounterpartyRequestDto requestDto;
@@ -374,13 +374,20 @@ class CounterpartyServiceImplTest {
     }
 
     @Test
-    void activate_WhenExists_ShouldActivateSuccessfully() {
+    void activate_WhenExists_ShouldActivateAndReturnResponse() {
         counterparty.setIsActive(false);
+        CounterpartyResponseDto activatedResponse = new CounterpartyResponseDto();
+        activatedResponse.setId(1L);
+        activatedResponse.setIsActive(true);
+
         when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
+        when(counterpartyMapper.toResponse(counterparty)).thenReturn(activatedResponse);
 
-        counterpartyService.activate(1L);
+        CounterpartyResponseDto result = counterpartyService.activate(1L);
 
+        assertNotNull(result);
+        assertTrue(result.getIsActive());
         assertTrue(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
@@ -395,24 +402,33 @@ class CounterpartyServiceImplTest {
     }
 
     @Test
-    void activate_WhenAlreadyActive_ShouldStillSave() {
+    void activate_WhenAlreadyActive_ShouldStillSaveAndReturnResponse() {
         counterparty.setIsActive(true);
         when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
+        when(counterpartyMapper.toResponse(counterparty)).thenReturn(responseDto);
 
-        counterpartyService.activate(1L);
+        CounterpartyResponseDto result = counterpartyService.activate(1L);
 
+        assertNotNull(result);
         assertTrue(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
 
     @Test
-    void deactivate_WhenExists_ShouldDeactivateSuccessfully() {
+    void deactivate_WhenExists_ShouldDeactivateAndReturnResponse() {
+        CounterpartyResponseDto deactivatedResponse = new CounterpartyResponseDto();
+        deactivatedResponse.setId(1L);
+        deactivatedResponse.setIsActive(false);
+
         when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
+        when(counterpartyMapper.toResponse(counterparty)).thenReturn(deactivatedResponse);
 
-        counterpartyService.deactivate(1L);
+        CounterpartyResponseDto result = counterpartyService.deactivate(1L);
 
+        assertNotNull(result);
+        assertFalse(result.getIsActive());
         assertFalse(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
@@ -427,13 +443,19 @@ class CounterpartyServiceImplTest {
     }
 
     @Test
-    void deactivate_WhenAlreadyInactive_ShouldStillSave() {
+    void deactivate_WhenAlreadyInactive_ShouldStillSaveAndReturnResponse() {
         counterparty.setIsActive(false);
+        CounterpartyResponseDto deactivatedResponse = new CounterpartyResponseDto();
+        deactivatedResponse.setId(1L);
+        deactivatedResponse.setIsActive(false);
+
         when(counterpartyRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(counterparty));
         when(counterpartyRepository.save(counterparty)).thenReturn(counterparty);
+        when(counterpartyMapper.toResponse(counterparty)).thenReturn(deactivatedResponse);
 
-        counterpartyService.deactivate(1L);
+        CounterpartyResponseDto result = counterpartyService.deactivate(1L);
 
+        assertNotNull(result);
         assertFalse(counterparty.getIsActive());
         verify(counterpartyRepository).save(counterparty);
     }
