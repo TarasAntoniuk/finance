@@ -10,6 +10,7 @@ import com.tarasantoniuk.finance.core.counterparty.exception.DuplicateCounterpar
 import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -96,6 +97,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCurrencyAlreadyExistsException(
             CurrencyAlreadyExistsException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    // ========== ECB SYNC EXCEPTIONS ==========
+
+    @ExceptionHandler(ECBSyncException.class)
+    public ResponseEntity<ErrorResponse> handleECBSyncException(
+            ECBSyncException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
     }
 
     // ========== VALIDATION EXCEPTIONS ==========
