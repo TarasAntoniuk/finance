@@ -80,11 +80,12 @@ public class ExternalExchangeRateService {
     }
 
     /**
-     * Get exchange rates by date with optimized query.
+     * Get exchange rates by date with optimized query and hard limit.
      */
     @Transactional(readOnly = true)
-    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDate(LocalDate date) {
-        List<ExternalExchangeRate> rates = exchangeRateRepository.findByExchangeDateWithCurrencies(date);
+    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDate(LocalDate date, int limit) {
+        List<ExternalExchangeRate> rates = exchangeRateRepository
+                .findByExchangeDateWithCurrencies(date, PageRequest.of(0, limit));
         return exchangeRateMapper.toResponseDTOList(rates);
     }
 
@@ -186,15 +187,17 @@ public class ExternalExchangeRateService {
     @Transactional(readOnly = true)
     public BigDecimal calculateCrossRate(Long currencyFromId, Long currencyToId,
                                          Long intermediateCurrencyId, LocalDate date) {
+        Pageable singleResult = PageRequest.of(0, 1);
+
         List<ExternalExchangeRate> rates1 = exchangeRateRepository
-                .findLatestRateBeforeDateWithCurrencies(date, currencyFromId, intermediateCurrencyId);
+                .findLatestRateBeforeDateWithCurrencies(date, currencyFromId, intermediateCurrencyId, singleResult);
 
         if (rates1.isEmpty()) {
             throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, currencyFromId, intermediateCurrencyId);
         }
 
         List<ExternalExchangeRate> rates2 = exchangeRateRepository
-                .findLatestRateBeforeDateWithCurrencies(date, intermediateCurrencyId, currencyToId);
+                .findLatestRateBeforeDateWithCurrencies(date, intermediateCurrencyId, currencyToId, singleResult);
 
         if (rates2.isEmpty()) {
             throw ExchangeRateNotFoundException.byDateAndCurrencyPair(date, intermediateCurrencyId, currencyToId);

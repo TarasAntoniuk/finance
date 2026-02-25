@@ -372,14 +372,14 @@ class ExternalExchangeRateServiceTest {
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         List<ExternalExchangeRateResponseDto> responseDTOs = List.of(responseDTO);
 
-        when(exchangeRateRepository.findByExchangeDateWithCurrencies(date)).thenReturn(rates);
+        when(exchangeRateRepository.findByExchangeDateWithCurrencies(eq(date), any(Pageable.class))).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
-        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDate(date);
+        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDate(date, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDateWithCurrencies(date);
+        verify(exchangeRateRepository).findByExchangeDateWithCurrencies(eq(date), any(Pageable.class));
     }
 
     @Test
@@ -490,9 +490,9 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRate rate2 = new ExternalExchangeRate();
         rate2.setRate(BigDecimal.valueOf(0.9));
 
-        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(eq(date), eq(1L), eq(3L), any(Pageable.class)))
                 .thenReturn(List.of(rate1));
-        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 3L, 2L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(eq(date), eq(3L), eq(2L), any(Pageable.class)))
                 .thenReturn(List.of(rate2));
 
         BigDecimal result = exchangeRateService.calculateCrossRate(1L, 2L, 3L, date);
@@ -504,7 +504,7 @@ class ExternalExchangeRateServiceTest {
     @Test
     void calculateCrossRate_WhenFirstRateMissing_ShouldThrowException() {
         LocalDate date = LocalDate.now();
-        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(eq(date), eq(1L), eq(3L), any(Pageable.class)))
                 .thenReturn(List.of());
 
         assertThrows(ExchangeRateNotFoundException.class,
@@ -517,9 +517,9 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRate rate1 = new ExternalExchangeRate();
         rate1.setRate(BigDecimal.valueOf(1.2));
 
-        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 1L, 3L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(eq(date), eq(1L), eq(3L), any(Pageable.class)))
                 .thenReturn(List.of(rate1));
-        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(date, 3L, 2L))
+        when(exchangeRateRepository.findLatestRateBeforeDateWithCurrencies(eq(date), eq(3L), eq(2L), any(Pageable.class)))
                 .thenReturn(List.of());
 
         assertThrows(ExchangeRateNotFoundException.class,
