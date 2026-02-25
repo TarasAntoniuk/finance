@@ -90,7 +90,7 @@ public class CurrencyDataLoader implements CommandLineRunner {
         currencies.add(createCurrency("HUF", "348", "Forint", "Ft", 2, true));
         currencies.add(createCurrency("RON", "946", "Romanian Leu", "lei", 2, true));
         currencies.add(createCurrency("BGN", "975", "Bulgarian Lev", "лв", 2, true));
-        currencies.add(createCurrency("HRK", "191", "Kuna", "kn", 2, true));
+        currencies.add(createCurrency("HRK", "191", "Kuna", "kn", 2, false));
         currencies.add(createCurrency("DKK", "208", "Danish Krone", "kr", 2, true));
         currencies.add(createCurrency("SEK", "752", "Swedish Krona", "kr", 2, true));
         currencies.add(createCurrency("NOK", "578", "Norwegian Krone", "kr", 2, true));
