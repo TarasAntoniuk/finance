@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
@@ -27,7 +28,7 @@ public class ECBClient {
 
     private final RestTemplate restTemplate;
 
-    public ECBClient(RestTemplate restTemplate) {
+    public ECBClient(@Qualifier("ecbRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
