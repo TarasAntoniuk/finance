@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.organization.controller;
 
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
@@ -20,6 +21,8 @@ import java.util.List;
 @Tag(name = "Core - Organization", description = "Organization management API")
 public class OrganizationController {
 
+    private static final int MAX_PAGE_SIZE = 500;
+
     private final OrganizationService organizationService;
 
     public OrganizationController(OrganizationService organizationService) {
@@ -27,11 +30,18 @@ public class OrganizationController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all organizations", description = "Retrieve a list of all organizations")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<OrganizationResponseDto>> getAllOrganizations() {
-        List<OrganizationResponseDto> organizations = organizationService.getAllOrganizations();
-        return ResponseEntity.ok(organizations);
+    @Operation(summary = "Get all organizations", description = "Retrieve a paginated list of all organizations")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<OrganizationResponseDto>> getAllOrganizations(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") int size) {
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
+        }
+        PageResponse<OrganizationResponseDto> response = organizationService.getAllOrganizations(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -56,13 +66,20 @@ public class OrganizationController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search organizations by name", description = "Search for organizations by name (case-insensitive)")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<OrganizationResponseDto>> searchOrganizationsByName(
+    @Operation(summary = "Search organizations by name", description = "Search for organizations by name (case-insensitive, paginated)")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<OrganizationResponseDto>> searchOrganizationsByName(
             @Parameter(description = "Name to search", required = true, example = "Acme")
-            @RequestParam String name) {
-        List<OrganizationResponseDto> organizations = organizationService.searchOrganizationsByName(name);
-        return ResponseEntity.ok(organizations);
+            @RequestParam String name,
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") int size) {
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
+        }
+        PageResponse<OrganizationResponseDto> response = organizationService.searchOrganizationsByName(name, page, size);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping

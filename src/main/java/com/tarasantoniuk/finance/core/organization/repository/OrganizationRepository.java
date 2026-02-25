@@ -1,6 +1,8 @@
 package com.tarasantoniuk.finance.core.organization.repository;
 
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,9 +20,11 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
      *
      * @return list of organizations with country eagerly loaded
      */
-    @Query("SELECT o FROM Organization o " +
-            "LEFT JOIN FETCH o.country")
-    List<Organization> findAllWithCountry();
+    @Query(value = "SELECT DISTINCT o FROM Organization o " +
+            "LEFT JOIN FETCH o.country " +
+            "ORDER BY o.name ASC",
+            countQuery = "SELECT COUNT(o) FROM Organization o")
+    Page<Organization> findAllWithCountry(Pageable pageable);
 
     /**
      * Find organization by ID with country loaded.
@@ -50,10 +54,13 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
      * @param name search term (case insensitive)
      * @return list of organizations with country
      */
-    @Query("SELECT o FROM Organization o " +
+    @Query(value = "SELECT DISTINCT o FROM Organization o " +
             "LEFT JOIN FETCH o.country " +
-            "WHERE LOWER(o.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Organization> findByNameContainingIgnoreCaseWithCountry(@Param("name") String name);
+            "WHERE LOWER(o.name) LIKE LOWER(CONCAT('%', :name, '%')) " +
+            "ORDER BY o.name ASC",
+            countQuery = "SELECT COUNT(o) FROM Organization o " +
+                    "WHERE LOWER(o.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Page<Organization> findByNameContainingIgnoreCaseWithCountry(@Param("name") String name, Pageable pageable);
 
     // Keep original methods for duplicate checks (don't need country)
     Optional<Organization> findByRegistrationNumber(String registrationNumber);

@@ -44,14 +44,15 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
     /**
      * Find exchange rates by date with currencies loaded.
      *
-     * @param date exchange date
+     * @param date     exchange date
+     * @param pageable pagination parameters for limiting results
      * @return list of exchange rates with currencies
      */
     @Query("SELECT e FROM ExternalExchangeRate e " +
             "LEFT JOIN FETCH e.currencyFrom " +
             "LEFT JOIN FETCH e.currencyTo " +
             "WHERE e.exchangeDate = :date")
-    List<ExternalExchangeRate> findByExchangeDateWithCurrencies(@Param("date") LocalDate date);
+    List<ExternalExchangeRate> findByExchangeDateWithCurrencies(@Param("date") LocalDate date, Pageable pageable);
 
     /**
      * Find exchange rates by date and source with currencies loaded.
@@ -137,6 +138,7 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
      * @param date           reference date
      * @param currencyFromId source currency ID
      * @param currencyToId   target currency ID
+     * @param pageable       pagination parameters (use PageRequest.of(0, 1) to get only the latest)
      * @return list of exchange rates with currencies
      */
     @Query("SELECT e FROM ExternalExchangeRate e " +
@@ -150,7 +152,8 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
     List<ExternalExchangeRate> findLatestRateBeforeDateWithCurrencies(
             @Param("date") LocalDate date,
             @Param("currencyFromId") Long currencyFromId,
-            @Param("currencyToId") Long currencyToId);
+            @Param("currencyToId") Long currencyToId,
+            Pageable pageable);
 
     /**
      * Check if exchange rate exists for given parameters.

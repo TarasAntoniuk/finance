@@ -10,18 +10,24 @@ import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlready
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapper;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,14 +85,15 @@ class OrganizationServiceTest {
     @Test
     void getAllOrganizations_ShouldReturnListOfOrganizations() {
         List<Organization> organizations = Arrays.asList(organization);
-        when(organizationRepository.findAllWithCountry()).thenReturn(organizations);
+        Page<Organization> page = new PageImpl<>(organizations);
+        when(organizationRepository.findAllWithCountry(any(Pageable.class))).thenReturn(page);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDto> result = organizationService.getAllOrganizations();
+        PageResponse<OrganizationResponseDto> result = organizationService.getAllOrganizations(0, 50);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(organizationRepository, times(1)).findAllWithCountry();
+        assertEquals(1, result.getContent().size());
+        verify(organizationRepository, times(1)).findAllWithCountry(any(Pageable.class));
     }
 
     @Test
@@ -125,15 +132,16 @@ class OrganizationServiceTest {
     @Test
     void searchOrganizationsByName_ShouldReturnMatchingOrganizations() {
         List<Organization> organizations = Arrays.asList(organization);
-        when(organizationRepository.findByNameContainingIgnoreCaseWithCountry("Test"))
-                .thenReturn(organizations);
+        Page<Organization> page = new PageImpl<>(organizations);
+        when(organizationRepository.findByNameContainingIgnoreCaseWithCountry(eq("Test"), any(Pageable.class)))
+                .thenReturn(page);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("Test");
+        PageResponse<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("Test", 0, 50);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(organizationRepository, times(1)).findByNameContainingIgnoreCaseWithCountry("Test");
+        assertEquals(1, result.getContent().size());
+        verify(organizationRepository, times(1)).findByNameContainingIgnoreCaseWithCountry(eq("Test"), any(Pageable.class));
     }
 
     @Test

@@ -74,12 +74,17 @@ public class ExternalExchangeRateController {
     }
 
     @GetMapping("/date/{date}")
-    @Operation(summary = "Get exchange rates by date", description = "Retrieve all exchange rates for a specific date")
+    @Operation(summary = "Get exchange rates by date", description = "Retrieve exchange rates for a specific date (limited to 500 results)")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<ExternalExchangeRateResponseDto>> getExchangeRatesByDate(
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<ExternalExchangeRateResponseDto> rates = exchangeRateService.getExchangeRatesByDate(date);
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
+        List<ExternalExchangeRateResponseDto> rates = exchangeRateService.getExchangeRatesByDate(date, limit);
         return ResponseEntity.ok(rates);
     }
 

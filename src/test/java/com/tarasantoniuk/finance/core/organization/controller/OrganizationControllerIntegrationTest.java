@@ -13,11 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
+
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -52,15 +54,20 @@ class OrganizationControllerIntegrationTest {
         org2.setRegistrationNumber("87654321");
 
         List<OrganizationResponseDto> organizations = Arrays.asList(org1, org2);
-        when(organizationService.getAllOrganizations()).thenReturn(organizations);
+        PageResponse<OrganizationResponseDto> pageResponse = PageResponse.<OrganizationResponseDto>builder()
+                .content(organizations)
+                .metadata(PageMetadata.builder()
+                        .currentPage(0).totalPages(1).pageSize(50).totalElements(2).hasNext(false).hasPrevious(false).build())
+                .build();
+        when(organizationService.getAllOrganizations(anyInt(), anyInt())).thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/organizations"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Acme Corp"))
-                .andExpect(jsonPath("$[1].name").value("Tech Solutions"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].name").value("Acme Corp"))
+                .andExpect(jsonPath("$.content[1].name").value("Tech Solutions"));
     }
 
     @Test
@@ -104,15 +111,20 @@ class OrganizationControllerIntegrationTest {
         organization.setId(1L);
         organization.setName("Acme Corp");
 
-        when(organizationService.searchOrganizationsByName("Acme"))
-                .thenReturn(List.of(organization));
+        PageResponse<OrganizationResponseDto> pageResponse = PageResponse.<OrganizationResponseDto>builder()
+                .content(List.of(organization))
+                .metadata(PageMetadata.builder()
+                        .currentPage(0).totalPages(1).pageSize(50).totalElements(1).hasNext(false).hasPrevious(false).build())
+                .build();
+        when(organizationService.searchOrganizationsByName(eq("Acme"), anyInt(), anyInt()))
+                .thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/organizations/search")
                         .param("name", "Acme"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].name").value("Acme Corp"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].name").value("Acme Corp"));
     }
 
     @Test

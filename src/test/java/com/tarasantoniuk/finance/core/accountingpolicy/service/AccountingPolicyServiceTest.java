@@ -17,18 +17,24 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -95,14 +101,15 @@ class AccountingPolicyServiceTest {
     @Test
     void getAllAccountingPolicies_ShouldReturnListOfPolicies() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findAllWithRelations()).thenReturn(policies);
+        Page<AccountingPolicy> page = new PageImpl<>(policies);
+        when(accountingPolicyRepository.findAllWithRelations(any(Pageable.class))).thenReturn(page);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies();
+        PageResponse<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies(0, 50);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(accountingPolicyRepository, times(1)).findAllWithRelations();
+        assertEquals(1, result.getContent().size());
+        verify(accountingPolicyRepository, times(1)).findAllWithRelations(any(Pageable.class));
     }
 
     @Test

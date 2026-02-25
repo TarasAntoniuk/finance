@@ -7,6 +7,7 @@ import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsEx
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapper;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,9 +57,11 @@ public class CurrencyService {
         return currencyMapper.toResponseDTO(currency);
     }
 
+    private static final int MAX_SEARCH_RESULTS = 500;
+
     @Transactional(readOnly = true)
     public List<CurrencyResponseDto> searchCurrenciesByName(String name) {
-        List<Currency> currencies = currencyRepository.findByNameContainingIgnoreCase(name);
+        List<Currency> currencies = currencyRepository.findByNameContainingIgnoreCase(name, PageRequest.of(0, MAX_SEARCH_RESULTS));
         return currencyMapper.toResponseDTOList(currencies);
     }
 

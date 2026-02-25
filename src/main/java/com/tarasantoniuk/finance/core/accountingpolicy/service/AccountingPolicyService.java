@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.service;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
@@ -11,6 +13,9 @@ import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundExcepti
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,12 +41,28 @@ public class AccountingPolicyService {
     }
 
     /**
-     * Get all accounting policies with optimized query (solves N+1 problem).
+     * Get all accounting policies with pagination and optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load organization and currency in a single query.
      */
-    public List<AccountingPolicyResponseDto> getAllAccountingPolicies() {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findAllWithRelations();
-        return accountingPolicyMapper.toResponseDTOList(policies);
+    public PageResponse<AccountingPolicyResponseDto> getAllAccountingPolicies(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AccountingPolicy> policyPage = accountingPolicyRepository.findAllWithRelations(pageable);
+
+        List<AccountingPolicyResponseDto> dtos = accountingPolicyMapper.toResponseDTOList(policyPage.getContent());
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(policyPage.getNumber())
+                .totalPages(policyPage.getTotalPages())
+                .pageSize(policyPage.getSize())
+                .totalElements(policyPage.getTotalElements())
+                .hasNext(policyPage.hasNext())
+                .hasPrevious(policyPage.hasPrevious())
+                .build();
+
+        return PageResponse.<AccountingPolicyResponseDto>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     /**

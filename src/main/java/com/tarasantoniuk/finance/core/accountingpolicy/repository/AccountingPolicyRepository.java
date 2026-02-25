@@ -1,6 +1,8 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.repository;
 
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,10 +20,12 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
      *
      * @return list of accounting policies with relationships eagerly loaded
      */
-    @Query("SELECT ap FROM AccountingPolicy ap " +
+    @Query(value = "SELECT DISTINCT ap FROM AccountingPolicy ap " +
             "LEFT JOIN FETCH ap.organization " +
-            "LEFT JOIN FETCH ap.currency")
-    List<AccountingPolicy> findAllWithRelations();
+            "LEFT JOIN FETCH ap.currency " +
+            "ORDER BY ap.year DESC, ap.id DESC",
+            countQuery = "SELECT COUNT(ap) FROM AccountingPolicy ap")
+    Page<AccountingPolicy> findAllWithRelations(Pageable pageable);
 
     /**
      * Find accounting policy by ID with relationships loaded.

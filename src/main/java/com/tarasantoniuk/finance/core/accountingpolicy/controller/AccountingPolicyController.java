@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.controller;
 
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
@@ -20,6 +21,8 @@ import java.util.List;
 @Tag(name = "Core - Accounting Policy", description = "Accounting policy management API")
 public class AccountingPolicyController {
 
+    private static final int MAX_PAGE_SIZE = 500;
+
     private final AccountingPolicyService accountingPolicyService;
 
     public AccountingPolicyController(AccountingPolicyService accountingPolicyService) {
@@ -27,11 +30,18 @@ public class AccountingPolicyController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all accounting policies", description = "Retrieve a list of all accounting policies")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDto>> getAllAccountingPolicies() {
-        List<AccountingPolicyResponseDto> policies = accountingPolicyService.getAllAccountingPolicies();
-        return ResponseEntity.ok(policies);
+    @Operation(summary = "Get all accounting policies", description = "Retrieve a paginated list of all accounting policies")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<AccountingPolicyResponseDto>> getAllAccountingPolicies(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") int size) {
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
+        }
+        PageResponse<AccountingPolicyResponseDto> response = accountingPolicyService.getAllAccountingPolicies(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
