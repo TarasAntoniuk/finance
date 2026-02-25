@@ -91,6 +91,7 @@ public class ECBSyncService {
 
         long step4 = System.currentTimeMillis();
         List<ExternalExchangeRate> newRates = new ArrayList<>();
+        int totalSaved = 0;
         int skipped = 0;
         int batchCount = 0;
 
@@ -128,6 +129,7 @@ public class ECBSyncService {
                     rateRepository.saveAll(newRates);
                     rateRepository.flush();
                     batchCount++;
+                    totalSaved += newRates.size();
                     log.info("⏱️  Saved batch #{}: {} records in {} ms",
                             batchCount, newRates.size(), System.currentTimeMillis() - batchStart);
                     newRates.clear();
@@ -139,16 +141,16 @@ public class ECBSyncService {
             long batchStart = System.currentTimeMillis();
             rateRepository.saveAll(newRates);
             rateRepository.flush();
+            totalSaved += newRates.size();
             log.info("⏱️  Saved final batch: {} records in {} ms",
                     newRates.size(), System.currentTimeMillis() - batchStart);
         }
 
         log.info("⏱️  Data processing and saving: {} ms", System.currentTimeMillis() - step4);
 
-        int saved = data.values().stream().mapToInt(Map::size).sum() - skipped;
         log.info("🔹 sync() completed in {} ms: {} saved, {} skipped",
-                System.currentTimeMillis() - syncStart, saved, skipped);
-        return saved;
+                System.currentTimeMillis() - syncStart, totalSaved, skipped);
+        return totalSaved;
     }
 
     private String buildKey(LocalDate date, Long fromId, Long toId) {
