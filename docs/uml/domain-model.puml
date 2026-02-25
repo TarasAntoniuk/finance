@@ -123,14 +123,14 @@ class com.tarasantoniuk.finance.common.snapshot.entity.SnapshotValidity {
 
 
 class com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy {
-	{field} +depreciationMethod : String
+	{field} +depreciationMethod : com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod
 	{field} +fiscalYearStartMonth : Integer
 	{field} +id : Long
-	{field} +inventoryValuationMethod : String
+	{field} +inventoryValuationMethod : com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod
 	{field} +isActive : Boolean
 	{field} +notes : String
-	{field} +revenueRecognitionMethod : String
-	{field} +vatAccountingMethod : String
+	{field} +revenueRecognitionMethod : com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod
+	{field} +vatAccountingMethod : com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod
 	{field} +year : Integer
 	{method} +equals ( paramObject1 : Object ) : boolean
 	{method} +hashCode () : int

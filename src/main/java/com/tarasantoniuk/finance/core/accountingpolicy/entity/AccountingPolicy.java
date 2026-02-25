@@ -2,6 +2,10 @@ package com.tarasantoniuk.finance.core.accountingpolicy.entity;
 
 
 import com.tarasantoniuk.finance.common.entity.BaseEntity;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import jakarta.persistence.*;
@@ -31,17 +35,21 @@ public class AccountingPolicy extends BaseEntity {
     @Column(name = "fiscal_year_start_month")
     private Integer fiscalYearStartMonth; // 1-12, default 1 (January)
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "depreciation_method", length = 50)
-    private String depreciationMethod; // STRAIGHT_LINE, DECLINING_BALANCE, etc.
+    private DepreciationMethod depreciationMethod;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "inventory_valuation_method", length = 50)
-    private String inventoryValuationMethod; // FIFO, LIFO, WEIGHTED_AVERAGE
+    private InventoryValuationMethod inventoryValuationMethod;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "revenue_recognition_method", length = 50)
-    private String revenueRecognitionMethod; // ACCRUAL, CASH
+    private RevenueRecognitionMethod revenueRecognitionMethod;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "vat_accounting_method", length = 50)
-    private String vatAccountingMethod; // INVOICE, PAYMENT
+    private VatAccountingMethod vatAccountingMethod;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -54,8 +62,8 @@ public class AccountingPolicy extends BaseEntity {
 
     public AccountingPolicy(Long id, Organization organization, Integer year,
                             Currency currency, Integer fiscalYearStartMonth,
-                            String depreciationMethod, String inventoryValuationMethod,
-                            String revenueRecognitionMethod, String vatAccountingMethod,
+                            DepreciationMethod depreciationMethod, InventoryValuationMethod inventoryValuationMethod,
+                            RevenueRecognitionMethod revenueRecognitionMethod, VatAccountingMethod vatAccountingMethod,
                             Boolean isActive, String notes) {
         this.id = id;
         this.organization = organization;
@@ -111,35 +119,35 @@ public class AccountingPolicy extends BaseEntity {
         this.fiscalYearStartMonth = fiscalYearStartMonth;
     }
 
-    public String getDepreciationMethod() {
+    public DepreciationMethod getDepreciationMethod() {
         return depreciationMethod;
     }
 
-    public void setDepreciationMethod(String depreciationMethod) {
+    public void setDepreciationMethod(DepreciationMethod depreciationMethod) {
         this.depreciationMethod = depreciationMethod;
     }
 
-    public String getInventoryValuationMethod() {
+    public InventoryValuationMethod getInventoryValuationMethod() {
         return inventoryValuationMethod;
     }
 
-    public void setInventoryValuationMethod(String inventoryValuationMethod) {
+    public void setInventoryValuationMethod(InventoryValuationMethod inventoryValuationMethod) {
         this.inventoryValuationMethod = inventoryValuationMethod;
     }
 
-    public String getRevenueRecognitionMethod() {
+    public RevenueRecognitionMethod getRevenueRecognitionMethod() {
         return revenueRecognitionMethod;
     }
 
-    public void setRevenueRecognitionMethod(String revenueRecognitionMethod) {
+    public void setRevenueRecognitionMethod(RevenueRecognitionMethod revenueRecognitionMethod) {
         this.revenueRecognitionMethod = revenueRecognitionMethod;
     }
 
-    public String getVatAccountingMethod() {
+    public VatAccountingMethod getVatAccountingMethod() {
         return vatAccountingMethod;
     }
 
-    public void setVatAccountingMethod(String vatAccountingMethod) {
+    public void setVatAccountingMethod(VatAccountingMethod vatAccountingMethod) {
         this.vatAccountingMethod = vatAccountingMethod;
     }
 

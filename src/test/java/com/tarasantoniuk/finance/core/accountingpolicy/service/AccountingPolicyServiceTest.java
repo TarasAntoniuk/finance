@@ -3,6 +3,10 @@ package com.tarasantoniuk.finance.core.accountingpolicy.service;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyNotFoundException;
 import com.tarasantoniuk.finance.core.accountingpolicy.mapper.AccountingPolicyMapper;
@@ -67,10 +71,10 @@ class AccountingPolicyServiceTest {
         accountingPolicy.setYear(2024);
         accountingPolicy.setCurrency(currency);
         accountingPolicy.setFiscalYearStartMonth(1);
-        accountingPolicy.setDepreciationMethod("STRAIGHT_LINE");
-        accountingPolicy.setInventoryValuationMethod("FIFO");
-        accountingPolicy.setRevenueRecognitionMethod("ACCRUAL");
-        accountingPolicy.setVatAccountingMethod("INVOICE");
+        accountingPolicy.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        accountingPolicy.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        accountingPolicy.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        accountingPolicy.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         accountingPolicy.setIsActive(true);
 
         requestDTO = new AccountingPolicyRequestDto();
@@ -78,10 +82,10 @@ class AccountingPolicyServiceTest {
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
         requestDTO.setFiscalYearStartMonth(1);
-        requestDTO.setDepreciationMethod("STRAIGHT_LINE");
-        requestDTO.setInventoryValuationMethod("FIFO");
-        requestDTO.setRevenueRecognitionMethod("ACCRUAL");
-        requestDTO.setVatAccountingMethod("INVOICE");
+        requestDTO.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        requestDTO.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        requestDTO.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        requestDTO.setVatAccountingMethod(VatAccountingMethod.INVOICE);
 
         responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
