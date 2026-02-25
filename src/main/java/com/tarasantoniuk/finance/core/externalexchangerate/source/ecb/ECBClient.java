@@ -12,6 +12,7 @@ import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncExce
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public class ECBClient {
             dbf.setExpandEntityReferences(false);
 
             Document doc = dbf.newDocumentBuilder()
-                    .parse(new ByteArrayInputStream(xml.getBytes()));
+                    .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
             Map<LocalDate, Map<String, BigDecimal>> result = new HashMap<>();
             NodeList cubes = doc.getElementsByTagName("Cube");
