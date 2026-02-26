@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -51,9 +52,9 @@ public class ExternalExchangeRateController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getAllExchangeRates(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "200")
-            @RequestParam(defaultValue = "200") int size) {
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
@@ -84,7 +85,7 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -102,7 +103,7 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Source name", required = true, example = "NBU")
             @PathVariable @Size(max = 100) @Pattern(regexp = "^[A-Z0-9_]+$") String source,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -129,9 +130,9 @@ public class ExternalExchangeRateController {
             @Parameter(description = "End date", required = true, example = "2024-12-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "200")
-            @RequestParam(defaultValue = "200") int size) {
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
@@ -161,9 +162,9 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Currency To ID", required = true, example = "2")
             @RequestParam Long currencyToId,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "200")
-            @RequestParam(defaultValue = "200") int size) {
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
@@ -185,7 +186,7 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Currency From ID", required = true, example = "2")
             @RequestParam Long currencyFromId,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }

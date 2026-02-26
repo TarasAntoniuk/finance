@@ -9,12 +9,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/counterparties")
+@Validated
 @Tag(name = "Core - Counterparty", description = "Counterparty management API")
 public class CounterpartyController {
 
@@ -53,9 +56,9 @@ public class CounterpartyController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<CounterpartyResponseDto>> getAll(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "50")
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
 
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;

@@ -282,4 +282,41 @@ class AccountingPolicyControllerIntegrationTest {
         mockMvc.perform(delete("/api/accounting-policies/1"))
                 .andExpect(status().isNoContent());
     }
+
+    // ========== PAGINATION VALIDATION TESTS ==========
+
+    @Test
+    void getAllAccountingPolicies_WhenSizeIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllAccountingPolicies_WhenSizeIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllAccountingPolicies_WhenPageIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAccountingPoliciesByOrganization_WhenLimitIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies/organization/1")
+                        .param("limit", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAccountingPoliciesByOrganization_WhenLimitIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies/organization/1")
+                        .param("limit", "-1"))
+                .andExpect(status().isBadRequest());
+    }
 }

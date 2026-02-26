@@ -510,4 +510,27 @@ class CounterpartyControllerTest {
 
         verify(counterpartyService, times(1)).deactivate(1L);
     }
+
+    // ========== PAGINATION VALIDATION TESTS ==========
+
+    @Test
+    void getAll_WhenSizeIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/counterparties")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAll_WhenSizeIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/counterparties")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAll_WhenPageIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/counterparties")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
 }

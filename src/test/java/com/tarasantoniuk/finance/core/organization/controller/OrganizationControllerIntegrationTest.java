@@ -194,4 +194,41 @@ class OrganizationControllerIntegrationTest {
         mockMvc.perform(delete("/api/organizations/1"))
                 .andExpect(status().isNoContent());
     }
+
+    // ========== PAGINATION VALIDATION TESTS ==========
+
+    @Test
+    void getAllOrganizations_WhenSizeIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/organizations")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllOrganizations_WhenSizeIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/organizations")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllOrganizations_WhenPageIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/organizations")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenLimitIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/organizations/country/1")
+                        .param("limit", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenLimitIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/organizations/country/1")
+                        .param("limit", "-1"))
+                .andExpect(status().isBadRequest());
+    }
 }

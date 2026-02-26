@@ -10,14 +10,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounting-policies")
+@Validated
 @Tag(name = "Core - Accounting Policy", description = "Accounting policy management API")
 public class AccountingPolicyController {
 
@@ -34,9 +37,9 @@ public class AccountingPolicyController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<AccountingPolicyResponseDto>> getAllAccountingPolicies(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "50")
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
         }
@@ -78,7 +81,7 @@ public class AccountingPolicyController {
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByOrganization(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -94,7 +97,7 @@ public class AccountingPolicyController {
     public ResponseEntity<List<AccountingPolicyResponseDto>> getActiveAccountingPoliciesByOrganization(
             @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -110,7 +113,7 @@ public class AccountingPolicyController {
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByYear(
             @Parameter(description = "Year", required = true, example = "2024") @PathVariable Integer year,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -127,7 +130,7 @@ public class AccountingPolicyController {
             @Parameter(description = "Start year", required = true, example = "2020") @RequestParam Integer startYear,
             @Parameter(description = "End year", required = true, example = "2024") @RequestParam Integer endYear,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -143,7 +146,7 @@ public class AccountingPolicyController {
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByCurrency(
             @Parameter(description = "Currency ID", required = true) @PathVariable Long currencyId,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }

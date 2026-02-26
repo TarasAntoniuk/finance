@@ -10,14 +10,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/organizations")
+@Validated
 @Tag(name = "Core - Organization", description = "Organization management API")
 public class OrganizationController {
 
@@ -34,9 +37,9 @@ public class OrganizationController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<OrganizationResponseDto>> getAllOrganizations(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "50")
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
         }
@@ -62,7 +65,7 @@ public class OrganizationController {
     public ResponseEntity<List<OrganizationResponseDto>> getOrganizationsByCountry(
             @Parameter(description = "Country ID", required = true) @PathVariable Long countryId,
             @Parameter(description = "Maximum number of results (max 500)", example = "500")
-            @RequestParam(defaultValue = "500") int limit) {
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
         if (limit > MAX_PAGE_SIZE) {
             limit = MAX_PAGE_SIZE;
         }
@@ -77,9 +80,9 @@ public class OrganizationController {
             @Parameter(description = "Name to search", required = true, example = "Acme")
             @RequestParam String name,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Number of items per page (max 500)", example = "50")
-            @RequestParam(defaultValue = "50") int size) {
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
         if (size > MAX_PAGE_SIZE) {
             size = MAX_PAGE_SIZE;
         }
