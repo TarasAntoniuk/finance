@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,6 @@ public class CurrencyDataLoader implements CommandLineRunner {
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
         if (currencyRepository.count() > 0) {
             log.info("Currencies already loaded. Skipping initialization.");
