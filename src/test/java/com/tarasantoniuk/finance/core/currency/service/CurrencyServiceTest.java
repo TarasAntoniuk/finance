@@ -14,10 +14,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -228,19 +232,19 @@ class CurrencyServiceTest {
         List<Currency> currencies = List.of(currency);
         List<CurrencyResponseDto> responseDTOs = List.of(responseDTO);
 
-        when(currencyRepository.findByNameContainingIgnoreCase("Dollar")).thenReturn(currencies);
+        when(currencyRepository.findByNameContainingIgnoreCase(eq("Dollar"), any(Pageable.class))).thenReturn(currencies);
         when(currencyMapper.toResponseDTOList(currencies)).thenReturn(responseDTOs);
 
         List<CurrencyResponseDto> result = currencyService.searchCurrenciesByName("Dollar");
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(currencyRepository).findByNameContainingIgnoreCase("Dollar");
+        verify(currencyRepository).findByNameContainingIgnoreCase(eq("Dollar"), any(Pageable.class));
     }
 
     @Test
     void searchCurrenciesByName_WhenNoMatches_ShouldReturnEmptyList() {
-        when(currencyRepository.findByNameContainingIgnoreCase("NonExistent")).thenReturn(List.of());
+        when(currencyRepository.findByNameContainingIgnoreCase(eq("NonExistent"), any(Pageable.class))).thenReturn(List.of());
         when(currencyMapper.toResponseDTOList(List.of())).thenReturn(List.of());
 
         List<CurrencyResponseDto> result = currencyService.searchCurrenciesByName("NonExistent");

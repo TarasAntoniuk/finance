@@ -27,31 +27,21 @@ public class ExternalRateSyncAdminController {
     @Operation(summary = "Sync daily ECB exchange rates", description = "Synchronize latest exchange rates from European Central Bank (ECB). Fetches current day rates and saves them to the database.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Synchronization completed successfully"),
-            @ApiResponse(responseCode = "500", description = "Synchronization failed")
+            @ApiResponse(responseCode = "503", description = "ECB service unavailable or sync failed")
     })
     public ResponseEntity<Map<String, Object>> syncECBDaily() {
-        try {
-            int count = ecbSyncService.syncDaily();
-            return ResponseEntity.ok(Map.of("success", true, "saved", count));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        }
+        int count = ecbSyncService.syncDaily();
+        return ResponseEntity.ok(Map.of("success", true, "saved", count));
     }
 
     @PostMapping("/ecb/history")
     @Operation(summary = "Sync historical ECB exchange rates", description = "Synchronize historical exchange rates from European Central Bank (ECB). Fetches all available historical rates and saves them to the database.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Synchronization completed successfully"),
-            @ApiResponse(responseCode = "500", description = "Synchronization failed")
+            @ApiResponse(responseCode = "503", description = "ECB service unavailable or sync failed")
     })
     public ResponseEntity<Map<String, Object>> syncECBHistory() {
-        try {
-            int count = ecbSyncService.syncHistory();
-            return ResponseEntity.ok(Map.of("success", true, "saved", count));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("success", false, "error", e.getMessage()));
-        }
+        int count = ecbSyncService.syncHistory();
+        return ResponseEntity.ok(Map.of("success", true, "saved", count));
     }
 }

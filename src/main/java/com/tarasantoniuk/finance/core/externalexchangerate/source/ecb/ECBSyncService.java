@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,32 +33,32 @@ public class ECBSyncService {
         this.currencyRepository = currencyRepository;
     }
 
-    @Transactional
     public int syncDaily() {
         log.info("Syncing daily ECB rates");
-        return sync(client.fetchDaily());
+        Map<LocalDate, Map<String, BigDecimal>> data = client.fetchDaily();
+        return saveRates(data);
     }
 
-    @Transactional
     public int syncHistory() {
-        log.info("🔹 Starting syncHistory");
+        log.info("Starting syncHistory");
         long totalStart = System.currentTimeMillis();
 
         long step1 = System.currentTimeMillis();
         Map<LocalDate, Map<String, BigDecimal>> data = client.fetchHistory();
-        log.info("⏱️  Step 1 (fetchHistory): {} ms, records: {}",
+        log.info("Step 1 (fetchHistory): {} ms, records: {}",
                 System.currentTimeMillis() - step1,
                 data != null ? data.size() : 0);
 
         long step2 = System.currentTimeMillis();
-        int result = sync(data);
-        log.info("⏱️  Step 2 (sync): {} ms", System.currentTimeMillis() - step2);
+        int result = saveRates(data);
+        log.info("Step 2 (saveRates): {} ms", System.currentTimeMillis() - step2);
 
-        log.info("🔹 Total syncHistory time: {} ms", System.currentTimeMillis() - totalStart);
+        log.info("Total syncHistory time: {} ms", System.currentTimeMillis() - totalStart);
         return result;
     }
 
-    private int sync(Map<LocalDate, Map<String, BigDecimal>> data) {
+    @Transactional
+    public int saveRates(Map<LocalDate, Map<String, BigDecimal>> data) {
         long syncStart = System.currentTimeMillis();
 
         if (data == null || data.isEmpty()) {
@@ -67,13 +68,13 @@ public class ECBSyncService {
 
         long step1 = System.currentTimeMillis();
         Currency eur = currencyRepository.findByCode("EUR")
-                .orElseThrow(() -> new RuntimeException("EUR currency not found"));
-        log.info("⏱️  Loading EUR: {} ms", System.currentTimeMillis() - step1);
+                .orElseThrow(() -> new ECBSyncException("EUR currency must exist in the database before ECB sync can run"));
+        log.info("Loading EUR: {} ms", System.currentTimeMillis() - step1);
 
         long step2 = System.currentTimeMillis();
         Map<String, Currency> currencyMap = currencyRepository.findAll().stream()
                 .collect(HashMap::new, (m, c) -> m.put(c.getCode(), c), HashMap::putAll);
-        log.info("⏱️  Loading all currencies: {} ms, count: {}",
+        log.info("Loading all currencies: {} ms, count: {}",
                 System.currentTimeMillis() - step2, currencyMap.size());
 
         LocalDate minDate = data.keySet().stream().min(LocalDate::compareTo).orElse(LocalDate.now());
@@ -81,15 +82,16 @@ public class ECBSyncService {
 
         long step3 = System.currentTimeMillis();
         Set<String> existingKeys = rateRepository
-                .findByExchangeDateBetweenAndSource(minDate, maxDate, SOURCE)
+                .findExistingRateKeys(minDate, maxDate, SOURCE)
                 .stream()
-                .map(r -> buildKey(r.getExchangeDate(), r.getCurrencyFrom().getId(), r.getCurrencyTo().getId()))
+                .map(row -> buildKey((LocalDate) row[0], (Long) row[1], (Long) row[2]))
                 .collect(HashSet::new, HashSet::add, HashSet::addAll);
-        log.info("⏱️  Loading existing rates: {} ms, count: {} (date range: {} - {})",
+        log.info("Loading existing rates: {} ms, count: {} (date range: {} - {})",
                 System.currentTimeMillis() - step3, existingKeys.size(), minDate, maxDate);
 
         long step4 = System.currentTimeMillis();
         List<ExternalExchangeRate> newRates = new ArrayList<>();
+        int totalSaved = 0;
         int skipped = 0;
         int batchCount = 0;
 
@@ -127,7 +129,8 @@ public class ECBSyncService {
                     rateRepository.saveAll(newRates);
                     rateRepository.flush();
                     batchCount++;
-                    log.info("⏱️  Saved batch #{}: {} records in {} ms",
+                    totalSaved += newRates.size();
+                    log.info("Saved batch #{}: {} records in {} ms",
                             batchCount, newRates.size(), System.currentTimeMillis() - batchStart);
                     newRates.clear();
                 }
@@ -138,16 +141,16 @@ public class ECBSyncService {
             long batchStart = System.currentTimeMillis();
             rateRepository.saveAll(newRates);
             rateRepository.flush();
-            log.info("⏱️  Saved final batch: {} records in {} ms",
+            totalSaved += newRates.size();
+            log.info("Saved final batch: {} records in {} ms",
                     newRates.size(), System.currentTimeMillis() - batchStart);
         }
 
-        log.info("⏱️  Data processing and saving: {} ms", System.currentTimeMillis() - step4);
+        log.info("Data processing and saving: {} ms", System.currentTimeMillis() - step4);
 
-        int saved = data.values().stream().mapToInt(Map::size).sum() - skipped;
-        log.info("🔹 sync() completed in {} ms: {} saved, {} skipped",
-                System.currentTimeMillis() - syncStart, saved, skipped);
-        return saved;
+        log.info("sync() completed in {} ms: {} saved, {} skipped",
+                System.currentTimeMillis() - syncStart, totalSaved, skipped);
+        return totalSaved;
     }
 
     private String buildKey(LocalDate date, Long fromId, Long toId) {

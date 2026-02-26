@@ -139,14 +139,12 @@ public class ExternalExchangeRate extends BaseEntity {
         ExternalExchangeRate that = (ExternalExchangeRate) o;
         return Objects.equals(id, that.id) &&
                 Objects.equals(exchangeDate, that.exchangeDate) &&
-                Objects.equals(currencyFrom, that.currencyFrom) &&
-                Objects.equals(currencyTo, that.currencyTo) &&
                 Objects.equals(source, that.source);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, exchangeDate, currencyFrom, currencyTo, source);
+        return Objects.hash(id, exchangeDate, source);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.controller;
 
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.service.AccountingPolicyService;
@@ -9,16 +10,21 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounting-policies")
+@Validated
 @Tag(name = "Core - Accounting Policy", description = "Accounting policy management API")
 public class AccountingPolicyController {
+
+    private static final int MAX_PAGE_SIZE = 500;
 
     private final AccountingPolicyService accountingPolicyService;
 
@@ -27,11 +33,18 @@ public class AccountingPolicyController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all accounting policies", description = "Retrieve a list of all accounting policies")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
-    public ResponseEntity<List<AccountingPolicyResponseDto>> getAllAccountingPolicies() {
-        List<AccountingPolicyResponseDto> policies = accountingPolicyService.getAllAccountingPolicies();
-        return ResponseEntity.ok(policies);
+    @Operation(summary = "Get all accounting policies", description = "Retrieve a paginated list of all accounting policies")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
+    public ResponseEntity<PageResponse<AccountingPolicyResponseDto>> getAllAccountingPolicies(
+            @Parameter(description = "Page number (0-based)", example = "0")
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
+        }
+        PageResponse<AccountingPolicyResponseDto> response = accountingPolicyService.getAllAccountingPolicies(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -66,9 +79,14 @@ public class AccountingPolicyController {
             description = "Retrieve all accounting policies for a specific organization")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByOrganization(
-            @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId) {
+            @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<AccountingPolicyResponseDto> policies = accountingPolicyService
-                .getAccountingPoliciesByOrganization(organizationId);
+                .getAccountingPoliciesByOrganization(organizationId, limit);
         return ResponseEntity.ok(policies);
     }
 
@@ -77,9 +95,14 @@ public class AccountingPolicyController {
             description = "Retrieve active accounting policies for a specific organization")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<AccountingPolicyResponseDto>> getActiveAccountingPoliciesByOrganization(
-            @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId) {
+            @Parameter(description = "Organization ID", required = true) @PathVariable Long organizationId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<AccountingPolicyResponseDto> policies = accountingPolicyService
-                .getActiveAccountingPoliciesByOrganization(organizationId);
+                .getActiveAccountingPoliciesByOrganization(organizationId, limit);
         return ResponseEntity.ok(policies);
     }
 
@@ -88,9 +111,14 @@ public class AccountingPolicyController {
             description = "Retrieve all accounting policies for a specific year")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByYear(
-            @Parameter(description = "Year", required = true, example = "2024") @PathVariable Integer year) {
+            @Parameter(description = "Year", required = true, example = "2024") @PathVariable Integer year,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<AccountingPolicyResponseDto> policies = accountingPolicyService
-                .getAccountingPoliciesByYear(year);
+                .getAccountingPoliciesByYear(year, limit);
         return ResponseEntity.ok(policies);
     }
 
@@ -100,9 +128,14 @@ public class AccountingPolicyController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByYearRange(
             @Parameter(description = "Start year", required = true, example = "2020") @RequestParam Integer startYear,
-            @Parameter(description = "End year", required = true, example = "2024") @RequestParam Integer endYear) {
+            @Parameter(description = "End year", required = true, example = "2024") @RequestParam Integer endYear,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<AccountingPolicyResponseDto> policies = accountingPolicyService
-                .getAccountingPoliciesByYearRange(startYear, endYear);
+                .getAccountingPoliciesByYearRange(startYear, endYear, limit);
         return ResponseEntity.ok(policies);
     }
 
@@ -111,9 +144,14 @@ public class AccountingPolicyController {
             description = "Retrieve all accounting policies using a specific currency")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<AccountingPolicyResponseDto>> getAccountingPoliciesByCurrency(
-            @Parameter(description = "Currency ID", required = true) @PathVariable Long currencyId) {
+            @Parameter(description = "Currency ID", required = true) @PathVariable Long currencyId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<AccountingPolicyResponseDto> policies = accountingPolicyService
-                .getAccountingPoliciesByCurrency(currencyId);
+                .getAccountingPoliciesByCurrency(currencyId, limit);
         return ResponseEntity.ok(policies);
     }
 

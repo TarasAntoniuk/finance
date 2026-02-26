@@ -19,8 +19,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -205,7 +204,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setId(1L);
         rate.setExchangeDate(date);
 
-        when(exchangeRateService.getExchangeRatesByDate(date))
+        when(exchangeRateService.getExchangeRatesByDate(eq(date), anyInt()))
                 .thenReturn(List.of(rate));
 
         // When & Then
@@ -222,7 +221,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setId(1L);
         rate.setExchangeDate(date);
 
-        when(exchangeRateService.getExchangeRatesByDateAndSource(date, "ECB"))
+        when(exchangeRateService.getExchangeRatesByDateAndSource(eq(date), eq("ECB"), anyInt()))
                 .thenReturn(List.of(rate));
 
         // When & Then
@@ -470,7 +469,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate2.setRate(BigDecimal.valueOf(1.15));
 
         when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(
-                LocalDate.of(2024, 1, 15), 2L))
+                eq(LocalDate.of(2024, 1, 15)), eq(2L), anyInt()))
                 .thenReturn(List.of(rate1, rate2));
 
         // When & Then
@@ -598,5 +597,42 @@ class ExternalExchangeRateControllerIntegrationTest {
         // When & Then
         mockMvc.perform(delete("/api/exchange-rates/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    // ========== PAGINATION VALIDATION TESTS ==========
+
+    @Test
+    void getAllExchangeRates_WhenSizeIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/exchange-rates")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllExchangeRates_WhenSizeIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/exchange-rates")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllExchangeRates_WhenPageIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/exchange-rates")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getExchangeRatesByDate_WhenLimitIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/exchange-rates/date/2024-01-15")
+                        .param("limit", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getExchangeRatesByDate_WhenLimitIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/exchange-rates/date/2024-01-15")
+                        .param("limit", "-1"))
+                .andExpect(status().isBadRequest());
     }
 }

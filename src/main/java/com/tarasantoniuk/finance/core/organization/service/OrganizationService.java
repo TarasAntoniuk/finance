@@ -9,6 +9,11 @@ import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlready
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapper;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,12 +36,13 @@ public class OrganizationService {
     }
 
     /**
-     * Get all organizations with optimized query (solves N+1 problem).
+     * Get all organizations with pagination and optimized query (solves N+1 problem).
      * Uses JOIN FETCH to load country in a single query.
      */
-    public List<OrganizationResponseDto> getAllOrganizations() {
-        List<Organization> organizations = organizationRepository.findAllWithCountry();
-        return organizationMapper.toResponseDTOList(organizations);
+    public PageResponse<OrganizationResponseDto> getAllOrganizations(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Organization> orgPage = organizationRepository.findAllWithCountry(pageable);
+        return buildPageResponse(orgPage);
     }
 
     /**
@@ -51,17 +57,36 @@ public class OrganizationService {
     /**
      * Get organizations by country with optimized query.
      */
-    public List<OrganizationResponseDto> getOrganizationsByCountry(Long countryId) {
-        List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId);
+    public List<OrganizationResponseDto> getOrganizationsByCountry(Long countryId, int limit) {
+        List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId, PageRequest.of(0, limit));
         return organizationMapper.toResponseDTOList(organizations);
     }
 
     /**
-     * Search organizations by name with optimized query.
+     * Search organizations by name with pagination and optimized query.
      */
-    public List<OrganizationResponseDto> searchOrganizationsByName(String name) {
-        List<Organization> organizations = organizationRepository.findByNameContainingIgnoreCaseWithCountry(name);
-        return organizationMapper.toResponseDTOList(organizations);
+    public PageResponse<OrganizationResponseDto> searchOrganizationsByName(String name, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Organization> orgPage = organizationRepository.findByNameContainingIgnoreCaseWithCountry(name, pageable);
+        return buildPageResponse(orgPage);
+    }
+
+    private PageResponse<OrganizationResponseDto> buildPageResponse(Page<Organization> orgPage) {
+        List<OrganizationResponseDto> dtos = organizationMapper.toResponseDTOList(orgPage.getContent());
+
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(orgPage.getNumber())
+                .totalPages(orgPage.getTotalPages())
+                .pageSize(orgPage.getSize())
+                .totalElements(orgPage.getTotalElements())
+                .hasNext(orgPage.hasNext())
+                .hasPrevious(orgPage.hasPrevious())
+                .build();
+
+        return PageResponse.<OrganizationResponseDto>builder()
+                .content(dtos)
+                .metadata(metadata)
+                .build();
     }
 
     @Transactional

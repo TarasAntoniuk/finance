@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.controller;
 
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import com.tarasantoniuk.finance.core.externalexchangerate.source.ecb.ECBSyncService;
 import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
@@ -52,15 +53,14 @@ class ExternalRateSyncAdminControllerTest {
     }
 
     @Test
-    void syncECBDaily_WhenServiceThrowsException_ShouldReturnInternalServerError() throws Exception {
+    void syncECBDaily_WhenServiceThrowsException_ShouldReturnServiceUnavailable() throws Exception {
         // Given
-        when(ecbSyncService.syncDaily()).thenThrow(new RuntimeException("ECB API is unavailable"));
+        when(ecbSyncService.syncDaily()).thenThrow(new ECBSyncException("ECB API is unavailable"));
 
         // When & Then
         mockMvc.perform(post("/api/admin/external-rate-sync/ecb/daily"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error").value("ECB API is unavailable"));
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("ECB API is unavailable"));
     }
 
     @Test
@@ -88,15 +88,14 @@ class ExternalRateSyncAdminControllerTest {
     }
 
     @Test
-    void syncECBHistory_WhenServiceThrowsException_ShouldReturnInternalServerError() throws Exception {
+    void syncECBHistory_WhenServiceThrowsException_ShouldReturnServiceUnavailable() throws Exception {
         // Given
-        when(ecbSyncService.syncHistory()).thenThrow(new RuntimeException("Database connection failed"));
+        when(ecbSyncService.syncHistory()).thenThrow(new ECBSyncException("Database connection failed"));
 
         // When & Then
         mockMvc.perform(post("/api/admin/external-rate-sync/ecb/history"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.error").value("Database connection failed"));
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.message").value("Database connection failed"));
     }
 
     @Test

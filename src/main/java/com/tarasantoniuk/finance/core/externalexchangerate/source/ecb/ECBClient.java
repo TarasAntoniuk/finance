@@ -2,14 +2,18 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -24,7 +28,7 @@ public class ECBClient {
 
     private final RestTemplate restTemplate;
 
-    public ECBClient(RestTemplate restTemplate) {
+    public ECBClient(@Qualifier("ecbRestTemplate") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
@@ -42,15 +46,22 @@ public class ECBClient {
             return parseXml(xml);
         } catch (Exception e) {
             log.error("Failed to fetch from ECB: {}", url, e);
-            throw new RuntimeException("ECB fetch failed", e);
+            throw ECBSyncException.fetchFailed(url, e);
         }
     }
 
     private Map<LocalDate, Map<String, BigDecimal>> parseXml(String xml) {
         try {
-            Document doc = DocumentBuilderFactory.newInstance()
-                    .newDocumentBuilder()
-                    .parse(new ByteArrayInputStream(xml.getBytes()));
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            dbf.setXIncludeAware(false);
+            dbf.setExpandEntityReferences(false);
+
+            Document doc = dbf.newDocumentBuilder()
+                    .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
 
             Map<LocalDate, Map<String, BigDecimal>> result = new HashMap<>();
             NodeList cubes = doc.getElementsByTagName("Cube");
@@ -73,7 +84,7 @@ public class ECBClient {
 
         } catch (Exception e) {
             log.error("Failed to parse ECB XML", e);
-            throw new RuntimeException("ECB parse failed", e);
+            throw ECBSyncException.parseFailed(e);
         }
     }
 

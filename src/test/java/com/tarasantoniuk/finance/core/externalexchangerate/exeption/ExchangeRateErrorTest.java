@@ -20,8 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -63,7 +62,7 @@ class ExchangeRateErrorTest {
     void getLatestRatesByDate_WhenCurrencyNotFound_ShouldReturn404() throws Exception {
         // Given
         LocalDate date = LocalDate.of(2024, 1, 15);
-        when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, 999L))
+        when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(eq(date), eq(999L), anyInt()))
                 .thenThrow(CurrencyNotFoundException.byId(999L));
 
         // When & Then

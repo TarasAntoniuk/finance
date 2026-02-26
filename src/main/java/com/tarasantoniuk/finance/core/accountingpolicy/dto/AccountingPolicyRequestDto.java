@@ -1,5 +1,9 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.dto;
 
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -18,9 +22,9 @@ public class AccountingPolicyRequestDto extends BaseAccountingPolicyDto {
     }
 
     public AccountingPolicyRequestDto(Long organizationId, Integer year, Long currencyId,
-                                      Integer fiscalYearStartMonth, String depreciationMethod,
-                                      String inventoryValuationMethod, String revenueRecognitionMethod,
-                                      String vatAccountingMethod, Boolean isActive, String notes) {
+                                      Integer fiscalYearStartMonth, DepreciationMethod depreciationMethod,
+                                      InventoryValuationMethod inventoryValuationMethod, RevenueRecognitionMethod revenueRecognitionMethod,
+                                      VatAccountingMethod vatAccountingMethod, Boolean isActive, String notes) {
         super();
         this.organizationId = organizationId;
         setYear(year);
