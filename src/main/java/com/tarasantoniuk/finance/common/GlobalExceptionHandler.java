@@ -5,11 +5,6 @@ import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatus
 import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
-import com.tarasantoniuk.finance.core.counterparty.exception.CounterpartyNotFoundException;
-import com.tarasantoniuk.finance.core.counterparty.exception.DuplicateCounterpartyException;
-import com.tarasantoniuk.finance.core.country.exception.CountryNotFoundException;
-import com.tarasantoniuk.finance.core.currency.exception.CurrencyAlreadyExistsException;
-import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -60,42 +55,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidDocumentStatusException.class)
     public ResponseEntity<ErrorResponse> handleInvalidDocumentStatus(
             InvalidDocumentStatusException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    // ========== COUNTERPARTY EXCEPTIONS ==========
-
-    @ExceptionHandler(CounterpartyNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCounterpartyNotFoundException(
-            CounterpartyNotFoundException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(DuplicateCounterpartyException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateCounterpartyException(
-            DuplicateCounterpartyException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
-    }
-
-    // ========== COUNTRY EXCEPTIONS ==========
-
-    @ExceptionHandler(CountryNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCountryNotFoundException(
-            CountryNotFoundException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-    }
-
-    // ========== CURRENCY EXCEPTIONS ==========
-
-    @ExceptionHandler(CurrencyNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCurrencyNotFoundException(
-            CurrencyNotFoundException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(CurrencyAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleCurrencyAlreadyExistsException(
-            CurrencyAlreadyExistsException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 

@@ -86,7 +86,7 @@ class CounterpartyControllerTest {
     void create_WhenCodeExists_ShouldReturnConflict() throws Exception {
         // Given
         when(counterpartyService.create(any(CounterpartyRequestDto.class)))
-                .thenThrow(new DuplicateCounterpartyException("Counterparty with code CP001 already exists"));
+                .thenThrow(DuplicateCounterpartyException.byCode("CP001"));
 
         // When & Then
         mockMvc.perform(post("/api/counterparties")
@@ -406,7 +406,7 @@ class CounterpartyControllerTest {
     void update_WhenChangingToExistingCode_ShouldReturnConflict() throws Exception {
         // Given
         when(counterpartyService.update(eq(1L), any(CounterpartyRequestDto.class)))
-                .thenThrow(new DuplicateCounterpartyException("Counterparty with code CP002 already exists"));
+                .thenThrow(DuplicateCounterpartyException.byCode("CP002"));
 
         // When & Then
         mockMvc.perform(put("/api/counterparties/1")
