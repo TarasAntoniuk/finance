@@ -1,19 +1,18 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.exception;
 
-import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
-
 /**
- * Exception thrown when ECB exchange rate synchronization fails
+ * Exception thrown when ECB exchange rate synchronization fails.
+ * Extends RuntimeException directly — represents an infrastructure/external service failure,
+ * not a client input error (InvalidOperationException).
  */
-public class ECBSyncException extends InvalidOperationException {
+public class ECBSyncException extends RuntimeException {
 
     public ECBSyncException(String message) {
         super(message);
     }
 
     public ECBSyncException(String message, Throwable cause) {
-        super(message);
-        initCause(cause);
+        super(message, cause);
     }
 
     public static ECBSyncException fetchFailed(String url, Throwable cause) {
