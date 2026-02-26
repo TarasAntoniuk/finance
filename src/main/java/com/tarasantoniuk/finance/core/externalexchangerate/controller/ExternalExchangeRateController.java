@@ -10,9 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,6 +24,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/exchange-rates")
+@Validated
 @Tag(name = "Core - Exchange Rate", description = "External exchange rate management API")
 public class ExternalExchangeRateController {
 
@@ -96,7 +100,7 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Source name", required = true, example = "NBU")
-            @PathVariable String source) {
+            @PathVariable @Size(max = 100) @Pattern(regexp = "^[A-Z0-9_]+$") String source) {
         List<ExternalExchangeRateResponseDto> rates = exchangeRateService
                 .getExchangeRatesByDateAndSource(date, source);
         return ResponseEntity.ok(rates);
