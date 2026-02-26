@@ -119,14 +119,14 @@ class OrganizationServiceTest {
     @Test
     void getOrganizationsByCountry_ShouldReturnFilteredList() {
         List<Organization> organizations = Arrays.asList(organization);
-        when(organizationRepository.findByCountryIdWithCountry(1L)).thenReturn(organizations);
+        when(organizationRepository.findByCountryIdWithCountry(eq(1L), any(Pageable.class))).thenReturn(organizations);
         when(organizationMapper.toResponseDTOList(organizations)).thenReturn(Arrays.asList(responseDTO));
 
-        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L);
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(organizationRepository, times(1)).findByCountryIdWithCountry(1L);
+        verify(organizationRepository, times(1)).findByCountryIdWithCountry(eq(1L), any(Pageable.class));
     }
 
     @Test

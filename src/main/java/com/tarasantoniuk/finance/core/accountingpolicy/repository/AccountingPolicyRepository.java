@@ -64,7 +64,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
             "WHERE ap.organization.id = :organizationId")
-    List<AccountingPolicy> findByOrganizationIdWithRelations(@Param("organizationId") Long organizationId);
+    List<AccountingPolicy> findByOrganizationIdWithRelations(@Param("organizationId") Long organizationId, Pageable pageable);
 
     /**
      * Find accounting policies by year with relationships loaded.
@@ -76,7 +76,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
             "WHERE ap.year = :year")
-    List<AccountingPolicy> findByYearWithRelations(@Param("year") Integer year);
+    List<AccountingPolicy> findByYearWithRelations(@Param("year") Integer year, Pageable pageable);
 
     /**
      * Find accounting policies by organization and active status with relationships loaded.
@@ -91,7 +91,8 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             "WHERE ap.organization.id = :organizationId AND ap.isActive = :isActive")
     List<AccountingPolicy> findByOrganizationIdAndIsActiveWithRelations(
             @Param("organizationId") Long organizationId,
-            @Param("isActive") Boolean isActive);
+            @Param("isActive") Boolean isActive,
+            Pageable pageable);
 
     /**
      * Find accounting policies by currency with relationships loaded.
@@ -103,7 +104,7 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
             "WHERE ap.currency.id = :currencyId")
-    List<AccountingPolicy> findByCurrencyIdWithRelations(@Param("currencyId") Long currencyId);
+    List<AccountingPolicy> findByCurrencyIdWithRelations(@Param("currencyId") Long currencyId, Pageable pageable);
 
     /**
      * Find accounting policies by year range with relationships loaded.
@@ -118,7 +119,8 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             "WHERE ap.year BETWEEN :startYear AND :endYear")
     List<AccountingPolicy> findByYearBetweenWithRelations(
             @Param("startYear") Integer startYear,
-            @Param("endYear") Integer endYear);
+            @Param("endYear") Integer endYear,
+            Pageable pageable);
 
     // Keep original method for duplicate check (doesn't need relationships)
     boolean existsByOrganizationIdAndYear(Long organizationId, Integer year);

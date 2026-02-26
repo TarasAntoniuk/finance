@@ -100,9 +100,14 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Source name", required = true, example = "NBU")
-            @PathVariable @Size(max = 100) @Pattern(regexp = "^[A-Z0-9_]+$") String source) {
+            @PathVariable @Size(max = 100) @Pattern(regexp = "^[A-Z0-9_]+$") String source,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<ExternalExchangeRateResponseDto> rates = exchangeRateService
-                .getExchangeRatesByDateAndSource(date, source);
+                .getExchangeRatesByDateAndSource(date, source, limit);
         return ResponseEntity.ok(rates);
     }
 
@@ -178,9 +183,14 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Date", required = true, example = "2025-11-03")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Currency From ID", required = true, example = "2")
-            @RequestParam Long currencyFromId) {
+            @RequestParam Long currencyFromId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<ExternalExchangeRateResponseDto> rates = exchangeRateService
-                .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+                .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId, limit);
         return ResponseEntity.ok(rates);
     }
 

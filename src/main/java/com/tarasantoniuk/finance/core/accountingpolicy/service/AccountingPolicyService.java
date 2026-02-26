@@ -86,40 +86,40 @@ public class AccountingPolicyService {
     /**
      * Get accounting policies by organization with optimized query.
      */
-    public List<AccountingPolicyResponseDto> getAccountingPoliciesByOrganization(Long organizationId) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdWithRelations(organizationId);
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByOrganization(Long organizationId, int limit) {
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdWithRelations(organizationId, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     /**
      * Get accounting policies by year with optimized query.
      */
-    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYear(Integer year) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearWithRelations(year);
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYear(Integer year, int limit) {
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearWithRelations(year, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     /**
      * Get active accounting policies by organization with optimized query.
      */
-    public List<AccountingPolicyResponseDto> getActiveAccountingPoliciesByOrganization(Long organizationId) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(organizationId, true);
+    public List<AccountingPolicyResponseDto> getActiveAccountingPoliciesByOrganization(Long organizationId, int limit) {
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(organizationId, true, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     /**
      * Get accounting policies by currency with optimized query.
      */
-    public List<AccountingPolicyResponseDto> getAccountingPoliciesByCurrency(Long currencyId) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByCurrencyIdWithRelations(currencyId);
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByCurrency(Long currencyId, int limit) {
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByCurrencyIdWithRelations(currencyId, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     /**
      * Get accounting policies by year range with optimized query.
      */
-    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYearRange(Integer startYear, Integer endYear) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearBetweenWithRelations(startYear, endYear);
+    public List<AccountingPolicyResponseDto> getAccountingPoliciesByYearRange(Integer startYear, Integer endYear, int limit) {
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearBetweenWithRelations(startYear, endYear, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 

@@ -60,8 +60,13 @@ public class OrganizationController {
     @Operation(summary = "Get organizations by country", description = "Retrieve all organizations in a specific country")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<OrganizationResponseDto>> getOrganizationsByCountry(
-            @Parameter(description = "Country ID", required = true) @PathVariable Long countryId) {
-        List<OrganizationResponseDto> organizations = organizationService.getOrganizationsByCountry(countryId);
+            @Parameter(description = "Country ID", required = true) @PathVariable Long countryId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
+        List<OrganizationResponseDto> organizations = organizationService.getOrganizationsByCountry(countryId, limit);
         return ResponseEntity.ok(organizations);
     }
 

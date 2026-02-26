@@ -67,7 +67,8 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
             "WHERE e.exchangeDate = :date AND e.source = :source")
     List<ExternalExchangeRate> findByExchangeDateAndSourceWithCurrencies(
             @Param("date") LocalDate date,
-            @Param("source") String source);
+            @Param("source") String source,
+            Pageable pageable);
 
     /**
      * Find exchange rates within date range with currencies loaded.
@@ -130,7 +131,8 @@ public interface ExternalExchangeRateRepository extends JpaRepository<ExternalEx
             ")")
     List<ExternalExchangeRate> findLatestRatesByCurrencyFromWithCurrencies(
             @Param("date") LocalDate date,
-            @Param("currencyFromId") Long currencyFromId);
+            @Param("currencyFromId") Long currencyFromId,
+            Pageable pageable);
 
     /**
      * Find latest active exchange rate before or on specified date with currencies loaded.

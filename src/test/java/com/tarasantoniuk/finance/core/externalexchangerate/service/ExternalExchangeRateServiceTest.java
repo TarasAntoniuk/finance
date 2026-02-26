@@ -389,14 +389,14 @@ class ExternalExchangeRateServiceTest {
         List<ExternalExchangeRate> rates = List.of(exchangeRate);
         List<ExternalExchangeRateResponseDto> responseDTOs = List.of(responseDTO);
 
-        when(exchangeRateRepository.findByExchangeDateAndSourceWithCurrencies(date, source)).thenReturn(rates);
+        when(exchangeRateRepository.findByExchangeDateAndSourceWithCurrencies(eq(date), eq(source), any(Pageable.class))).thenReturn(rates);
         when(exchangeRateMapper.toResponseDTOList(rates)).thenReturn(responseDTOs);
 
-        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDateAndSource(date, source);
+        List<ExternalExchangeRateResponseDto> result = exchangeRateService.getExchangeRatesByDateAndSource(date, source, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(exchangeRateRepository).findByExchangeDateAndSourceWithCurrencies(date, source);
+        verify(exchangeRateRepository).findByExchangeDateAndSourceWithCurrencies(eq(date), eq(source), any(Pageable.class));
     }
 
     @Test
@@ -455,13 +455,13 @@ class ExternalExchangeRateServiceTest {
         ExternalExchangeRateResponseDto responseDTO2 = new ExternalExchangeRateResponseDto();
 
         when(currencyRepository.existsById(currencyFromId)).thenReturn(true);
-        when(exchangeRateRepository.findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId))
+        when(exchangeRateRepository.findLatestRatesByCurrencyFromWithCurrencies(eq(date), eq(currencyFromId), any(Pageable.class)))
                 .thenReturn(List.of(rate1, rate2));
         when(exchangeRateMapper.toResponseDTOList(List.of(rate1, rate2)))
                 .thenReturn(List.of(responseDTO1, responseDTO2));
 
         List<ExternalExchangeRateResponseDto> result =
-                exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+                exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId, 500);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -475,8 +475,8 @@ class ExternalExchangeRateServiceTest {
         when(currencyRepository.existsById(currencyFromId)).thenReturn(false);
 
         assertThrows(CurrencyNotFoundException.class,
-                () -> exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId));
-        verify(exchangeRateRepository, never()).findLatestRatesByCurrencyFromWithCurrencies(any(), anyLong());
+                () -> exchangeRateService.getLatestRatesByDateAndCurrencyFrom(date, currencyFromId, 500));
+        verify(exchangeRateRepository, never()).findLatestRatesByCurrencyFromWithCurrencies(any(), anyLong(), any());
     }
 
     // ========== CROSS RATE TESTS ==========

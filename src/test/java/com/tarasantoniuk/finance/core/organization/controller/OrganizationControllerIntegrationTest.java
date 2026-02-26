@@ -94,7 +94,7 @@ class OrganizationControllerIntegrationTest {
         organization.setId(1L);
         organization.setName("Ukrainian Company");
 
-        when(organizationService.getOrganizationsByCountry(1L))
+        when(organizationService.getOrganizationsByCountry(eq(1L), anyInt()))
                 .thenReturn(List.of(organization));
 
         // When & Then

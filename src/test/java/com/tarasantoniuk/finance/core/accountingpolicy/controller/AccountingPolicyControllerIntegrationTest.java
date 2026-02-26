@@ -107,7 +107,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByOrganization(1L))
+        when(accountingPolicyService.getAccountingPoliciesByOrganization(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -125,7 +125,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setYear(2024);
         policy.setIsActive(true);
 
-        when(accountingPolicyService.getActiveAccountingPoliciesByOrganization(1L))
+        when(accountingPolicyService.getActiveAccountingPoliciesByOrganization(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -142,7 +142,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByYear(2024))
+        when(accountingPolicyService.getAccountingPoliciesByYear(eq(2024), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -159,7 +159,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByYearRange(2020, 2024))
+        when(accountingPolicyService.getAccountingPoliciesByYearRange(eq(2020), eq(2024), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -177,7 +177,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByCurrency(1L))
+        when(accountingPolicyService.getAccountingPoliciesByCurrency(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then

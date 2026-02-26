@@ -46,7 +46,7 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     @Query("SELECT o FROM Organization o " +
             "LEFT JOIN FETCH o.country " +
             "WHERE o.country.id = :countryId")
-    List<Organization> findByCountryIdWithCountry(@Param("countryId") Long countryId);
+    List<Organization> findByCountryIdWithCountry(@Param("countryId") Long countryId, Pageable pageable);
 
     /**
      * Search organizations by name with country loaded.

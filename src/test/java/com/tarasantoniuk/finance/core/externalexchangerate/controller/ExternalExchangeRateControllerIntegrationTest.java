@@ -221,7 +221,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate.setId(1L);
         rate.setExchangeDate(date);
 
-        when(exchangeRateService.getExchangeRatesByDateAndSource(date, "ECB"))
+        when(exchangeRateService.getExchangeRatesByDateAndSource(eq(date), eq("ECB"), anyInt()))
                 .thenReturn(List.of(rate));
 
         // When & Then
@@ -469,7 +469,7 @@ class ExternalExchangeRateControllerIntegrationTest {
         rate2.setRate(BigDecimal.valueOf(1.15));
 
         when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(
-                LocalDate.of(2024, 1, 15), 2L))
+                eq(LocalDate.of(2024, 1, 15)), eq(2L), anyInt()))
                 .thenReturn(List.of(rate1, rate2));
 
         // When & Then

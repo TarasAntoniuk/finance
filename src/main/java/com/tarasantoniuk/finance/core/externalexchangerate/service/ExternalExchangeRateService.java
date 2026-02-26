@@ -90,9 +90,9 @@ public class ExternalExchangeRateService {
     /**
      * Get exchange rates by date and source with optimized query.
      */
-    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDateAndSource(LocalDate date, String source) {
+    public List<ExternalExchangeRateResponseDto> getExchangeRatesByDateAndSource(LocalDate date, String source, int limit) {
         List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findByExchangeDateAndSourceWithCurrencies(date, source);
+                .findByExchangeDateAndSourceWithCurrencies(date, source, PageRequest.of(0, limit));
         return exchangeRateMapper.toResponseDTOList(rates);
     }
 
@@ -162,14 +162,14 @@ public class ExternalExchangeRateService {
      * Get latest rates by date and currency from with optimized query.
      */
     public List<ExternalExchangeRateResponseDto> getLatestRatesByDateAndCurrencyFrom(
-            LocalDate date, Long currencyFromId) {
+            LocalDate date, Long currencyFromId, int limit) {
 
         if (!currencyRepository.existsById(currencyFromId)) {
             throw CurrencyNotFoundException.byId(currencyFromId);
         }
 
         List<ExternalExchangeRate> rates = exchangeRateRepository
-                .findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId);
+                .findLatestRatesByCurrencyFromWithCurrencies(date, currencyFromId, PageRequest.of(0, limit));
 
         return exchangeRateMapper.toResponseDTOList(rates);
     }

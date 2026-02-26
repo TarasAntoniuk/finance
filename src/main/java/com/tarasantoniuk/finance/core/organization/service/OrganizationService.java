@@ -57,8 +57,8 @@ public class OrganizationService {
     /**
      * Get organizations by country with optimized query.
      */
-    public List<OrganizationResponseDto> getOrganizationsByCountry(Long countryId) {
-        List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId);
+    public List<OrganizationResponseDto> getOrganizationsByCountry(Long countryId, int limit) {
+        List<Organization> organizations = organizationRepository.findByCountryIdWithCountry(countryId, PageRequest.of(0, limit));
         return organizationMapper.toResponseDTOList(organizations);
     }
 
