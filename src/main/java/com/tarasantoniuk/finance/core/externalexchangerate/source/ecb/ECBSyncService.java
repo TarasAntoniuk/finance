@@ -33,13 +33,12 @@ public class ECBSyncService {
         this.currencyRepository = currencyRepository;
     }
 
-    @Transactional
     public int syncDaily() {
         log.info("Syncing daily ECB rates");
-        return sync(client.fetchDaily());
+        Map<LocalDate, Map<String, BigDecimal>> data = client.fetchDaily();
+        return saveRates(data);
     }
 
-    @Transactional
     public int syncHistory() {
         log.info("Starting syncHistory");
         long totalStart = System.currentTimeMillis();
@@ -51,14 +50,15 @@ public class ECBSyncService {
                 data != null ? data.size() : 0);
 
         long step2 = System.currentTimeMillis();
-        int result = sync(data);
-        log.info("Step 2 (sync): {} ms", System.currentTimeMillis() - step2);
+        int result = saveRates(data);
+        log.info("Step 2 (saveRates): {} ms", System.currentTimeMillis() - step2);
 
         log.info("Total syncHistory time: {} ms", System.currentTimeMillis() - totalStart);
         return result;
     }
 
-    private int sync(Map<LocalDate, Map<String, BigDecimal>> data) {
+    @Transactional
+    public int saveRates(Map<LocalDate, Map<String, BigDecimal>> data) {
         long syncStart = System.currentTimeMillis();
 
         if (data == null || data.isEmpty()) {
