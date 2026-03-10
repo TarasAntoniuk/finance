@@ -4,7 +4,7 @@ import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.security.user.dto.UserDetailDto;
 import com.tarasantoniuk.finance.security.user.dto.UserSummaryDto;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
-import com.tarasantoniuk.finance.security.user.service.AdminUserService;
+import com.tarasantoniuk.finance.security.user.service.UserManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "bearerAuth")
 public class AdminUserController {
 
-    private final AdminUserService adminUserService;
+    private final UserManagementService userManagementService;
 
-    public AdminUserController(AdminUserService adminUserService) {
-        this.adminUserService = adminUserService;
+    public AdminUserController(UserManagementService userManagementService) {
+        this.userManagementService = userManagementService;
     }
 
     @GetMapping
@@ -32,7 +32,7 @@ public class AdminUserController {
     public ResponseEntity<PageResponse<UserSummaryDto>> listUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(adminUserService.listUsers(page, size));
+        return ResponseEntity.ok(userManagementService.listUsers(page, size));
     }
 
     @GetMapping("/{id}")
@@ -42,7 +42,7 @@ public class AdminUserController {
     @ApiResponse(responseCode = "403", description = "Not authorized (requires ADMIN role)")
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<UserDetailDto> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(adminUserService.getUser(id));
+        return ResponseEntity.ok(userManagementService.getUser(id));
     }
 
     @PatchMapping("/{id}/role")
@@ -53,7 +53,7 @@ public class AdminUserController {
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<Void> changeRole(@PathVariable Long id,
                                            @RequestParam UserRole role) {
-        adminUserService.changeRole(id, role);
+        userManagementService.changeRole(id, role);
         return ResponseEntity.noContent().build();
     }
 
@@ -65,7 +65,7 @@ public class AdminUserController {
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<Void> changeStatus(@PathVariable Long id,
                                              @RequestParam boolean active) {
-        adminUserService.setActive(id, active);
+        userManagementService.setActive(id, active);
         return ResponseEntity.noContent().build();
     }
 }

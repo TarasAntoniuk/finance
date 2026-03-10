@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AdminUserServiceTest {
+class UserManagementServiceTest {
 
     @Mock
     private UserRepository userRepository;
@@ -35,7 +35,7 @@ class AdminUserServiceTest {
     private UserMapper userMapper;
 
     @InjectMocks
-    private AdminUserService adminUserService;
+    private UserManagementService userManagementService;
 
     @Test
     void listUsers_ShouldReturnPaginatedResponse() {
@@ -49,7 +49,7 @@ class AdminUserServiceTest {
         when(userRepository.findAll(PageRequest.of(0, 20, Sort.by(Sort.Direction.ASC, "id")))).thenReturn(page);
         when(userMapper.toSummaryDto(user)).thenReturn(expectedDto);
 
-        PageResponse<UserSummaryDto> response = adminUserService.listUsers(0, 20);
+        PageResponse<UserSummaryDto> response = userManagementService.listUsers(0, 20);
 
         assertEquals(1, response.getContent().size());
         assertEquals("user@example.com", response.getContent().get(0).getEmail());
@@ -67,7 +67,7 @@ class AdminUserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userMapper.toDetailDto(user)).thenReturn(expectedDto);
 
-        UserDetailDto dto = adminUserService.getUser(1L);
+        UserDetailDto dto = userManagementService.getUser(1L);
 
         assertEquals(1L, dto.getId());
         assertEquals("user@example.com", dto.getEmail());
@@ -79,7 +79,7 @@ class AdminUserServiceTest {
     void getUser_WhenNotFound_ShouldThrowException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> adminUserService.getUser(99L));
+        assertThrows(ResourceNotFoundException.class, () -> userManagementService.getUser(99L));
     }
 
     @Test
@@ -87,7 +87,7 @@ class AdminUserServiceTest {
         User user = createUser(1L, "user@example.com", UserRole.USER, true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        adminUserService.changeRole(1L, UserRole.ADMIN);
+        userManagementService.changeRole(1L, UserRole.ADMIN);
 
         assertEquals(UserRole.ADMIN, user.getRole());
         verify(userRepository).save(user);
@@ -97,7 +97,7 @@ class AdminUserServiceTest {
     void changeRole_WhenNotFound_ShouldThrowException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> adminUserService.changeRole(99L, UserRole.ADMIN));
+        assertThrows(ResourceNotFoundException.class, () -> userManagementService.changeRole(99L, UserRole.ADMIN));
     }
 
     @Test
@@ -105,7 +105,7 @@ class AdminUserServiceTest {
         User user = createUser(1L, "user@example.com", UserRole.USER, true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        adminUserService.setActive(1L, false);
+        userManagementService.setActive(1L, false);
 
         assertFalse(user.getIsActive());
         verify(userRepository).save(user);
@@ -115,7 +115,7 @@ class AdminUserServiceTest {
     void setActive_WhenNotFound_ShouldThrowException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> adminUserService.setActive(99L, false));
+        assertThrows(ResourceNotFoundException.class, () -> userManagementService.setActive(99L, false));
     }
 
 }

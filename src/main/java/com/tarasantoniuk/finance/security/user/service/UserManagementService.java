@@ -19,12 +19,12 @@ import java.util.List;
 
 @Service
 @Transactional
-public class AdminUserService {
+public class UserManagementService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    public AdminUserService(UserRepository userRepository, UserMapper userMapper) {
+    public UserManagementService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
