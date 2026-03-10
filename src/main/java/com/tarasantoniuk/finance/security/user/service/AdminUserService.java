@@ -7,6 +7,7 @@ import com.tarasantoniuk.finance.security.user.dto.UserDetailDto;
 import com.tarasantoniuk.finance.security.user.dto.UserSummaryDto;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.mapper.UserMapper;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,9 +22,11 @@ import java.util.List;
 public class AdminUserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public AdminUserService(UserRepository userRepository) {
+    public AdminUserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     @Transactional(readOnly = true)
@@ -32,7 +35,7 @@ public class AdminUserService {
                 PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id")));
 
         List<UserSummaryDto> content = userPage.getContent().stream()
-                .map(this::toSummaryDto)
+                .map(userMapper::toSummaryDto)
                 .toList();
 
         PageMetadata metadata = PageMetadata.builder()
@@ -54,7 +57,7 @@ public class AdminUserService {
     public UserDetailDto getUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-        return toDetailDto(user);
+        return userMapper.toDetailDto(user);
     }
 
     public void changeRole(Long id, UserRole role) {
@@ -71,25 +74,4 @@ public class AdminUserService {
         userRepository.save(user);
     }
 
-    private UserSummaryDto toSummaryDto(User user) {
-        return new UserSummaryDto(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.getIsActive());
-    }
-
-    private UserDetailDto toDetailDto(User user) {
-        UserDetailDto dto = new UserDetailDto();
-        dto.setId(user.getId());
-        dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
-        dto.setIsActive(user.getIsActive());
-        dto.setFailedLoginAttempts(user.getFailedLoginAttempts());
-        dto.setLockedUntil(user.getLockedUntil());
-        dto.setOrganizationId(user.getOrganization() != null ? user.getOrganization().getId() : null);
-        dto.setCreatedAt(user.getCreatedAt());
-        dto.setUpdatedAt(user.getUpdatedAt());
-        return dto;
-    }
 }
