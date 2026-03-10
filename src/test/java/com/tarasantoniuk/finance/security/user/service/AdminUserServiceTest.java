@@ -21,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import java.util.List;
 import java.util.Optional;
 
+import static com.tarasantoniuk.finance.security.common.TestDataFactorySecurity.createUser;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -128,12 +129,4 @@ class AdminUserServiceTest {
         assertNull(dto.getOrganizationId());
     }
 
-    private User createUser(Long id, String email, UserRole role, boolean active) {
-        User user = new User();
-        user.setId(id);
-        user.setEmail(email);
-        user.setRole(role);
-        user.setIsActive(active);
-        return user;
-    }
 }
