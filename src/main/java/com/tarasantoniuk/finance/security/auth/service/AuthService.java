@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.auth.service;
 
+import com.tarasantoniuk.finance.security.auth.LockoutProperties;
 import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
@@ -31,9 +32,6 @@ public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
-    private static final int MAX_FAILED_ATTEMPTS = 5;
-    private static final int LOCK_DURATION_MINUTES = 30;
-
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
@@ -41,6 +39,7 @@ public class AuthService {
     private final TokenBlacklistService tokenBlacklistService;
     private final ApplicationEventPublisher eventPublisher;
     private final ClientIpResolver clientIpResolver;
+    private final LockoutProperties lockoutProperties;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -48,7 +47,8 @@ public class AuthService {
                        PasswordEncoder passwordEncoder,
                        TokenBlacklistService tokenBlacklistService,
                        ApplicationEventPublisher eventPublisher,
-                       ClientIpResolver clientIpResolver) {
+                       ClientIpResolver clientIpResolver,
+                       LockoutProperties lockoutProperties) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
@@ -56,6 +56,7 @@ public class AuthService {
         this.tokenBlacklistService = tokenBlacklistService;
         this.eventPublisher = eventPublisher;
         this.clientIpResolver = clientIpResolver;
+        this.lockoutProperties = lockoutProperties;
     }
 
     @Transactional
@@ -77,7 +78,7 @@ public class AuthService {
 
     @Transactional(noRollbackFor = {InvalidCredentialsException.class, AccountLockedException.class, AccountDisabledException.class})
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailForUpdate(request.getEmail())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
         if (!user.getIsActive()) {
@@ -95,12 +96,12 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
 
-            if (user.getFailedLoginAttempts() >= MAX_FAILED_ATTEMPTS) {
-                user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+            if (user.getFailedLoginAttempts() >= lockoutProperties.getMaxFailedAttempts()) {
+                user.setLockedUntil(LocalDateTime.now().plusMinutes(lockoutProperties.getLockDurationMinutes()));
                 userRepository.save(user);
                 eventPublisher.publishEvent(SecurityAuditEvent.accountLocked(request.getEmail(), clientIp));
                 throw new AccountLockedException(
-                        "Account locked for " + LOCK_DURATION_MINUTES + " minutes due to too many failed attempts");
+                        "Account locked for " + lockoutProperties.getLockDurationMinutes() + " minutes due to too many failed attempts");
             }
 
             userRepository.save(user);
@@ -165,7 +166,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void changePassword(Long userId, String currentPassword, String newPassword) {
+    public void changePassword(Long userId, String currentPassword, String newPassword, String accessToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new InvalidCredentialsException("User not found"));
 
@@ -175,6 +176,11 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+
+        String jti = jwtService.extractClaims(accessToken).getId();
+        if (jti != null) {
+            tokenBlacklistService.blacklist(jti);
+        }
 
         refreshTokenRepository.revokeAllByUserId(userId);
     }
@@ -186,9 +192,7 @@ public class AuthService {
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setUser(user);
         refreshToken.setTokenHash(jwtService.hashToken(rawRefreshToken));
-        refreshToken.setExpiresAt(LocalDateTime.now().plusSeconds(
-                jwtService.getRefreshTokenExpiration() / 1000
-        ));
+        refreshToken.setExpiresAt(jwtService.extractExpiration(rawRefreshToken));
         refreshTokenRepository.save(refreshToken);
 
         return new AuthResponse(accessToken, rawRefreshToken);
