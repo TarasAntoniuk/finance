@@ -168,8 +168,7 @@ mvn spring-boot:run
 **Certifications:**
 - SQL (Advanced)
 - SQL (Intermediate)
-- Java (Basic)
-
+- Java (Basic)  
 *\*Java certification: HackerRank currently offers only Basic level for standard accounts*
 
 
