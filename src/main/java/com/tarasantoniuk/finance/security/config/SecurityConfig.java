@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.config;
 
+import com.tarasantoniuk.finance.security.auth.LockoutProperties;
 import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import com.tarasantoniuk.finance.security.jwt.JwtProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,7 +27,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, CorsProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, CorsProperties.class, LockoutProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
