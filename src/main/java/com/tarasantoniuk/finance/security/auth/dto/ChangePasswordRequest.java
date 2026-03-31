@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.auth.dto;
 
+import com.tarasantoniuk.finance.security.auth.validation.PasswordConstraints;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -13,10 +14,7 @@ public class ChangePasswordRequest {
 
     @NotBlank
     @Size(min = 8, max = 100)
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^()\\-_=+])[A-Za-z\\d@$!%*?&#^()\\-_=+]{8,}$",
-            message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
-    )
+    @Pattern(regexp = PasswordConstraints.PATTERN, message = PasswordConstraints.MESSAGE)
     @Schema(description = "New password", example = "NewSecureP@ss1",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private String newPassword;
