@@ -2,12 +2,17 @@ package com.tarasantoniuk.finance.security.user.service;
 
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
+import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
 import com.tarasantoniuk.finance.security.user.dto.UserDetailDto;
 import com.tarasantoniuk.finance.security.user.dto.UserSummaryDto;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
+import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.mapper.UserMapper;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,6 +22,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +44,16 @@ class UserManagementServiceTest {
 
     @InjectMocks
     private UserManagementService userManagementService;
+
+    @BeforeEach
+    void setUp() {
+        setCurrentUser(100L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void listUsers_ShouldReturnPaginatedResponse() {
@@ -118,4 +136,51 @@ class UserManagementServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> userManagementService.setActive(99L, false));
     }
 
+    @Test
+    void changeRole_WhenSelfModification_ShouldThrowException() {
+        setCurrentUser(1L);
+
+        assertThrows(SelfModificationException.class,
+                () -> userManagementService.changeRole(1L, UserRole.GUEST));
+        verify(userRepository, never()).findById(anyLong());
+    }
+
+    @Test
+    void changeRole_WhenLastAdmin_ShouldThrowException() {
+        User admin = createUser(2L, "admin@example.com", UserRole.ADMIN, true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(UserRole.ADMIN)).thenReturn(1L);
+
+        assertThrows(LastAdminException.class,
+                () -> userManagementService.changeRole(2L, UserRole.USER));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changeRole_WhenMultipleAdmins_ShouldAllowDemotion() {
+        User admin = createUser(2L, "admin@example.com", UserRole.ADMIN, true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+        when(userRepository.countByRole(UserRole.ADMIN)).thenReturn(2L);
+
+        userManagementService.changeRole(2L, UserRole.USER);
+
+        assertEquals(UserRole.USER, admin.getRole());
+        verify(userRepository).save(admin);
+    }
+
+    @Test
+    void setActive_WhenSelfModification_ShouldThrowException() {
+        setCurrentUser(1L);
+
+        assertThrows(SelfModificationException.class,
+                () -> userManagementService.setActive(1L, false));
+        verify(userRepository, never()).findById(anyLong());
+    }
+
+    private void setCurrentUser(Long userId) {
+        JwtPrincipal principal = new JwtPrincipal(userId, "admin@example.com", UserRole.ADMIN, null);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
 }

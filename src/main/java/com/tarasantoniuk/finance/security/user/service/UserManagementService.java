@@ -3,15 +3,19 @@ package com.tarasantoniuk.finance.security.user.service;
 import com.tarasantoniuk.finance.common.dto.PageMetadata;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
+import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
 import com.tarasantoniuk.finance.security.user.dto.UserDetailDto;
 import com.tarasantoniuk.finance.security.user.dto.UserSummaryDto;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
+import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.mapper.UserMapper;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,17 +65,41 @@ public class UserManagementService {
     }
 
     public void changeRole(Long id, UserRole role) {
+        Long currentUserId = getCurrentUserId();
+        if (id.equals(currentUserId)) {
+            throw new SelfModificationException("Cannot change your own role");
+        }
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
+
+        if (user.getRole() == UserRole.ADMIN && role != UserRole.ADMIN) {
+            long adminCount = userRepository.countByRole(UserRole.ADMIN);
+            if (adminCount <= 1) {
+                throw new LastAdminException("Cannot remove the last admin role");
+            }
+        }
+
         user.setRole(role);
         userRepository.save(user);
     }
 
     public void setActive(Long id, boolean active) {
+        Long currentUserId = getCurrentUserId();
+        if (id.equals(currentUserId)) {
+            throw new SelfModificationException("Cannot change your own status");
+        }
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         user.setIsActive(active);
         userRepository.save(user);
+    }
+
+    private Long getCurrentUserId() {
+        JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        return principal.userId();
     }
 
 }
