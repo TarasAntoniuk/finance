@@ -1,5 +1,6 @@
 package com.tarasantoniuk.finance.security.auth.dto;
 
+import com.tarasantoniuk.finance.security.auth.validation.PasswordConstraints;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -16,10 +17,7 @@ public class RegisterRequest {
 
     @NotBlank
     @Size(min = 8, max = 100)
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^()\\-_=+])[A-Za-z\\d@$!%*?&#^()\\-_=+]{8,}$",
-            message = "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character"
-    )
+    @Pattern(regexp = PasswordConstraints.PATTERN, message = PasswordConstraints.MESSAGE)
     @Schema(description = "User password", example = "SecureP@ss1",
             requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
