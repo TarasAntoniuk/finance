@@ -9,13 +9,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/users")
 @Tag(name = "Admin - User Management", description = "Admin endpoints for user management")
 @SecurityRequirement(name = "bearerAuth")
+@Validated
 public class AdminUserController {
 
     private final UserManagementService userManagementService;
@@ -30,8 +34,8 @@ public class AdminUserController {
     @ApiResponse(responseCode = "401", description = "Not authenticated")
     @ApiResponse(responseCode = "403", description = "Not authorized (requires ADMIN role)")
     public ResponseEntity<PageResponse<UserSummaryDto>> listUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         return ResponseEntity.ok(userManagementService.listUsers(page, size));
     }
 
