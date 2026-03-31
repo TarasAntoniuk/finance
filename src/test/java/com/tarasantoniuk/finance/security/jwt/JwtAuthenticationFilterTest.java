@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -84,7 +85,7 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer invalid-token");
 
-        when(jwtService.isTokenValid("invalid-token")).thenReturn(false);
+        when(jwtService.validateAndExtractClaims("invalid-token")).thenReturn(Optional.empty());
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -97,16 +98,8 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer valid-token");
 
-        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
-
-        Map<String, Object> claimMap = new HashMap<>();
-        claimMap.put("jti", "test-jti");
-        claimMap.put("sub", "1");
-        claimMap.put("email", "test@example.com");
-        claimMap.put("role", "USER");
-        Claims claims = new DefaultClaims(claimMap);
-
-        when(jwtService.extractClaims("valid-token")).thenReturn(claims);
+        Claims claims = createClaims("test-jti", "1", "test@example.com", "USER", null);
+        when(jwtService.validateAndExtractClaims("valid-token")).thenReturn(Optional.of(claims));
         when(tokenBlacklistService.isBlacklisted("test-jti")).thenReturn(false);
 
         filter.doFilterInternal(request, response, filterChain);
@@ -126,16 +119,8 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer blacklisted-token");
 
-        when(jwtService.isTokenValid("blacklisted-token")).thenReturn(true);
-
-        Map<String, Object> claimMap = new HashMap<>();
-        claimMap.put("jti", "blacklisted-jti");
-        claimMap.put("sub", "1");
-        claimMap.put("email", "test@example.com");
-        claimMap.put("role", "USER");
-        Claims claims = new DefaultClaims(claimMap);
-
-        when(jwtService.extractClaims("blacklisted-token")).thenReturn(claims);
+        Claims claims = createClaims("blacklisted-jti", "1", "test@example.com", "USER", null);
+        when(jwtService.validateAndExtractClaims("blacklisted-token")).thenReturn(Optional.of(claims));
         when(tokenBlacklistService.isBlacklisted("blacklisted-jti")).thenReturn(true);
 
         filter.doFilterInternal(request, response, filterChain);
@@ -149,15 +134,8 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer admin-token");
 
-        when(jwtService.isTokenValid("admin-token")).thenReturn(true);
-
-        Map<String, Object> claimMap = new HashMap<>();
-        claimMap.put("sub", "2");
-        claimMap.put("email", "admin@example.com");
-        claimMap.put("role", "ADMIN");
-        Claims claims = new DefaultClaims(claimMap);
-
-        when(jwtService.extractClaims("admin-token")).thenReturn(claims);
+        Claims claims = createClaims(null, "2", "admin@example.com", "ADMIN", null);
+        when(jwtService.validateAndExtractClaims("admin-token")).thenReturn(Optional.of(claims));
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -172,15 +150,8 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer guest-token");
 
-        when(jwtService.isTokenValid("guest-token")).thenReturn(true);
-
-        Map<String, Object> claimMap = new HashMap<>();
-        claimMap.put("sub", "3");
-        claimMap.put("email", "guest@example.com");
-        claimMap.put("role", "GUEST");
-        Claims claims = new DefaultClaims(claimMap);
-
-        when(jwtService.extractClaims("guest-token")).thenReturn(claims);
+        Claims claims = createClaims(null, "3", "guest@example.com", "GUEST", null);
+        when(jwtService.validateAndExtractClaims("guest-token")).thenReturn(Optional.of(claims));
 
         filter.doFilterInternal(request, response, filterChain);
 
@@ -195,7 +166,8 @@ class JwtAuthenticationFilterTest {
         request.setRequestURI("/api/v1/currencies");
         request.addHeader("Authorization", "Bearer valid-token");
 
-        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+        Claims claims = createClaims(null, "1", "test@example.com", "USER", null);
+        when(jwtService.validateAndExtractClaims("valid-token")).thenReturn(Optional.of(claims));
 
         UsernamePasswordAuthenticationToken existingAuth = new UsernamePasswordAuthenticationToken(
                 "existing-user", null, java.util.List.of());
@@ -204,7 +176,6 @@ class JwtAuthenticationFilterTest {
         filter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
-        verify(jwtService, never()).extractClaims(anyString());
         assertEquals("existing-user", SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 
@@ -250,5 +221,19 @@ class JwtAuthenticationFilterTest {
     void shouldNotFilter_WhenAuthEndpoint_ShouldReturnFalse() {
         request.setRequestURI("/api/auth/login");
         assertFalse(filter.shouldNotFilter(request));
+    }
+
+    private Claims createClaims(String jti, String sub, String email, String role, Long orgId) {
+        Map<String, Object> claimMap = new HashMap<>();
+        if (jti != null) {
+            claimMap.put("jti", jti);
+        }
+        claimMap.put("sub", sub);
+        claimMap.put("email", email);
+        claimMap.put("role", role);
+        if (orgId != null) {
+            claimMap.put("orgId", orgId);
+        }
+        return new DefaultClaims(claimMap);
     }
 }

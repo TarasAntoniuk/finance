@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.jwt.service;
 import com.tarasantoniuk.finance.security.jwt.JwtProperties;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -12,10 +13,12 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -80,13 +83,26 @@ public class JwtService {
         return Long.parseLong(extractClaims(token).getSubject());
     }
 
-    public boolean isTokenValid(String token) {
+    public Optional<Claims> validateAndExtractClaims(String token) {
         try {
-            return extractClaims(token).getExpiration().after(new Date());
+            Claims claims = extractClaims(token);
+            if (claims.getExpiration().before(new Date())) {
+                return Optional.empty();
+            }
+            return Optional.of(claims);
         } catch (JwtException | IllegalArgumentException e) {
             log.debug("JWT validation failed: {}", e.getMessage());
-            return false;
+            return Optional.empty();
         }
+    }
+
+    public boolean isTokenValid(String token) {
+        return validateAndExtractClaims(token).isPresent();
+    }
+
+    public LocalDateTime extractExpiration(String token) {
+        Date expiration = extractClaims(token).getExpiration();
+        return expiration.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime();
     }
 
     public String hashToken(String token) {
