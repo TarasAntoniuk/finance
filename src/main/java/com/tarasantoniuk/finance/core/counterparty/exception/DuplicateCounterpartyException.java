@@ -1,16 +1,14 @@
 package com.tarasantoniuk.finance.core.counterparty.exception;
 
+import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
+
 /**
  * Exception thrown when attempting to create a counterparty with duplicate code
  */
-public class DuplicateCounterpartyException extends RuntimeException {
+public class DuplicateCounterpartyException extends ResourceAlreadyExistsException {
 
     public DuplicateCounterpartyException(String code) {
-        super(String.format("Counterparty with code already exists: %s", code));
-    }
-
-    public DuplicateCounterpartyException(String message, Object... args) {
-        super(String.format(message, args));
+        super("Counterparty", "code", code);
     }
 
     // Static factory method

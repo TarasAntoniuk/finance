@@ -2,13 +2,14 @@
 
 ## Overview
 
-**Modular monolith** with clear separation between foundation (Core) and business logic (Banking).
+**Modular monolith** with clear separation between foundation (Core), business logic (Banking), and security (Security).
 
 ### Key Principles
 
 - **Unidirectional Dependency** — Banking depends on Core, Core is independent
 - **Event Sourcing** — Immutable audit trail for all banking transactions
 - **Clean Architecture** — Layered structure (entity → repository → service → controller)
+- **JWT Security** — Stateless authentication with role-based access control
 
 ---
 
@@ -17,41 +18,56 @@
 com.tarasantoniuk.finance
 │
 ├── common/                   (Shared Infrastructure)
-│   ├── entity/BaseEntity    createdAt, updatedAt
+│   ├── entity/BaseEntity    createdAt, updatedAt, createdBy, updatedBy
 │   ├── document/BaseDocument documentDate, status, organization
-│   └── config/              JPA auditing, Swagger, exceptions
+│   ├── config/              JPA auditing, Swagger, exceptions
+│   ├── period/              Report period calculation
+│   ├── snapshot/            Balance snapshot validity tracking
+│   └── debug/               Health check endpoints
 │
 ├── core/                    (Foundation Module - Independent)
 │   ├── country/             Country registry
 │   ├── organization/        Multi-organization support
 │   ├── counterparty/        Customer/supplier registry
-│   ├── currency/            ISO 4217 currencies
+│   ├── currency/            ISO 4217 currencies + data loader
 │   ├── accountingpolicy/    Fiscal year policies
 │   └── externalexchangerate/ ECB integration + exchange rates
 │       └── source/ecb/      ECBScheduler, ECBClient, ECBSyncService
 │
-└── banking/                 (Transaction Module - Depends on Core)
-    ├── common/
-    │   └── entity/MonetaryDocument  Abstract base for payments
-    ├── bank/                Bank registry
-    ├── bankaccount/         Multi-currency accounts
-    ├── bankreceipt/         Incoming payments (10+ types)
-    ├── bankpayment/         Outgoing payments (10+ types)
-    ├── bankaccounttransaction/  Event Store (immutable)
-    ├── bankaccountbalance/  Balance snapshots (cache)
-    └── report/              Financial reports
+├── banking/                 (Transaction Module - Depends on Core)
+│   ├── common/
+│   │   └── entity/MonetaryDocument  Abstract base for payments
+│   ├── bank/                Bank registry
+│   ├── bankaccount/         Multi-currency accounts
+│   ├── bankreceipt/         Incoming payments (10+ types)
+│   ├── bankpayment/         Outgoing payments (10+ types)
+│   ├── bankaccounttransaction/  Event Store (immutable)
+│   ├── bankaccountbalance/  Balance snapshots (cache + validity)
+│   └── report/              Financial reports
+│       ├── accountbalance/  Balance reports
+│       └── accountturnover/ Turnover reports
+│
+└── security/                (Security Module - Cross-cutting)
+    ├── auth/                Authentication (register, login, refresh, logout)
+    ├── jwt/                 JWT token generation & validation
+    ├── user/                User entity, admin management
+    ├── token/               Refresh token storage & blacklist
+    ├── config/              SecurityFilterChain, CORS, exception handlers
+    └── audit/               Security event logging
 ```
 
 ### Module Dependencies
 ```
+Security Module (cross-cutting, protects all endpoints)
+    ↓
 Banking Module
     ↓ uses
 Core Module (Country, Organization, Counterparty, Currency, AccountingPolicy, ExternalExchangeRate)
     ↓ uses
-Common Infrastructure (BaseEntity, BaseDocument)
+Common Infrastructure (BaseEntity, BaseDocument, SnapshotValidity)
 ```
 
-**Rule**: Banking → Core → Common (unidirectional only)
+**Rule**: Banking → Core → Common (unidirectional only). Security is cross-cutting.
 
 ---
 
@@ -63,7 +79,7 @@ Common Infrastructure (BaseEntity, BaseDocument)
 
 ### Entity Hierarchy
 ```
-BaseEntity (audit fields)
+BaseEntity (audit fields: createdAt, updatedAt, createdBy, updatedBy)
     ↓
 BaseDocument (lifecycle: DRAFT → POSTED → CANCELLED)
     ↓
@@ -71,8 +87,12 @@ MonetaryDocument (amount, currency, counterparty)
     ├── BankReceipt (incoming payments)
     └── BankPayment (outgoing payments)
 
+User (email, password, role, organization, lockout tracking)
+RefreshToken (tokenHash, expiresAt, revoked, used)
+
 BankAccountTransactionEvent (immutable Event Store)
 BankAccountBalanceSnapshot (performance cache)
+SnapshotValidity (validity tracking for snapshots)
 ```
 
 ### Key Entities
@@ -87,11 +107,75 @@ BankAccountBalanceSnapshot (performance cache)
 
 **Banking Module (Transactions):**
 - `Bank` — Bank registry with SWIFT codes
-- `BankAccount` — Multi-currency accounts
+- `BankAccount` — Multi-currency accounts with holder types (ORGANIZATION/COUNTERPARTY)
 - `BankReceipt` — 10+ receipt types (CUSTOMER_PAYMENT, LOAN_RECEIVED, etc.)
 - `BankPayment` — 10+ payment types (SUPPLIER_PAYMENT, SALARY, TAX_PAYMENT, etc.)
 - `BankAccountTransactionEvent` — Immutable event log (Event Store)
-- `BankAccountBalanceSnapshot` — Optimization cache
+- `BankAccountBalanceSnapshot` — Optimization cache with validity tracking
+
+**Security Module (Authentication & Authorization):**
+- `User` — Email (unique), encoded password, role (ADMIN/USER/GUEST), organization FK, lockout fields
+- `RefreshToken` — Token hash, expiration, revoked/used flags
+
+---
+
+## Security Architecture
+
+### Authentication Flow
+```
+Client                          Server
+  |                               |
+  |-- POST /api/auth/login ------>|
+  |   {email, password}           |
+  |                               |-- Validate credentials
+  |                               |-- Check account lockout
+  |                               |-- Generate JWT access token (15 min)
+  |                               |-- Generate refresh token (7 days)
+  |                               |-- Store refresh token hash in DB
+  |                               |-- Publish audit event
+  |<-- 200 {accessToken} ---------|
+  |   Set-Cookie: refresh_token   |
+  |   (HttpOnly, Secure, Strict)  |
+  |                               |
+  |-- GET /api/v1/... ----------->|
+  |   Authorization: Bearer <jwt> |
+  |                               |-- JwtAuthenticationFilter
+  |                               |   1. Extract Bearer token
+  |                               |   2. Validate signature (HMAC-SHA256)
+  |                               |   3. Check blacklist (Caffeine cache)
+  |                               |   4. Create JwtPrincipal
+  |                               |   5. Set SecurityContext
+  |<-- 200 response --------------|
+```
+
+### JWT Token Structure
+- **Algorithm**: HMAC-SHA256
+- **Access Token** (15 min): Claims include `jti`, `sub` (userId), `email`, `role`, `orgId`, `iss`
+- **Refresh Token** (7 days): Stored as HttpOnly, Secure, SameSite=Strict cookie
+
+### Security Filter Chains
+1. **Swagger chain** (Order=1): Permits `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health`
+2. **Main API chain** (Order=2): Stateless JWT authentication
+
+### Authorization Rules
+| Endpoint Pattern | HTTP Method | Required Role |
+|---|---|---|
+| `/api/auth/*` (register, login, refresh) | POST | None (public) |
+| `/api/auth/logout`, `/api/auth/change-password` | POST | Any authenticated |
+| `/api/v1/**` | GET | Any authenticated |
+| `/api/v1/**` | POST/PUT/PATCH | USER or ADMIN |
+| `/api/v1/**` | DELETE | ADMIN only |
+| `/api/admin/**` | Any | ADMIN only |
+| Swagger, API Docs, Health | Any | None (public) |
+
+### Security Features
+- **Account Lockout**: 5 failed login attempts = 30-minute lock
+- **Rate Limiting**: Resilience4j — 5 requests/60s on auth endpoints
+- **Token Blacklist**: Caffeine cache (15-min TTL, 10K max entries) for logout
+- **Password Validation**: Strength requirements enforced on registration and change
+- **Security Headers**: X-Frame-Options: DENY, HSTS (1 year), CSP, X-Content-Type-Options: nosniff
+- **CORS**: Configurable origins (default: localhost:3000, localhost:63342)
+- **Audit Events**: Login success/failure, registration, logout, account lockout
 
 ---
 
@@ -149,6 +233,7 @@ ExternalExchangeRate (190k+ records)
 - Error handling with retry logic
 - Transaction safety (all-or-nothing)
 - Historical data preserved (append-only)
+- Admin-triggered manual sync endpoint
 
 **Live Demo**: https://tarasantoniuk.com/exchange-rates.html
 
@@ -194,12 +279,12 @@ stateDiagram-v2
     DRAFT --> CANCELLED: cancel()
     POSTED --> CANCELLED: cancel()
     CANCELLED --> [*]
-    
+
     note right of POSTED
         Creates immutable
         TransactionEvent
     end note
-    
+
     note right of DRAFT
         Unpost creates
         reversal event
@@ -219,10 +304,11 @@ stateDiagram-v2
 Balance = Previous Balance + Amount (CREDIT) - Amount (DEBIT)
 ```
 
-**Balance Snapshots** (optional optimization):
+**Balance Snapshots** (optimization):
 - Calculated on-demand for reporting
 - Fields: `openingBalance`, `debitTurnover`, `creditTurnover`, `closingBalance`
-- Cached for performance
+- Validity tracking with auto-invalidation on backdated transactions
+- Scheduled recalculation of invalid snapshots
 
 ---
 
@@ -230,16 +316,23 @@ Balance = Previous Balance + Amount (CREDIT) - Amount (DEBIT)
 
 ### Why Event Sourcing?
 
-✅ **Complete Audit Trail** — Every transaction recorded, immutable  
-✅ **Regulatory Compliance** — Financial audit requirements  
-✅ **Temporal Queries** — Balance as of any date  
+✅ **Complete Audit Trail** — Every transaction recorded, immutable
+✅ **Regulatory Compliance** — Financial audit requirements
+✅ **Temporal Queries** — Balance as of any date
 ✅ **Reversal Support** — Unpost without deleting history
 
 ### Why Modular Monolith?
 
-✅ **Simplicity** — Single deployable unit, easier development  
-✅ **Clear Boundaries** — Modules can become microservices later  
+✅ **Simplicity** — Single deployable unit, easier development
+✅ **Clear Boundaries** — Modules can become microservices later
 ✅ **Performance** — No network overhead between modules
+
+### Why JWT (not session-based)?
+
+- **Stateless** — No server-side session storage needed
+- **Scalable** — Works across multiple instances without session affinity
+- **Flexible** — Claims carry role/org context, reducing DB lookups
+- **Standard** — Widely supported by frontend frameworks
 
 ### Trade-offs
 
@@ -247,11 +340,12 @@ Balance = Previous Balance + Amount (CREDIT) - Amount (DEBIT)
 - Complete transaction history
 - Easy debugging (event log)
 - Time-travel queries
+- Stateless security
 
 **Cons:**
 - Event store grows over time (mitigated with snapshots)
 - More complex than CRUD
-- Learning curve for developers
+- JWT cannot be revoked instantly (mitigated with blacklist cache)
 
 ---
 
@@ -280,6 +374,11 @@ Balance = Previous Balance + Amount (CREDIT) - Amount (DEBIT)
 - `bank_payments` — Outgoing payment documents
 - `bank_account_transaction_events` — Event Store (append-only) ⭐
 - `bank_account_balance_snapshots` — Performance cache
+- `snapshot_validity` — Snapshot validity tracking
+
+**Security Module:**
+- `users` — User accounts with email, encoded password, role, organization FK, lockout fields
+- `refresh_tokens` — Refresh token hashes with expiration and revocation tracking
 
 ### Event Store Table
 
@@ -298,6 +397,7 @@ Strategic indexes for performance:
 - `bank_receipts(status, organization_id)` — Filtered lists
 - `bank_payments(status, organization_id)` — Filtered lists
 - `bank_accounts(holder_type, holder_id)` — Polymorphic holder queries
+- `users(email)` — Unique index for login lookups
 
 ### Sequences
 
@@ -312,23 +412,37 @@ PostgreSQL sequences for ID generation:
 
 All endpoints documented in [Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html)
 
+**Authentication:**
+- `/api/auth/register` — User registration
+- `/api/auth/login` — Login (returns access token + refresh cookie)
+- `/api/auth/refresh` — Refresh access token (cookie-based)
+- `/api/auth/change-password` — Change password (authenticated)
+- `/api/auth/logout` — Logout and blacklist token
+
+**Admin:**
+- `/api/admin/users` — User management (ADMIN only)
+- `/api/admin/external-rate-sync` — Manual ECB sync (ADMIN only)
+
 **Core Module:**
-- `/api/v1/countries`
-- `/api/v1/organizations`
-- `/api/v1/counterparties`
-- `/api/v1/currencies`
-- `/api/v1/accounting-policies`
-- `/api/v1/exchange-rates`
+- `/api/countries`
+- `/api/organizations`
+- `/api/counterparties`
+- `/api/currencies`
+- `/api/accounting-policies`
+- `/api/exchange-rates`
 
 **Banking Module:**
-- `/api/v1/banks`
-- `/api/v1/bank-accounts`
+- `/api/banks`
+- `/api/bank-accounts`
 - `/api/v1/bank-receipts`
 - `/api/v1/bank-payments`
 - `/api/v1/banking/reports/account-balances`
 - `/api/v1/banking/reports/account-turnovers`
 
+**Debug:**
+- `/api/debug/health` — Health check
+
 ---
 
-**Version**: 0.0.5
-**Last Updated**: January 2025
+**Version**: 0.0.6
+**Last Updated**: February 2026

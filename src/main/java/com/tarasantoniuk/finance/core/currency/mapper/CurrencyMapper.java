@@ -1,5 +1,4 @@
 package com.tarasantoniuk.finance.core.currency.mapper;
-//import com.example.demo.entity.Currency;
 
 import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;

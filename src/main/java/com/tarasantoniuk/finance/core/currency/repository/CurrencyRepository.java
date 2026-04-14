@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.core.currency.repository;
 
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -20,5 +21,5 @@ public interface CurrencyRepository extends JpaRepository<Currency, Long> {
 
     boolean existsByNumericCode(String numericCode);
 
-    List<Currency> findByNameContainingIgnoreCase(String name);
+    List<Currency> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }

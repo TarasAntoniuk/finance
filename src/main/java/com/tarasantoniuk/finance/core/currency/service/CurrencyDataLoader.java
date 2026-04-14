@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +31,6 @@ public class CurrencyDataLoader implements CommandLineRunner {
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
         if (currencyRepository.count() > 0) {
             log.info("Currencies already loaded. Skipping initialization.");
@@ -90,7 +88,7 @@ public class CurrencyDataLoader implements CommandLineRunner {
         currencies.add(createCurrency("HUF", "348", "Forint", "Ft", 2, true));
         currencies.add(createCurrency("RON", "946", "Romanian Leu", "lei", 2, true));
         currencies.add(createCurrency("BGN", "975", "Bulgarian Lev", "лв", 2, true));
-        currencies.add(createCurrency("HRK", "191", "Kuna", "kn", 2, true));
+        currencies.add(createCurrency("HRK", "191", "Kuna", "kn", 2, false));
         currencies.add(createCurrency("DKK", "208", "Danish Krone", "kr", 2, true));
         currencies.add(createCurrency("SEK", "752", "Swedish Krona", "kr", 2, true));
         currencies.add(createCurrency("NOK", "578", "Norwegian Krone", "kr", 2, true));

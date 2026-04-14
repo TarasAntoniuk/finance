@@ -10,7 +10,8 @@ public class PostgresTestContainer {
         CONTAINER = new PostgreSQLContainer<>("postgres:17-alpine")
                 .withDatabaseName("testdb")
                 .withUsername("test")
-                .withPassword("test");
+                .withPassword("test")
+                .withReuse(true);
         CONTAINER.start();
     }
 

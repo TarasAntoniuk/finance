@@ -13,11 +13,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.tarasantoniuk.finance.common.dto.PageMetadata;
+import com.tarasantoniuk.finance.common.dto.PageResponse;
+
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,15 +52,20 @@ class AccountingPolicyControllerIntegrationTest {
         policy2.setYear(2023);
 
         List<AccountingPolicyResponseDto> policies = Arrays.asList(policy1, policy2);
-        when(accountingPolicyService.getAllAccountingPolicies()).thenReturn(policies);
+        PageResponse<AccountingPolicyResponseDto> pageResponse = PageResponse.<AccountingPolicyResponseDto>builder()
+                .content(policies)
+                .metadata(PageMetadata.builder()
+                        .currentPage(0).totalPages(1).pageSize(50).totalElements(2).hasNext(false).hasPrevious(false).build())
+                .build();
+        when(accountingPolicyService.getAllAccountingPolicies(anyInt(), anyInt())).thenReturn(pageResponse);
 
         // When & Then
         mockMvc.perform(get("/api/accounting-policies"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].year").value(2024))
-                .andExpect(jsonPath("$[1].year").value(2023));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].year").value(2024))
+                .andExpect(jsonPath("$.content[1].year").value(2023));
     }
 
     @Test
@@ -100,7 +107,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByOrganization(1L))
+        when(accountingPolicyService.getAccountingPoliciesByOrganization(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -118,7 +125,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setYear(2024);
         policy.setIsActive(true);
 
-        when(accountingPolicyService.getActiveAccountingPoliciesByOrganization(1L))
+        when(accountingPolicyService.getActiveAccountingPoliciesByOrganization(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -135,7 +142,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByYear(2024))
+        when(accountingPolicyService.getAccountingPoliciesByYear(eq(2024), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -152,7 +159,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByYearRange(2020, 2024))
+        when(accountingPolicyService.getAccountingPoliciesByYearRange(eq(2020), eq(2024), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -170,7 +177,7 @@ class AccountingPolicyControllerIntegrationTest {
         policy.setId(1L);
         policy.setYear(2024);
 
-        when(accountingPolicyService.getAccountingPoliciesByCurrency(1L))
+        when(accountingPolicyService.getAccountingPoliciesByCurrency(eq(1L), anyInt()))
                 .thenReturn(List.of(policy));
 
         // When & Then
@@ -274,5 +281,42 @@ class AccountingPolicyControllerIntegrationTest {
         // When & Then
         mockMvc.perform(delete("/api/accounting-policies/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    // ========== PAGINATION VALIDATION TESTS ==========
+
+    @Test
+    void getAllAccountingPolicies_WhenSizeIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllAccountingPolicies_WhenSizeIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("size", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAllAccountingPolicies_WhenPageIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies")
+                        .param("page", "-1"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAccountingPoliciesByOrganization_WhenLimitIsZero_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies/organization/1")
+                        .param("limit", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getAccountingPoliciesByOrganization_WhenLimitIsNegative_ShouldReturn400() throws Exception {
+        mockMvc.perform(get("/api/accounting-policies/organization/1")
+                        .param("limit", "-1"))
+                .andExpect(status().isBadRequest());
     }
 }

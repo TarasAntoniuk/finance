@@ -1,24 +1,34 @@
 package com.tarasantoniuk.finance.banking.bankreceipt.mapper;
 
+import com.tarasantoniuk.finance.banking.bank.mapper.BankMapperImpl;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.mapper.BankAccountMapperImpl;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.banking.bankreceipt.enums.ReceiptType;
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
+import com.tarasantoniuk.finance.core.counterparty.mapper.CounterpartyMapperImpl;
+import com.tarasantoniuk.finance.core.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
+import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapperImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BankReceiptMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({BankReceiptMapperImpl.class, BankAccountMapperImpl.class, BankMapperImpl.class, CounterpartyMapperImpl.class, CurrencyMapperImpl.class, OrganizationMapperImpl.class, CountryMapperImpl.class})
+class BankReceiptMapperTest {
 
     @Autowired
     private BankReceiptMapper mapper;

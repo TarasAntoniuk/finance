@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
-import com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate;
+import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
 import com.tarasantoniuk.finance.core.externalexchangerate.repository.ExternalExchangeRateRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class ECBSyncServiceTest {
         when(client.fetchDaily()).thenReturn(Map.of(
                 LocalDate.now(), Map.of("USD", new BigDecimal("1.0850"))
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncDaily();
@@ -88,8 +88,8 @@ class ECBSyncServiceTest {
         ));
 
         assertThatThrownBy(() -> syncService.syncDaily())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("EUR currency not found");
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("EUR currency must exist in the database");
     }
 
     @Test
@@ -105,7 +105,7 @@ class ECBSyncServiceTest {
                         "XXX", new BigDecimal("999.99")
                 )
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncDaily();
@@ -123,18 +123,13 @@ class ECBSyncServiceTest {
         Currency usd = createCurrency(2L, "USD");
         LocalDate today = LocalDate.now();
 
-        var existingRate = new ExternalExchangeRate();
-        existingRate.setExchangeDate(today);
-        existingRate.setCurrencyFrom(eur);
-        existingRate.setCurrencyTo(usd);
-
         when(currencyRepository.findByCode("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findAll()).thenReturn(List.of(eur, usd));
         when(client.fetchDaily()).thenReturn(Map.of(
                 today, Map.of("USD", new BigDecimal("1.0850"))
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
-                .thenReturn(List.of(existingRate));
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
+                .thenReturn(List.<Object[]>of(new Object[]{today, 1L, 2L}));
 
         int result = syncService.syncDaily();
 
@@ -159,7 +154,7 @@ class ECBSyncServiceTest {
         when(currencyRepository.findByCode("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findAll()).thenReturn(currencies);
         when(client.fetchDaily()).thenReturn(Map.of(LocalDate.now(), rates));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncDaily();
@@ -180,7 +175,7 @@ class ECBSyncServiceTest {
                 LocalDate.of(2024, 1, 1), Map.of("USD", new BigDecimal("1.10")),
                 LocalDate.of(2024, 1, 2), Map.of("USD", new BigDecimal("1.11"))
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncHistory();
@@ -219,8 +214,8 @@ class ECBSyncServiceTest {
         ));
 
         assertThatThrownBy(() -> syncService.syncHistory())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("EUR currency not found");
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("EUR currency must exist in the database");
     }
 
     @Test
@@ -236,7 +231,7 @@ class ECBSyncServiceTest {
                         "XXX", new BigDecimal("999.99")
                 )
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncHistory();
@@ -250,18 +245,13 @@ class ECBSyncServiceTest {
         Currency usd = createCurrency(2L, "USD");
         LocalDate date = LocalDate.of(2024, 1, 1);
 
-        var existingRate = new ExternalExchangeRate();
-        existingRate.setExchangeDate(date);
-        existingRate.setCurrencyFrom(eur);
-        existingRate.setCurrencyTo(usd);
-
         when(currencyRepository.findByCode("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findAll()).thenReturn(List.of(eur, usd));
         when(client.fetchHistory()).thenReturn(Map.of(
                 date, Map.of("USD", new BigDecimal("1.10"))
         ));
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
-                .thenReturn(List.of(existingRate));
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
+                .thenReturn(List.<Object[]>of(new Object[]{date, 1L, 2L}));
 
         int result = syncService.syncHistory();
 
@@ -290,7 +280,7 @@ class ECBSyncServiceTest {
         when(currencyRepository.findByCode("EUR")).thenReturn(Optional.of(eur));
         when(currencyRepository.findAll()).thenReturn(currencies);
         when(client.fetchHistory()).thenReturn(historyData);
-        when(rateRepository.findByExchangeDateBetweenAndSource(any(), any(), eq("ECB")))
+        when(rateRepository.findExistingRateKeys(any(), any(), eq("ECB")))
                 .thenReturn(List.of());
 
         int result = syncService.syncHistory();

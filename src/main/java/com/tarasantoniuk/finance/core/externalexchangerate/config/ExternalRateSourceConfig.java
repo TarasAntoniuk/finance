@@ -11,8 +11,8 @@ import org.springframework.web.client.RestTemplate;
 @EnableScheduling
 public class ExternalRateSourceConfig {
 
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
+    @Bean("ecbRestTemplate")
+    public RestTemplate ecbRestTemplate(RestTemplateBuilder builder) {
         return builder
                 .requestFactory(() -> {
                     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
