@@ -25,6 +25,7 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -52,6 +53,7 @@ public class BankPaymentService {
     private final BankAccountBalanceService balanceService;
     private final BankAccountTransactionEventRepository transactionEventRepository;
     private final BankAccountSnapshotValidityService snapshotValidityService;
+    private final OrganizationSecurityContext orgContext;
 
     public BankPaymentService(
             BankPaymentRepository bankPaymentRepository,
@@ -63,7 +65,8 @@ public class BankPaymentService {
             BankAccountTransactionService transactionService,
             BankAccountBalanceService balanceService,
             BankAccountTransactionEventRepository transactionEventRepository,
-            BankAccountSnapshotValidityService snapshotValidityService) {
+            BankAccountSnapshotValidityService snapshotValidityService,
+            OrganizationSecurityContext orgContext) {
         this.bankPaymentRepository = bankPaymentRepository;
         this.bankPaymentMapper = bankPaymentMapper;
         this.bankAccountRepository = bankAccountRepository;
@@ -74,12 +77,19 @@ public class BankPaymentService {
         this.balanceService = balanceService;
         this.transactionEventRepository = transactionEventRepository;
         this.snapshotValidityService = snapshotValidityService;
+        this.orgContext = orgContext;
+    }
+
+    private Long queryOrgScope() {
+        return orgContext.isAdmin() ? null : orgContext.getActiveOrganizationId();
     }
 
     /**
      * Create new bank payment in DRAFT status
      */
     public BankPaymentResponseDto create(BankPaymentRequestDto requestDto) {
+        requestDto.setOrganizationId(orgContext.resolveOrganizationId(requestDto.getOrganizationId()));
+
         // Check for duplicate external transaction ID
         if (requestDto.getExternalTransactionId() != null &&
                 bankPaymentRepository.existsByExternalTransactionId(requestDto.getExternalTransactionId())) {
@@ -110,6 +120,7 @@ public class BankPaymentService {
      */
     public BankPaymentResponseDto update(Long id, BankPaymentRequestDto requestDto) {
         BankPayment existing = findEntityByIdOrThrow(id);
+        requestDto.setOrganizationId(orgContext.resolveOrganizationId(requestDto.getOrganizationId()));
 
         // Only DRAFT documents can be modified
         if (!existing.isMutable()) {
@@ -145,7 +156,7 @@ public class BankPaymentService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankPaymentResponseDto> findAll(Pageable pageable) {
-        Page<BankPayment> paymentsPage = bankPaymentRepository.findAllWithDetails(pageable);
+        Page<BankPayment> paymentsPage = bankPaymentRepository.findAllWithDetails(queryOrgScope(), pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -155,7 +166,7 @@ public class BankPaymentService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankPaymentResponseDto> findByAccountId(Long accountId, Pageable pageable) {
-        Page<BankPayment> paymentsPage = bankPaymentRepository.findByAccountId(accountId, pageable);
+        Page<BankPayment> paymentsPage = bankPaymentRepository.findByAccountId(accountId, queryOrgScope(), pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -165,7 +176,7 @@ public class BankPaymentService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankPaymentResponseDto> findByCounterpartyId(Long counterpartyId, Pageable pageable) {
-        Page<BankPayment> paymentsPage = bankPaymentRepository.findByCounterpartyId(counterpartyId, pageable);
+        Page<BankPayment> paymentsPage = bankPaymentRepository.findByCounterpartyId(counterpartyId, queryOrgScope(), pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -175,7 +186,7 @@ public class BankPaymentService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankPaymentResponseDto> findByStatus(DocumentStatus status, Pageable pageable) {
-        Page<BankPayment> paymentsPage = bankPaymentRepository.findByStatus(status, pageable);
+        Page<BankPayment> paymentsPage = bankPaymentRepository.findByStatus(status, queryOrgScope(), pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -189,7 +200,7 @@ public class BankPaymentService {
             LocalDateTime endDateTime,
             Pageable pageable) {
         Page<BankPayment> paymentsPage = bankPaymentRepository.findByTransactionDateTimeBetween(
-                startDateTime, endDateTime, pageable);
+                startDateTime, endDateTime, queryOrgScope(), pageable);
         List<BankPaymentResponseDto> dtoList = paymentsPage.map(bankPaymentMapper::toResponseDto).getContent();
         return buildPageResponse(paymentsPage, dtoList);
     }
@@ -308,10 +319,12 @@ public class BankPaymentService {
     // ========== PRIVATE HELPER METHODS ==========
 
     private BankPayment findEntityByIdOrThrow(Long id) {
-        return bankPaymentRepository.findByIdWithDetails(id)
+        BankPayment payment = bankPaymentRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Bank payment not found with id: " + id
                 ));
+        orgContext.validateAccess(payment.getOrganization().getId());
+        return payment;
     }
 
     private void loadRelatedEntities(BankPayment payment, BankPaymentRequestDto requestDto) {
