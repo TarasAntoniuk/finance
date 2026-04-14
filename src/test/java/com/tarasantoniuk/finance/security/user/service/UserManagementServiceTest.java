@@ -11,6 +11,7 @@ import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
 import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.mapper.UserMapper;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,12 @@ class UserManagementServiceTest {
 
     @Mock
     private UserMapper userMapper;
+
+    @Mock
+    private UserRevocationService userRevocationService;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     private UserManagementService userManagementService;

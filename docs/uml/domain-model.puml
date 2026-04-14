@@ -224,10 +224,13 @@ class com.tarasantoniuk.finance.security.token.entity.RefreshToken {
 
 class com.tarasantoniuk.finance.security.user.entity.User {
 	{field} +email : String
+	{field} +failedLoginAttempts : int
 	{field} +id : Long
 	{field} +isActive : Boolean
+	{field} +lockedUntil : java.time.LocalDateTime
 	{field} +password : String
 	{field} +role : com.tarasantoniuk.finance.security.user.enums.UserRole
+	{method} +isLocked () : boolean
 }
 
 
@@ -270,6 +273,7 @@ com.tarasantoniuk.finance.core.organization.entity.Organization -->  com.tarasan
 com.tarasantoniuk.finance.core.organization.entity.Organization --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 com.tarasantoniuk.finance.security.token.entity.RefreshToken -->  com.tarasantoniuk.finance.security.user.entity.User : user
 com.tarasantoniuk.finance.security.token.entity.RefreshToken --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.security.user.entity.User -->  com.tarasantoniuk.finance.core.organization.entity.Organization : organization
 com.tarasantoniuk.finance.security.user.entity.User --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 
 

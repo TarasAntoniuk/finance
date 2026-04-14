@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.jwt;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.service.UserRevocationService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -24,10 +25,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRevocationService userRevocationService;
 
-    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   TokenBlacklistService tokenBlacklistService,
+                                   UserRevocationService userRevocationService) {
         this.jwtService = jwtService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.userRevocationService = userRevocationService;
     }
 
     @Override
@@ -63,6 +68,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         Long userId = Long.parseLong(claims.getSubject());
+        if (userRevocationService.isRevoked(userId)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String email = claims.get("email", String.class);
         UserRole role = UserRole.valueOf(claims.get("role", String.class));
         Long orgId = claims.get("orgId", Long.class);

@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.jwt;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.service.UserRevocationService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.impl.DefaultClaims;
 import jakarta.servlet.FilterChain;
@@ -35,6 +36,9 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     private TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    private UserRevocationService userRevocationService;
 
     @Mock
     private FilterChain filterChain;
@@ -112,6 +116,22 @@ class JwtAuthenticationFilterTest {
         assertEquals("test@example.com", principal.email());
         assertEquals(UserRole.USER, principal.role());
         assertNull(principal.organizationId());
+    }
+
+    @Test
+    void doFilterInternal_WhenUserRevoked_ShouldNotSetAuthentication() throws ServletException, IOException {
+        request.setRequestURI("/api/v1/currencies");
+        request.addHeader("Authorization", "Bearer revoked-user-token");
+
+        Claims claims = createClaims("jti", "42", "revoked@example.com", "USER", null);
+        when(jwtService.validateAndExtractClaims("revoked-user-token")).thenReturn(Optional.of(claims));
+        when(tokenBlacklistService.isBlacklisted("jti")).thenReturn(false);
+        when(userRevocationService.isRevoked(42L)).thenReturn(true);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Test

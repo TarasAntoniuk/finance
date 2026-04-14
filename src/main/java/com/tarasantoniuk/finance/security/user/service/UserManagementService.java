@@ -12,6 +12,7 @@ import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
 import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.mapper.UserMapper;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
+import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -27,10 +28,17 @@ public class UserManagementService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final UserRevocationService userRevocationService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    public UserManagementService(UserRepository userRepository, UserMapper userMapper) {
+    public UserManagementService(UserRepository userRepository,
+                                 UserMapper userMapper,
+                                 UserRevocationService userRevocationService,
+                                 RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.userRevocationService = userRevocationService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Transactional(readOnly = true)
@@ -82,6 +90,9 @@ public class UserManagementService {
 
         user.setRole(role);
         userRepository.save(user);
+
+        userRevocationService.revoke(id);
+        refreshTokenRepository.revokeAllByUserId(id);
     }
 
     public void setActive(Long id, boolean active) {
@@ -94,6 +105,11 @@ public class UserManagementService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         user.setIsActive(active);
         userRepository.save(user);
+
+        if (!active) {
+            userRevocationService.revoke(id);
+            refreshTokenRepository.revokeAllByUserId(id);
+        }
     }
 
     private Long getCurrentUserId() {
