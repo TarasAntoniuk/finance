@@ -23,6 +23,7 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,7 @@ public class BankReceiptService {
     private final BankAccountTransactionService transactionService;
     private final BankAccountTransactionEventRepository transactionEventRepository;
     private final BankAccountSnapshotValidityService snapshotValidityService;
+    private final OrganizationSecurityContext orgContext;
 
     public BankReceiptService(
             BankReceiptRepository bankReceiptRepository,
@@ -58,7 +60,8 @@ public class BankReceiptService {
             OrganizationRepository organizationRepository,
             BankAccountTransactionService transactionService,
             BankAccountTransactionEventRepository transactionEventRepository,
-            BankAccountSnapshotValidityService snapshotValidityService) {
+            BankAccountSnapshotValidityService snapshotValidityService,
+            OrganizationSecurityContext orgContext) {
         this.bankReceiptRepository = bankReceiptRepository;
         this.bankReceiptMapper = bankReceiptMapper;
         this.bankAccountRepository = bankAccountRepository;
@@ -68,12 +71,23 @@ public class BankReceiptService {
         this.transactionService = transactionService;
         this.transactionEventRepository = transactionEventRepository;
         this.snapshotValidityService = snapshotValidityService;
+        this.orgContext = orgContext;
+    }
+
+    /**
+     * Returns the organizationId to apply as a query filter.
+     * Admin sees all orgs (null = bypass filter); non-admin is scoped to their own org.
+     */
+    private Long queryOrgScope() {
+        return orgContext.isAdmin() ? null : orgContext.getActiveOrganizationId();
     }
 
     /**
      * Create new bank receipt in DRAFT status
      */
     public BankReceiptResponseDto create(BankReceiptRequestDto requestDto) {
+        requestDto.setOrganizationId(orgContext.resolveOrganizationId(requestDto.getOrganizationId()));
+
         // Check for duplicate external transaction ID
         if (requestDto.getExternalTransactionId() != null &&
                 bankReceiptRepository.existsByExternalTransactionId(requestDto.getExternalTransactionId())) {
@@ -104,6 +118,7 @@ public class BankReceiptService {
      */
     public BankReceiptResponseDto update(Long id, BankReceiptRequestDto requestDto) {
         BankReceipt existing = findEntityByIdOrThrow(id);
+        requestDto.setOrganizationId(orgContext.resolveOrganizationId(requestDto.getOrganizationId()));
 
         // Only DRAFT documents can be modified
         if (!existing.isMutable()) {
@@ -139,7 +154,7 @@ public class BankReceiptService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankReceiptResponseDto> findAll(Pageable pageable) {
-        Page<BankReceipt> receiptsPage = bankReceiptRepository.findAllWithDetails(pageable);
+        Page<BankReceipt> receiptsPage = bankReceiptRepository.findAllWithDetails(queryOrgScope(), pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -149,7 +164,7 @@ public class BankReceiptService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankReceiptResponseDto> findByAccountId(Long accountId, Pageable pageable) {
-        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByAccountId(accountId, pageable);
+        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByAccountId(accountId, queryOrgScope(), pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -159,7 +174,7 @@ public class BankReceiptService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankReceiptResponseDto> findByCounterpartyId(Long counterpartyId, Pageable pageable) {
-        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByCounterpartyId(counterpartyId, pageable);
+        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByCounterpartyId(counterpartyId, queryOrgScope(), pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -169,7 +184,7 @@ public class BankReceiptService {
      */
     @Transactional(readOnly = true)
     public PageResponse<BankReceiptResponseDto> findByStatus(DocumentStatus status, Pageable pageable) {
-        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByStatus(status, pageable);
+        Page<BankReceipt> receiptsPage = bankReceiptRepository.findByStatus(status, queryOrgScope(), pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -183,7 +198,7 @@ public class BankReceiptService {
             LocalDateTime endDateTime,
             Pageable pageable) {
         Page<BankReceipt> receiptsPage = bankReceiptRepository.findByTransactionDateTimeBetween(
-                startDateTime, endDateTime, pageable);
+                startDateTime, endDateTime, queryOrgScope(), pageable);
         List<BankReceiptResponseDto> dtoList = receiptsPage.map(bankReceiptMapper::toResponseDto).getContent();
         return buildPageResponse(receiptsPage, dtoList);
     }
@@ -293,10 +308,12 @@ public class BankReceiptService {
     // ========== PRIVATE HELPER METHODS ==========
 
     private BankReceipt findEntityByIdOrThrow(Long id) {
-        return bankReceiptRepository.findByIdWithDetails(id)
+        BankReceipt receipt = bankReceiptRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Bank receipt not found with id: " + id
                 ));
+        orgContext.validateAccess(receipt.getOrganization().getId());
+        return receipt;
     }
 
     private void loadRelatedEntities(BankReceipt receipt, BankReceiptRequestDto requestDto) {

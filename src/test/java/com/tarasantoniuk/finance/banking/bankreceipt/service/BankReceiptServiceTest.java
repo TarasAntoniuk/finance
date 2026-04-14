@@ -23,6 +23,7 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,9 @@ class BankReceiptServiceTest {
     @Mock
     private BankAccountSnapshotValidityService snapshotValidityService;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private BankReceiptService bankReceiptService;
 
@@ -86,6 +90,10 @@ class BankReceiptServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(false);
+        lenient().when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        lenient().when(orgContext.resolveOrganizationId(any())).thenReturn(1L);
+
         // Create request DTO
         requestDto = new BankReceiptRequestDto();
         requestDto.setTransactionDateTime(LocalDateTime.of(2024, 1, 15, 10, 0, 0));
@@ -302,7 +310,7 @@ class BankReceiptServiceTest {
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findAllWithDetails(pageable)).thenReturn(page);
+        when(bankReceiptRepository.findAllWithDetails(1L, pageable)).thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class))).thenReturn(responseDto);
 
         // When
@@ -537,7 +545,7 @@ class BankReceiptServiceTest {
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable))
+        when(bankReceiptRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, 1L, pageable))
                 .thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
                 .thenReturn(responseDto);
@@ -549,7 +557,7 @@ class BankReceiptServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable);
+        verify(bankReceiptRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, 1L, pageable);
     }
 
     @Test
@@ -562,7 +570,7 @@ class BankReceiptServiceTest {
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findByAccountId(accountId, pageable))
+        when(bankReceiptRepository.findByAccountId(accountId, 1L, pageable))
                 .thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
                 .thenReturn(responseDto);
@@ -574,7 +582,7 @@ class BankReceiptServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByAccountId(accountId, pageable);
+        verify(bankReceiptRepository).findByAccountId(accountId, 1L, pageable);
     }
 
     @Test
@@ -587,7 +595,7 @@ class BankReceiptServiceTest {
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findByCounterpartyId(counterpartyId, pageable))
+        when(bankReceiptRepository.findByCounterpartyId(counterpartyId, 1L, pageable))
                 .thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
                 .thenReturn(responseDto);
@@ -599,7 +607,7 @@ class BankReceiptServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByCounterpartyId(counterpartyId, pageable);
+        verify(bankReceiptRepository).findByCounterpartyId(counterpartyId, 1L, pageable);
     }
 
     @Test
@@ -612,7 +620,7 @@ class BankReceiptServiceTest {
         List<BankReceipt> receipts = List.of(receipt);
         Page<BankReceipt> page = new PageImpl<>(receipts, pageable, 1);
 
-        when(bankReceiptRepository.findByStatus(status, pageable))
+        when(bankReceiptRepository.findByStatus(status, 1L, pageable))
                 .thenReturn(page);
         when(bankReceiptMapper.toResponseDto(any(BankReceipt.class)))
                 .thenReturn(responseDto);
@@ -624,7 +632,7 @@ class BankReceiptServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(bankReceiptRepository).findByStatus(status, pageable);
+        verify(bankReceiptRepository).findByStatus(status, 1L, pageable);
     }
 
 // ==================== LOAD RELATED ENTITIES Tests ====================

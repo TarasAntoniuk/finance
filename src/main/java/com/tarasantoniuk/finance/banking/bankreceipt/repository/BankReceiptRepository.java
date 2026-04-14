@@ -43,14 +43,16 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
             LEFT JOIN FETCH b.country
             LEFT JOIN FETCH b.counterparty
             LEFT JOIN FETCH a.currency
-            LEFT JOIN FETCH br.organization
+            LEFT JOIN FETCH br.organization o
             LEFT JOIN FETCH br.counterparty
             LEFT JOIN FETCH br.currency
+            WHERE (:orgId IS NULL OR o.id = :orgId)
             """,
             countQuery = """
                     SELECT COUNT(DISTINCT br) FROM BankReceipt br
+                    WHERE (:orgId IS NULL OR br.organization.id = :orgId)
                     """)
-    Page<BankReceipt> findAllWithDetails(Pageable pageable);
+    Page<BankReceipt> findAllWithDetails(@Param("orgId") Long orgId, Pageable pageable);
 
     /**
      * Find receipts by account ID with pagination
@@ -62,11 +64,15 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
                 LEFT JOIN FETCH b.country
                 LEFT JOIN FETCH b.counterparty
                 LEFT JOIN FETCH a.currency
+                LEFT JOIN FETCH br.organization o
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE a.id = :accountId
+                  AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankReceipt> findByAccountId(@Param("accountId") Long accountId, Pageable pageable);
+    Page<BankReceipt> findByAccountId(@Param("accountId") Long accountId,
+                                      @Param("orgId") Long orgId,
+                                      Pageable pageable);
 
     /**
      * Find receipts by counterparty ID with pagination
@@ -78,11 +84,15 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
                 LEFT JOIN FETCH b.country
                 LEFT JOIN FETCH b.counterparty
                 LEFT JOIN FETCH a.currency
+                LEFT JOIN FETCH br.organization o
                 LEFT JOIN FETCH br.counterparty cp
                 LEFT JOIN FETCH br.currency
                 WHERE cp.id = :counterpartyId
+                  AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankReceipt> findByCounterpartyId(@Param("counterpartyId") Long counterpartyId, Pageable pageable);
+    Page<BankReceipt> findByCounterpartyId(@Param("counterpartyId") Long counterpartyId,
+                                           @Param("orgId") Long orgId,
+                                           Pageable pageable);
 
     /**
      * Find receipts by status
@@ -94,11 +104,15 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
                 LEFT JOIN FETCH b.country
                 LEFT JOIN FETCH b.counterparty
                 LEFT JOIN FETCH a.currency
+                LEFT JOIN FETCH br.organization o
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE br.status = :status
+                  AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankReceipt> findByStatus(@Param("status") DocumentStatus status, Pageable pageable);
+    Page<BankReceipt> findByStatus(@Param("status") DocumentStatus status,
+                                   @Param("orgId") Long orgId,
+                                   Pageable pageable);
 
     /**
      * Find receipts by transaction datetime range
@@ -110,13 +124,16 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
                 LEFT JOIN FETCH b.country
                 LEFT JOIN FETCH b.counterparty
                 LEFT JOIN FETCH a.currency
+                LEFT JOIN FETCH br.organization o
                 LEFT JOIN FETCH br.counterparty
                 LEFT JOIN FETCH br.currency
                 WHERE br.transactionDateTime BETWEEN :startDateTime AND :endDateTime
+                  AND (:orgId IS NULL OR o.id = :orgId)
             """)
     Page<BankReceipt> findByTransactionDateTimeBetween(
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime,
+            @Param("orgId") Long orgId,
             Pageable pageable
     );
 

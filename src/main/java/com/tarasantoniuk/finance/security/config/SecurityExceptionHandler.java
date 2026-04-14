@@ -5,6 +5,8 @@ import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledExceptio
 import com.tarasantoniuk.finance.security.auth.exception.AccountLockedException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
+import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
+import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,6 +48,18 @@ public class SecurityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidTokenException(
             InvalidTokenException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(SelfModificationException.class)
+    public ResponseEntity<ErrorResponse> handleSelfModificationException(
+            SelfModificationException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(LastAdminException.class)
+    public ResponseEntity<ErrorResponse> handleLastAdminException(
+            LastAdminException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
     @ExceptionHandler(RequestNotPermitted.class)

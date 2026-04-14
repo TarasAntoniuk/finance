@@ -48,8 +48,8 @@ public class AuthController {
     public ResponseEntity<AccessTokenResponse> register(@Valid @RequestBody RegisterRequest request,
                                                         HttpServletResponse response) {
         AuthResponse authResponse = authService.register(request);
-        addRefreshTokenCookie(response, authResponse.getRefreshToken());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new AccessTokenResponse(authResponse.getAccessToken()));
+        addRefreshTokenCookie(response, authResponse.refreshToken());
+        return ResponseEntity.status(HttpStatus.CREATED).body(new AccessTokenResponse(authResponse.accessToken()));
     }
 
     @PostMapping("/login")
@@ -62,8 +62,8 @@ public class AuthController {
     public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
                                                      HttpServletResponse response) {
         AuthResponse authResponse = authService.login(request);
-        addRefreshTokenCookie(response, authResponse.getRefreshToken());
-        return ResponseEntity.ok(new AccessTokenResponse(authResponse.getAccessToken()));
+        addRefreshTokenCookie(response, authResponse.refreshToken());
+        return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
     }
 
     @PostMapping("/refresh")
@@ -73,8 +73,8 @@ public class AuthController {
     public ResponseEntity<AccessTokenResponse> refresh(@CookieValue(name = REFRESH_TOKEN_COOKIE) String refreshToken,
                                                        HttpServletResponse response) {
         AuthResponse authResponse = authService.refresh(refreshToken);
-        addRefreshTokenCookie(response, authResponse.getRefreshToken());
-        return ResponseEntity.ok(new AccessTokenResponse(authResponse.getAccessToken()));
+        addRefreshTokenCookie(response, authResponse.refreshToken());
+        return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
     }
 
     @PostMapping("/change-password")
@@ -82,12 +82,15 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponse(responseCode = "204", description = "Password changed successfully")
     @ApiResponse(responseCode = "401", description = "Current password is incorrect")
-    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                               @RequestHeader("Authorization") String authorizationHeader) {
         JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String accessToken = authorizationHeader.substring(7);
         authService.changePassword(
                 principal.userId(),
                 request.getCurrentPassword(),
-                request.getNewPassword());
+                request.getNewPassword(),
+                accessToken);
         return ResponseEntity.noContent().build();
     }
 

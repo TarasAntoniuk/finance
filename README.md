@@ -214,8 +214,7 @@ See [Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html) for full i
 **Certifications:**
 - SQL (Advanced)
 - SQL (Intermediate)
-- Java (Basic)
-
+- Java (Basic)  
 *\*Java certification: HackerRank currently offers only Basic level for standard accounts*
 
 **Skills:**

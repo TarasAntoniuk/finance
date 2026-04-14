@@ -24,6 +24,7 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -82,6 +83,9 @@ class BankPaymentServiceTest {
     @Mock
     private BankAccountSnapshotValidityService snapshotValidityService;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private BankPaymentService bankPaymentService;
 
@@ -96,6 +100,10 @@ class BankPaymentServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(false);
+        lenient().when(orgContext.getActiveOrganizationId()).thenReturn(5L);
+        lenient().when(orgContext.resolveOrganizationId(any())).thenReturn(5L);
+
         // Request DTO
         requestDto = new BankPaymentRequestDto();
         requestDto.setAccountId(1L);
@@ -443,7 +451,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findAllWithDetails(pageable)).thenReturn(paymentsPage);
+            when(bankPaymentRepository.findAllWithDetails(5L, pageable)).thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act
@@ -454,7 +462,7 @@ class BankPaymentServiceTest {
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getMetadata().getTotalElements()).isEqualTo(1);
             assertThat(result.getMetadata().getTotalPages()).isEqualTo(1);
-            verify(bankPaymentRepository).findAllWithDetails(pageable);
+            verify(bankPaymentRepository).findAllWithDetails(5L, pageable);
         }
 
         @Test
@@ -465,7 +473,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findByAccountId(1L, pageable)).thenReturn(paymentsPage);
+            when(bankPaymentRepository.findByAccountId(1L, 5L, pageable)).thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act
@@ -474,7 +482,7 @@ class BankPaymentServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            verify(bankPaymentRepository).findByAccountId(1L, pageable);
+            verify(bankPaymentRepository).findByAccountId(1L, 5L, pageable);
         }
 
         @Test
@@ -485,7 +493,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findByCounterpartyId(2L, pageable)).thenReturn(paymentsPage);
+            when(bankPaymentRepository.findByCounterpartyId(2L, 5L, pageable)).thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act
@@ -494,7 +502,7 @@ class BankPaymentServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            verify(bankPaymentRepository).findByCounterpartyId(2L, pageable);
+            verify(bankPaymentRepository).findByCounterpartyId(2L, 5L, pageable);
         }
 
         @Test
@@ -505,7 +513,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findByStatus(DocumentStatus.DRAFT, pageable)).thenReturn(paymentsPage);
+            when(bankPaymentRepository.findByStatus(DocumentStatus.DRAFT, 5L, pageable)).thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act
@@ -514,7 +522,7 @@ class BankPaymentServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            verify(bankPaymentRepository).findByStatus(DocumentStatus.DRAFT, pageable);
+            verify(bankPaymentRepository).findByStatus(DocumentStatus.DRAFT, 5L, pageable);
         }
 
         @Test
@@ -527,7 +535,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 1);
 
-            when(bankPaymentRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable))
+            when(bankPaymentRepository.findByTransactionDateTimeBetween(startDateTime, endDateTime, 5L, pageable))
                     .thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
@@ -538,7 +546,7 @@ class BankPaymentServiceTest {
             // Assert
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
-            verify(bankPaymentRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, pageable);
+            verify(bankPaymentRepository).findByTransactionDateTimeBetween(startDateTime, endDateTime, 5L, pageable);
         }
 
         @Test
@@ -548,7 +556,7 @@ class BankPaymentServiceTest {
             Pageable pageable = PageRequest.of(0, 10);
             Page<BankPayment> emptyPage = new PageImpl<>(List.of(), pageable, 0);
 
-            when(bankPaymentRepository.findAllWithDetails(pageable)).thenReturn(emptyPage);
+            when(bankPaymentRepository.findAllWithDetails(5L, pageable)).thenReturn(emptyPage);
 
             // Act
             PageResponse<BankPaymentResponseDto> result = bankPaymentService.findAll(pageable);
@@ -974,7 +982,7 @@ class BankPaymentServiceTest {
             List<BankPayment> payments = List.of(payment);
             Page<BankPayment> paymentsPage = new PageImpl<>(payments, pageable, 25);
 
-            when(bankPaymentRepository.findAllWithDetails(pageable)).thenReturn(paymentsPage);
+            when(bankPaymentRepository.findAllWithDetails(5L, pageable)).thenReturn(paymentsPage);
             when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
 
             // Act

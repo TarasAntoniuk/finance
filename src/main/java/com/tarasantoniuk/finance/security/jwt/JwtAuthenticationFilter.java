@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.jwt;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.service.TokenBlacklistService;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.user.service.UserRevocationService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,16 +18,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRevocationService userRevocationService;
 
-    public JwtAuthenticationFilter(JwtService jwtService, TokenBlacklistService tokenBlacklistService) {
+    public JwtAuthenticationFilter(JwtService jwtService,
+                                   TokenBlacklistService tokenBlacklistService,
+                                   UserRevocationService userRevocationService) {
         this.jwtService = jwtService;
         this.tokenBlacklistService = tokenBlacklistService;
+        this.userRevocationService = userRevocationService;
     }
 
     @Override
@@ -43,7 +49,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String token = authHeader.substring(7);
 
-        if (!jwtService.isTokenValid(token)) {
+        Optional<Claims> optionalClaims = jwtService.validateAndExtractClaims(token);
+        if (optionalClaims.isEmpty()) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -53,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Claims claims = jwtService.extractClaims(token);
+        Claims claims = optionalClaims.get();
 
         String jti = claims.getId();
         if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
@@ -61,6 +68,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         Long userId = Long.parseLong(claims.getSubject());
+        if (userRevocationService.isRevoked(userId)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String email = claims.get("email", String.class);
         UserRole role = UserRole.valueOf(claims.get("role", String.class));
         Long orgId = claims.get("orgId", Long.class);

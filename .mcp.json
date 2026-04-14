@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "spring-docs": {
+      "command": "springdocs-mcp",
+      "args": []
+    },
+    "knowledge-base": {
+      "command": "node",
+      "args": ["/home/taras/projects/mcp-knowledge-base/mcp-stdio-proxy/index.js"]
+    }
+  }
+}

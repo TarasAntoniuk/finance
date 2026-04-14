@@ -62,11 +62,18 @@ jobs:
           
             if [ ! -f .env ]; then
               echo "❌ ERROR: .env file not found!"
-              echo "Please create .env with FINANCE_DB_PASSWORD"
+              echo "Please create .env with FINANCE_DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS"
               exit 1
             fi
-          
-            echo "✅ .env file exists"
+
+            for key in FINANCE_DB_PASSWORD JWT_SECRET CORS_ALLOWED_ORIGINS; do
+              if ! grep -q "^${key}=" .env; then
+                echo "❌ ERROR: ${key} is missing from .env"
+                exit 1
+              fi
+            done
+
+            echo "✅ .env file exists and has required keys"
           ENDSSH
 
       - name: Install rsync

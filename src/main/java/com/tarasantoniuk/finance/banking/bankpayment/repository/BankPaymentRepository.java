@@ -15,9 +15,6 @@ import java.util.Optional;
 @Repository
 public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> {
 
-    /**
-     * Find payment by ID with all related entities loaded (N+1 optimization)
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -33,9 +30,6 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             """)
     Optional<BankPayment> findByIdWithDetails(@Param("id") Long id);
 
-    /**
-     * Find all payments with pagination and N+1 optimization
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -46,13 +40,11 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
-            LEFT JOIN FETCH p.organization
+            LEFT JOIN FETCH p.organization o
+            WHERE (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankPayment> findAllWithDetails(Pageable pageable);
+    Page<BankPayment> findAllWithDetails(@Param("orgId") Long orgId, Pageable pageable);
 
-    /**
-     * Find payments by account ID
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -63,14 +55,14 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
-            LEFT JOIN FETCH p.organization
+            LEFT JOIN FETCH p.organization o
             WHERE p.account.id = :accountId
+              AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankPayment> findByAccountId(@Param("accountId") Long accountId, Pageable pageable);
+    Page<BankPayment> findByAccountId(@Param("accountId") Long accountId,
+                                      @Param("orgId") Long orgId,
+                                      Pageable pageable);
 
-    /**
-     * Find payments by counterparty ID
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -81,14 +73,14 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
-            LEFT JOIN FETCH p.organization
+            LEFT JOIN FETCH p.organization o
             WHERE p.counterparty.id = :counterpartyId
+              AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankPayment> findByCounterpartyId(@Param("counterpartyId") Long counterpartyId, Pageable pageable);
+    Page<BankPayment> findByCounterpartyId(@Param("counterpartyId") Long counterpartyId,
+                                           @Param("orgId") Long orgId,
+                                           Pageable pageable);
 
-    /**
-     * Find payments by status
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -99,14 +91,14 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
-            LEFT JOIN FETCH p.organization
+            LEFT JOIN FETCH p.organization o
             WHERE p.status = :status
+              AND (:orgId IS NULL OR o.id = :orgId)
             """)
-    Page<BankPayment> findByStatus(@Param("status") DocumentStatus status, Pageable pageable);
+    Page<BankPayment> findByStatus(@Param("status") DocumentStatus status,
+                                   @Param("orgId") Long orgId,
+                                   Pageable pageable);
 
-    /**
-     * Find payments by transaction datetime range
-     */
     @Query("""
             SELECT p FROM BankPayment p
             LEFT JOIN FETCH p.account a
@@ -117,17 +109,16 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
             LEFT JOIN FETCH p.counterparty
             LEFT JOIN FETCH p.counterpartyBankAccount
             LEFT JOIN FETCH p.currency
-            LEFT JOIN FETCH p.organization
+            LEFT JOIN FETCH p.organization o
             WHERE p.transactionDateTime BETWEEN :startDateTime AND :endDateTime
+              AND (:orgId IS NULL OR o.id = :orgId)
             """)
     Page<BankPayment> findByTransactionDateTimeBetween(
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime,
+            @Param("orgId") Long orgId,
             Pageable pageable
     );
 
-    /**
-     * Check if payment exists by external transaction ID
-     */
     boolean existsByExternalTransactionId(String externalTransactionId);
 }
