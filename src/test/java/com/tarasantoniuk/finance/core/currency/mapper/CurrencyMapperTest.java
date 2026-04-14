@@ -1,11 +1,13 @@
 package com.tarasantoniuk.finance.core.currency.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.currency.dto.CurrencyRequestDto;
 import com.tarasantoniuk.finance.core.currency.dto.CurrencyResponseDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -14,7 +16,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class CurrencyMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({CurrencyMapperImpl.class})
+class CurrencyMapperTest {
 
     @Autowired
     private CurrencyMapper currencyMapper;

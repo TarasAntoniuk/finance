@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
-import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @AutoConfigureMockMvc
+@org.springframework.transaction.annotation.Transactional
 class AdminUserControllerTest extends BaseIntegrationTest {
 
     @Autowired
@@ -39,6 +40,7 @@ class AdminUserControllerTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // Clean data from other non-@Transactional test classes
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
 

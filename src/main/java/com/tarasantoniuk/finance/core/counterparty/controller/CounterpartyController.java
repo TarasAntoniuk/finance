@@ -9,14 +9,19 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/counterparties")
+@Validated
 @Tag(name = "Core - Counterparty", description = "Counterparty management API")
 public class CounterpartyController {
+
+    private static final int MAX_PAGE_SIZE = 500;
 
     private final CounterpartyService counterpartyService;
 
@@ -51,15 +56,12 @@ public class CounterpartyController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<CounterpartyResponseDto>> getAll(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "50")
-            @RequestParam(defaultValue = "50") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "50")
+            @RequestParam(defaultValue = "50") @Min(1) int size) {
 
-        // Prevent abuse by limiting maximum page size
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<CounterpartyResponseDto> response =
@@ -84,15 +86,13 @@ public class CounterpartyController {
 
     @PatchMapping("/{id}/activate")
     @Operation(summary = "Activate counterparty")
-    public ResponseEntity<Void> activate(@PathVariable Long id) {
-        counterpartyService.activate(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<CounterpartyResponseDto> activate(@PathVariable Long id) {
+        return ResponseEntity.ok(counterpartyService.activate(id));
     }
 
     @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate counterparty")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        counterpartyService.deactivate(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CounterpartyResponseDto> deactivate(@PathVariable Long id) {
+        return ResponseEntity.ok(counterpartyService.deactivate(id));
     }
 }

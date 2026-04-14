@@ -1,14 +1,24 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
 import com.tarasantoniuk.finance.core.country.entity.Country;
+import com.tarasantoniuk.finance.core.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
+import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapperImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -16,8 +26,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
-class AccountingPolicyMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({AccountingPolicyMapperImpl.class, OrganizationMapperImpl.class, CurrencyMapperImpl.class, CountryMapperImpl.class})
+class AccountingPolicyMapperTest {
 
 
     @Autowired
@@ -32,10 +43,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(2L);
         requestDTO.setFiscalYearStartMonth(1);
-        requestDTO.setDepreciationMethod("STRAIGHT_LINE");
-        requestDTO.setInventoryValuationMethod("FIFO");
-        requestDTO.setRevenueRecognitionMethod("ACCRUAL");
-        requestDTO.setVatAccountingMethod("INVOICE");
+        requestDTO.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        requestDTO.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        requestDTO.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        requestDTO.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         requestDTO.setIsActive(true);
         requestDTO.setNotes("Standard accounting policy for 2024");
 
@@ -51,10 +62,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(entity.getCurrency()).isNotNull();
         assertThat(entity.getCurrency().getId()).isEqualTo(2L);
         assertThat(entity.getFiscalYearStartMonth()).isEqualTo(1);
-        assertThat(entity.getDepreciationMethod()).isEqualTo("STRAIGHT_LINE");
-        assertThat(entity.getInventoryValuationMethod()).isEqualTo("FIFO");
-        assertThat(entity.getRevenueRecognitionMethod()).isEqualTo("ACCRUAL");
-        assertThat(entity.getVatAccountingMethod()).isEqualTo("INVOICE");
+        assertThat(entity.getDepreciationMethod()).isEqualTo(DepreciationMethod.STRAIGHT_LINE);
+        assertThat(entity.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.FIFO);
+        assertThat(entity.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.ACCRUAL);
+        assertThat(entity.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.INVOICE);
         assertThat(entity.getIsActive()).isTrue();
         assertThat(entity.getNotes()).isEqualTo("Standard accounting policy for 2024");
         assertThat(entity.getCreatedAt()).isNull(); // should be ignored
@@ -154,40 +165,40 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         dto1.setOrganizationId(1L);
         dto1.setYear(2024);
         dto1.setCurrencyId(1L);
-        dto1.setDepreciationMethod("DECLINING_BALANCE");
+        dto1.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
 
         AccountingPolicy entity1 = accountingPolicyMapper.toEntity(dto1);
-        assertThat(entity1.getDepreciationMethod()).isEqualTo("DECLINING_BALANCE");
+        assertThat(entity1.getDepreciationMethod()).isEqualTo(DepreciationMethod.DECLINING_BALANCE);
 
         // Test different inventory methods
         AccountingPolicyRequestDto dto2 = new AccountingPolicyRequestDto();
         dto2.setOrganizationId(1L);
         dto2.setYear(2024);
         dto2.setCurrencyId(1L);
-        dto2.setInventoryValuationMethod("WEIGHTED_AVERAGE");
+        dto2.setInventoryValuationMethod(InventoryValuationMethod.WEIGHTED_AVERAGE);
 
         AccountingPolicy entity2 = accountingPolicyMapper.toEntity(dto2);
-        assertThat(entity2.getInventoryValuationMethod()).isEqualTo("WEIGHTED_AVERAGE");
+        assertThat(entity2.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.WEIGHTED_AVERAGE);
 
         // Test cash-based revenue recognition
         AccountingPolicyRequestDto dto3 = new AccountingPolicyRequestDto();
         dto3.setOrganizationId(1L);
         dto3.setYear(2024);
         dto3.setCurrencyId(1L);
-        dto3.setRevenueRecognitionMethod("CASH");
+        dto3.setRevenueRecognitionMethod(RevenueRecognitionMethod.CASH);
 
         AccountingPolicy entity3 = accountingPolicyMapper.toEntity(dto3);
-        assertThat(entity3.getRevenueRecognitionMethod()).isEqualTo("CASH");
+        assertThat(entity3.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.CASH);
 
         // Test payment-based VAT
         AccountingPolicyRequestDto dto4 = new AccountingPolicyRequestDto();
         dto4.setOrganizationId(1L);
         dto4.setYear(2024);
         dto4.setCurrencyId(1L);
-        dto4.setVatAccountingMethod("PAYMENT");
+        dto4.setVatAccountingMethod(VatAccountingMethod.PAYMENT);
 
         AccountingPolicy entity4 = accountingPolicyMapper.toEntity(dto4);
-        assertThat(entity4.getVatAccountingMethod()).isEqualTo("PAYMENT");
+        assertThat(entity4.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.PAYMENT);
     }
 
     @Test
@@ -225,10 +236,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         entity.setYear(2024);
         entity.setCurrency(currency);
         entity.setFiscalYearStartMonth(1);
-        entity.setDepreciationMethod("STRAIGHT_LINE");
-        entity.setInventoryValuationMethod("FIFO");
-        entity.setRevenueRecognitionMethod("ACCRUAL");
-        entity.setVatAccountingMethod("INVOICE");
+        entity.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        entity.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        entity.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        entity.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         entity.setIsActive(true);
         entity.setNotes("Main accounting policy");
         entity.setCreatedAt(now.minusDays(30));
@@ -242,10 +253,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(responseDTO.getId()).isEqualTo(100L);
         assertThat(responseDTO.getYear()).isEqualTo(2024);
         assertThat(responseDTO.getFiscalYearStartMonth()).isEqualTo(1);
-        assertThat(responseDTO.getDepreciationMethod()).isEqualTo("STRAIGHT_LINE");
-        assertThat(responseDTO.getInventoryValuationMethod()).isEqualTo("FIFO");
-        assertThat(responseDTO.getRevenueRecognitionMethod()).isEqualTo("ACCRUAL");
-        assertThat(responseDTO.getVatAccountingMethod()).isEqualTo("INVOICE");
+        assertThat(responseDTO.getDepreciationMethod()).isEqualTo(DepreciationMethod.STRAIGHT_LINE);
+        assertThat(responseDTO.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.FIFO);
+        assertThat(responseDTO.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.ACCRUAL);
+        assertThat(responseDTO.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.INVOICE);
         assertThat(responseDTO.getIsActive()).isTrue();
         assertThat(responseDTO.getNotes()).isEqualTo("Main accounting policy");
         assertThat(responseDTO.getCreatedAt()).isEqualTo(now.minusDays(30));
@@ -335,14 +346,14 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         policy1.setOrganization(org1);
         policy1.setYear(2024);
         policy1.setCurrency(uah);
-        policy1.setDepreciationMethod("STRAIGHT_LINE");
+        policy1.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
 
         AccountingPolicy policy2 = new AccountingPolicy();
         policy2.setId(2L);
         policy2.setOrganization(org2);
         policy2.setYear(2024);
         policy2.setCurrency(usd);
-        policy2.setDepreciationMethod("DECLINING_BALANCE");
+        policy2.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
 
         List<AccountingPolicy> policies = Arrays.asList(policy1, policy2);
 
@@ -355,12 +366,12 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(responseDTOs.getFirst().getId()).isEqualTo(1L);
         assertThat(responseDTOs.getFirst().getOrganization().getName()).isEqualTo("Company A");
         assertThat(responseDTOs.getFirst().getCurrency().getCode()).isEqualTo("UAH");
-        assertThat(responseDTOs.getFirst().getDepreciationMethod()).isEqualTo("STRAIGHT_LINE");
+        assertThat(responseDTOs.getFirst().getDepreciationMethod()).isEqualTo(DepreciationMethod.STRAIGHT_LINE);
 
         assertThat(responseDTOs.get(1).getId()).isEqualTo(2L);
         assertThat(responseDTOs.get(1).getOrganization().getName()).isEqualTo("Company B");
         assertThat(responseDTOs.get(1).getCurrency().getCode()).isEqualTo("USD");
-        assertThat(responseDTOs.get(1).getDepreciationMethod()).isEqualTo("DECLINING_BALANCE");
+        assertThat(responseDTOs.get(1).getDepreciationMethod()).isEqualTo(DepreciationMethod.DECLINING_BALANCE);
     }
 
     @Test
@@ -395,10 +406,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setYear(2023);
         existingEntity.setCurrency(oldCurrency);
         existingEntity.setFiscalYearStartMonth(1);
-        existingEntity.setDepreciationMethod("STRAIGHT_LINE");
-        existingEntity.setInventoryValuationMethod("FIFO");
-        existingEntity.setRevenueRecognitionMethod("ACCRUAL");
-        existingEntity.setVatAccountingMethod("INVOICE");
+        existingEntity.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        existingEntity.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        existingEntity.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        existingEntity.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         existingEntity.setIsActive(false);
         existingEntity.setNotes("Old notes");
         existingEntity.setCreatedAt(originalCreatedAt);
@@ -409,10 +420,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         updateDTO.setYear(2024);
         updateDTO.setCurrencyId(88L);
         updateDTO.setFiscalYearStartMonth(7);
-        updateDTO.setDepreciationMethod("DECLINING_BALANCE");
-        updateDTO.setInventoryValuationMethod("WEIGHTED_AVERAGE");
-        updateDTO.setRevenueRecognitionMethod("CASH");
-        updateDTO.setVatAccountingMethod("PAYMENT");
+        updateDTO.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+        updateDTO.setInventoryValuationMethod(InventoryValuationMethod.WEIGHTED_AVERAGE);
+        updateDTO.setRevenueRecognitionMethod(RevenueRecognitionMethod.CASH);
+        updateDTO.setVatAccountingMethod(VatAccountingMethod.PAYMENT);
         updateDTO.setIsActive(true);
         updateDTO.setNotes("New notes");
 
@@ -427,10 +438,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(existingEntity.getCurrency()).isNotNull();
         assertThat(existingEntity.getCurrency().getId()).isEqualTo(88L);
         assertThat(existingEntity.getFiscalYearStartMonth()).isEqualTo(7);
-        assertThat(existingEntity.getDepreciationMethod()).isEqualTo("DECLINING_BALANCE");
-        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo("WEIGHTED_AVERAGE");
-        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo("CASH");
-        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo("PAYMENT");
+        assertThat(existingEntity.getDepreciationMethod()).isEqualTo(DepreciationMethod.DECLINING_BALANCE);
+        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.WEIGHTED_AVERAGE);
+        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.CASH);
+        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.PAYMENT);
         assertThat(existingEntity.getIsActive()).isTrue();
         assertThat(existingEntity.getNotes()).isEqualTo("New notes");
 
@@ -455,10 +466,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setYear(2024);
         existingEntity.setCurrency(existingCurrency);
         existingEntity.setFiscalYearStartMonth(1);
-        existingEntity.setDepreciationMethod("STRAIGHT_LINE");
-        existingEntity.setInventoryValuationMethod("FIFO");
-        existingEntity.setRevenueRecognitionMethod("ACCRUAL");
-        existingEntity.setVatAccountingMethod("INVOICE");
+        existingEntity.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        existingEntity.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        existingEntity.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        existingEntity.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         existingEntity.setIsActive(true);
         existingEntity.setNotes("Existing notes");
 
@@ -468,7 +479,7 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         updateDTO.setCurrencyId(null); // ignore
         updateDTO.setFiscalYearStartMonth(null); // ignore
         updateDTO.setDepreciationMethod(null); // ignore
-        updateDTO.setInventoryValuationMethod("LIFO"); // update
+        updateDTO.setInventoryValuationMethod(InventoryValuationMethod.LIFO); // update
         updateDTO.setRevenueRecognitionMethod(null); // ignore
         updateDTO.setVatAccountingMethod(null); // ignore
         updateDTO.setIsActive(null); // ignore
@@ -482,10 +493,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(existingEntity.getYear()).isEqualTo(2025); // updated
         assertThat(existingEntity.getCurrency().getId()).isEqualTo(3L); // unchanged
         assertThat(existingEntity.getFiscalYearStartMonth()).isEqualTo(1); // unchanged
-        assertThat(existingEntity.getDepreciationMethod()).isEqualTo("STRAIGHT_LINE"); // unchanged
-        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo("LIFO"); // updated
-        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo("ACCRUAL"); // unchanged
-        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo("INVOICE"); // unchanged
+        assertThat(existingEntity.getDepreciationMethod()).isEqualTo(DepreciationMethod.STRAIGHT_LINE); // unchanged
+        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.LIFO); // updated
+        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.ACCRUAL); // unchanged
+        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.INVOICE); // unchanged
         assertThat(existingEntity.getIsActive()).isTrue(); // unchanged
         assertThat(existingEntity.getNotes()).isEqualTo("Existing notes"); // unchanged
     }
@@ -533,10 +544,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         existingEntity.setYear(2023);
         existingEntity.setCurrency(existingCurrency);
         existingEntity.setFiscalYearStartMonth(1);
-        existingEntity.setDepreciationMethod("STRAIGHT_LINE");
-        existingEntity.setInventoryValuationMethod("FIFO");
-        existingEntity.setRevenueRecognitionMethod("ACCRUAL");
-        existingEntity.setVatAccountingMethod("INVOICE");
+        existingEntity.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        existingEntity.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        existingEntity.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        existingEntity.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         existingEntity.setIsActive(true);
         existingEntity.setNotes("Old notes");
 
@@ -546,9 +557,9 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         updateDTO.setCurrencyId(null); // ignore
         updateDTO.setFiscalYearStartMonth(7); // update
         updateDTO.setDepreciationMethod(null); // ignore
-        updateDTO.setInventoryValuationMethod("WEIGHTED_AVERAGE"); // update
+        updateDTO.setInventoryValuationMethod(InventoryValuationMethod.WEIGHTED_AVERAGE); // update
         updateDTO.setRevenueRecognitionMethod(null); // ignore
-        updateDTO.setVatAccountingMethod("PAYMENT"); // update
+        updateDTO.setVatAccountingMethod(VatAccountingMethod.PAYMENT); // update
         updateDTO.setIsActive(false); // update
         updateDTO.setNotes(null); // ignore
 
@@ -560,10 +571,10 @@ class AccountingPolicyMapperTest extends BaseIntegrationTest {
         assertThat(existingEntity.getYear()).isEqualTo(2024);
         assertThat(existingEntity.getCurrency().getId()).isEqualTo(5L); // unchanged
         assertThat(existingEntity.getFiscalYearStartMonth()).isEqualTo(7);
-        assertThat(existingEntity.getDepreciationMethod()).isEqualTo("STRAIGHT_LINE"); // unchanged
-        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo("WEIGHTED_AVERAGE");
-        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo("ACCRUAL"); // unchanged
-        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo("PAYMENT");
+        assertThat(existingEntity.getDepreciationMethod()).isEqualTo(DepreciationMethod.STRAIGHT_LINE); // unchanged
+        assertThat(existingEntity.getInventoryValuationMethod()).isEqualTo(InventoryValuationMethod.WEIGHTED_AVERAGE);
+        assertThat(existingEntity.getRevenueRecognitionMethod()).isEqualTo(RevenueRecognitionMethod.ACCRUAL); // unchanged
+        assertThat(existingEntity.getVatAccountingMethod()).isEqualTo(VatAccountingMethod.PAYMENT);
         assertThat(existingEntity.getIsActive()).isFalse();
         assertThat(existingEntity.getNotes()).isEqualTo("Old notes"); // unchanged
     }

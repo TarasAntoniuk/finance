@@ -5,9 +5,9 @@ import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
-import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
+import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
 import com.tarasantoniuk.finance.security.user.repository.UserRepository;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +41,7 @@ class AuthControllerTest extends BaseIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // Clean data from other non-@Transactional test classes
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
     }

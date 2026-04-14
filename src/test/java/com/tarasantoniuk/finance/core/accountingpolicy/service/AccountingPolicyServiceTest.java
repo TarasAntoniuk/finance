@@ -3,6 +3,10 @@ package com.tarasantoniuk.finance.core.accountingpolicy.service;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyRequestDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.dto.AccountingPolicyResponseDto;
 import com.tarasantoniuk.finance.core.accountingpolicy.entity.AccountingPolicy;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyAlreadyExistsException;
 import com.tarasantoniuk.finance.core.accountingpolicy.exception.AccountingPolicyNotFoundException;
 import com.tarasantoniuk.finance.core.accountingpolicy.mapper.AccountingPolicyMapper;
@@ -13,18 +17,24 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+
+import com.tarasantoniuk.finance.common.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,10 +77,10 @@ class AccountingPolicyServiceTest {
         accountingPolicy.setYear(2024);
         accountingPolicy.setCurrency(currency);
         accountingPolicy.setFiscalYearStartMonth(1);
-        accountingPolicy.setDepreciationMethod("STRAIGHT_LINE");
-        accountingPolicy.setInventoryValuationMethod("FIFO");
-        accountingPolicy.setRevenueRecognitionMethod("ACCRUAL");
-        accountingPolicy.setVatAccountingMethod("INVOICE");
+        accountingPolicy.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        accountingPolicy.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        accountingPolicy.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        accountingPolicy.setVatAccountingMethod(VatAccountingMethod.INVOICE);
         accountingPolicy.setIsActive(true);
 
         requestDTO = new AccountingPolicyRequestDto();
@@ -78,10 +88,10 @@ class AccountingPolicyServiceTest {
         requestDTO.setYear(2024);
         requestDTO.setCurrencyId(1L);
         requestDTO.setFiscalYearStartMonth(1);
-        requestDTO.setDepreciationMethod("STRAIGHT_LINE");
-        requestDTO.setInventoryValuationMethod("FIFO");
-        requestDTO.setRevenueRecognitionMethod("ACCRUAL");
-        requestDTO.setVatAccountingMethod("INVOICE");
+        requestDTO.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        requestDTO.setInventoryValuationMethod(InventoryValuationMethod.FIFO);
+        requestDTO.setRevenueRecognitionMethod(RevenueRecognitionMethod.ACCRUAL);
+        requestDTO.setVatAccountingMethod(VatAccountingMethod.INVOICE);
 
         responseDTO = new AccountingPolicyResponseDto();
         responseDTO.setId(1L);
@@ -91,14 +101,15 @@ class AccountingPolicyServiceTest {
     @Test
     void getAllAccountingPolicies_ShouldReturnListOfPolicies() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findAllWithRelations()).thenReturn(policies);
+        Page<AccountingPolicy> page = new PageImpl<>(policies);
+        when(accountingPolicyRepository.findAllWithRelations(any(Pageable.class))).thenReturn(page);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies();
+        PageResponse<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies(0, 50);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(accountingPolicyRepository, times(1)).findAllWithRelations();
+        assertEquals(1, result.getContent().size());
+        verify(accountingPolicyRepository, times(1)).findAllWithRelations(any(Pageable.class));
     }
 
     @Test
@@ -146,11 +157,11 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByOrganization_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByOrganizationIdWithRelations(1L)).thenReturn(policies);
+        when(accountingPolicyRepository.findByOrganizationIdWithRelations(eq(1L), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getAccountingPoliciesByOrganization(1L);
+                .getAccountingPoliciesByOrganization(1L, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -159,10 +170,10 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYear_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByYearWithRelations(2024)).thenReturn(policies);
+        when(accountingPolicyRepository.findByYearWithRelations(eq(2024), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAccountingPoliciesByYear(2024);
+        List<AccountingPolicyResponseDto> result = accountingPolicyService.getAccountingPoliciesByYear(2024, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -171,11 +182,11 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYearRange_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByYearBetweenWithRelations(2020, 2024)).thenReturn(policies);
+        when(accountingPolicyRepository.findByYearBetweenWithRelations(eq(2020), eq(2024), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getAccountingPoliciesByYearRange(2020, 2024);
+                .getAccountingPoliciesByYearRange(2020, 2024, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -391,61 +402,61 @@ class AccountingPolicyServiceTest {
     @Test
     void getActiveAccountingPoliciesByOrganization_ShouldReturnOnlyActivePolicies() {
         List<AccountingPolicy> activePolicies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(1L, true))
+        when(accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(eq(1L), eq(true), any(Pageable.class)))
                 .thenReturn(activePolicies);
         when(accountingPolicyMapper.toResponseDTOList(activePolicies))
                 .thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getActiveAccountingPoliciesByOrganization(1L);
+                .getActiveAccountingPoliciesByOrganization(1L, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActiveWithRelations(1L, true);
+        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActiveWithRelations(eq(1L), eq(true), any(Pageable.class));
     }
 
     @Test
     void getActiveAccountingPoliciesByOrganization_WhenNoActivePolicies_ShouldReturnEmptyList() {
-        when(accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(1L, true))
+        when(accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(eq(1L), eq(true), any(Pageable.class)))
                 .thenReturn(Collections.emptyList());
         when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
                 .thenReturn(Collections.emptyList());
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getActiveAccountingPoliciesByOrganization(1L);
+                .getActiveAccountingPoliciesByOrganization(1L, 500);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActiveWithRelations(1L, true);
+        verify(accountingPolicyRepository, times(1)).findByOrganizationIdAndIsActiveWithRelations(eq(1L), eq(true), any(Pageable.class));
     }
 
     @Test
     void getAccountingPoliciesByCurrency_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByCurrencyIdWithRelations(1L)).thenReturn(policies);
+        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies))
                 .thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getAccountingPoliciesByCurrency(1L);
+                .getAccountingPoliciesByCurrency(1L, 500);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(1L);
+        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(Pageable.class));
     }
 
     @Test
     void getAccountingPoliciesByCurrency_WhenNoPolicies_ShouldReturnEmptyList() {
-        when(accountingPolicyRepository.findByCurrencyIdWithRelations(1L))
+        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(Pageable.class)))
                 .thenReturn(Collections.emptyList());
         when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
                 .thenReturn(Collections.emptyList());
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
-                .getAccountingPoliciesByCurrency(1L);
+                .getAccountingPoliciesByCurrency(1L, 500);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(1L);
+        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(Pageable.class));
     }
 }

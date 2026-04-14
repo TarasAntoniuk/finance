@@ -10,9 +10,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,8 +25,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/exchange-rates")
+@Validated
 @Tag(name = "Core - Exchange Rate", description = "External exchange rate management API")
 public class ExternalExchangeRateController {
+
+    private static final int MAX_PAGE_SIZE = 500;
 
     private final ExternalExchangeRateService exchangeRateService;
 
@@ -45,14 +52,12 @@ public class ExternalExchangeRateController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved paginated list")
     public ResponseEntity<PageResponse<ExternalExchangeRateResponseDto>> getAllExchangeRates(
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =
@@ -74,12 +79,17 @@ public class ExternalExchangeRateController {
     }
 
     @GetMapping("/date/{date}")
-    @Operation(summary = "Get exchange rates by date", description = "Retrieve all exchange rates for a specific date")
+    @Operation(summary = "Get exchange rates by date", description = "Retrieve exchange rates for a specific date (limited to 500 results)")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list")
     public ResponseEntity<List<ExternalExchangeRateResponseDto>> getExchangeRatesByDate(
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
-            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<ExternalExchangeRateResponseDto> rates = exchangeRateService.getExchangeRatesByDate(date);
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
+        List<ExternalExchangeRateResponseDto> rates = exchangeRateService.getExchangeRatesByDate(date, limit);
         return ResponseEntity.ok(rates);
     }
 
@@ -91,9 +101,14 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Exchange date", required = true, example = "2024-01-15")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Source name", required = true, example = "NBU")
-            @PathVariable String source) {
+            @PathVariable @Size(max = 100) @Pattern(regexp = "^[A-Z0-9_]+$") String source,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<ExternalExchangeRateResponseDto> rates = exchangeRateService
-                .getExchangeRatesByDateAndSource(date, source);
+                .getExchangeRatesByDateAndSource(date, source, limit);
         return ResponseEntity.ok(rates);
     }
 
@@ -115,14 +130,12 @@ public class ExternalExchangeRateController {
             @Parameter(description = "End date", required = true, example = "2024-12-31")
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =
@@ -149,14 +162,12 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Currency To ID", required = true, example = "2")
             @RequestParam Long currencyToId,
             @Parameter(description = "Page number (0-based)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of items per page", example = "200")
-            @RequestParam(defaultValue = "200") int size,
-            @Parameter(description = "Maximum allowed page size", example = "500")
-            @RequestParam(defaultValue = "500") int maxSize) {
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @Parameter(description = "Number of items per page (max 500)", example = "200")
+            @RequestParam(defaultValue = "200") @Min(1) int size) {
 
-        if (size > maxSize) {
-            size = maxSize;
+        if (size > MAX_PAGE_SIZE) {
+            size = MAX_PAGE_SIZE;
         }
 
         PageResponse<ExternalExchangeRateResponseDto> response =
@@ -173,9 +184,14 @@ public class ExternalExchangeRateController {
             @Parameter(description = "Date", required = true, example = "2025-11-03")
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @Parameter(description = "Currency From ID", required = true, example = "2")
-            @RequestParam Long currencyFromId) {
+            @RequestParam Long currencyFromId,
+            @Parameter(description = "Maximum number of results (max 500)", example = "500")
+            @RequestParam(defaultValue = "500") @Min(1) int limit) {
+        if (limit > MAX_PAGE_SIZE) {
+            limit = MAX_PAGE_SIZE;
+        }
         List<ExternalExchangeRateResponseDto> rates = exchangeRateService
-                .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId);
+                .getLatestRatesByDateAndCurrencyFrom(date, currencyFromId, limit);
         return ResponseEntity.ok(rates);
     }
 

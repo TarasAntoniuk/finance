@@ -1,15 +1,20 @@
 package com.tarasantoniuk.finance.banking.bankaccount.mapper;
 
 import com.tarasantoniuk.finance.banking.bank.entity.Bank;
+import com.tarasantoniuk.finance.banking.bank.mapper.BankMapperImpl;
 import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountRequestDto;
 import com.tarasantoniuk.finance.banking.bankaccount.dto.BankAccountResponseDto;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.core.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -17,7 +22,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BankAccountMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({BankAccountMapperImpl.class, BankMapperImpl.class, CurrencyMapperImpl.class, CountryMapperImpl.class})
+class BankAccountMapperTest {
 
     @Autowired
     BankAccountMapper bankAccountMapper;

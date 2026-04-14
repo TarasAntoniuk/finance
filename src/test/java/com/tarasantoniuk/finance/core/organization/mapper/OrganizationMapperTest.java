@@ -1,13 +1,17 @@
 package com.tarasantoniuk.finance.core.organization.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.country.entity.Country;
+import com.tarasantoniuk.finance.core.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -16,7 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class OrganizationMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({OrganizationMapperImpl.class, CountryMapperImpl.class, CurrencyMapperImpl.class})
+class OrganizationMapperTest {
 
     @Autowired
     private OrganizationMapper organizationMapper;

@@ -1,9 +1,12 @@
 package com.tarasantoniuk.finance.core.accountingpolicy.dto;
 
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.DepreciationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.InventoryValuationMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.RevenueRecognitionMethod;
+import com.tarasantoniuk.finance.core.accountingpolicy.enums.VatAccountingMethod;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 /**
  * Base DTO class with common fields for AccountingPolicy request and response DTOs
@@ -19,17 +22,13 @@ public abstract class BaseAccountingPolicyDto {
     @Max(value = 12, message = "Fiscal year start month must be between 1 and 12")
     private Integer fiscalYearStartMonth;
 
-    @Size(max = 50, message = "Depreciation method must not exceed 50 characters")
-    private String depreciationMethod;
+    private DepreciationMethod depreciationMethod;
 
-    @Size(max = 50, message = "Inventory valuation method must not exceed 50 characters")
-    private String inventoryValuationMethod;
+    private InventoryValuationMethod inventoryValuationMethod;
 
-    @Size(max = 50, message = "Revenue recognition method must not exceed 50 characters")
-    private String revenueRecognitionMethod;
+    private RevenueRecognitionMethod revenueRecognitionMethod;
 
-    @Size(max = 50, message = "VAT accounting method must not exceed 50 characters")
-    private String vatAccountingMethod;
+    private VatAccountingMethod vatAccountingMethod;
 
     private Boolean isActive;
 
@@ -54,35 +53,35 @@ public abstract class BaseAccountingPolicyDto {
         this.fiscalYearStartMonth = fiscalYearStartMonth;
     }
 
-    public String getDepreciationMethod() {
+    public DepreciationMethod getDepreciationMethod() {
         return depreciationMethod;
     }
 
-    public void setDepreciationMethod(String depreciationMethod) {
+    public void setDepreciationMethod(DepreciationMethod depreciationMethod) {
         this.depreciationMethod = depreciationMethod;
     }
 
-    public String getInventoryValuationMethod() {
+    public InventoryValuationMethod getInventoryValuationMethod() {
         return inventoryValuationMethod;
     }
 
-    public void setInventoryValuationMethod(String inventoryValuationMethod) {
+    public void setInventoryValuationMethod(InventoryValuationMethod inventoryValuationMethod) {
         this.inventoryValuationMethod = inventoryValuationMethod;
     }
 
-    public String getRevenueRecognitionMethod() {
+    public RevenueRecognitionMethod getRevenueRecognitionMethod() {
         return revenueRecognitionMethod;
     }
 
-    public void setRevenueRecognitionMethod(String revenueRecognitionMethod) {
+    public void setRevenueRecognitionMethod(RevenueRecognitionMethod revenueRecognitionMethod) {
         this.revenueRecognitionMethod = revenueRecognitionMethod;
     }
 
-    public String getVatAccountingMethod() {
+    public VatAccountingMethod getVatAccountingMethod() {
         return vatAccountingMethod;
     }
 
-    public void setVatAccountingMethod(String vatAccountingMethod) {
+    public void setVatAccountingMethod(VatAccountingMethod vatAccountingMethod) {
         this.vatAccountingMethod = vatAccountingMethod;
     }
 

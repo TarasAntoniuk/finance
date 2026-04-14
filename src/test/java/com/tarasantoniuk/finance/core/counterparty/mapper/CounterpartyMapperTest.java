@@ -1,13 +1,17 @@
 package com.tarasantoniuk.finance.core.counterparty.mapper;
 
-import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyRequestDto;
 import com.tarasantoniuk.finance.core.counterparty.dto.CounterpartyResponseDto;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.country.entity.Country;
+import com.tarasantoniuk.finance.core.country.mapper.CountryMapperImpl;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.core.currency.mapper.CurrencyMapperImpl;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -16,7 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class CounterpartyMapperTest extends BaseIntegrationTest {
+@ExtendWith(SpringExtension.class)
+@Import({CounterpartyMapperImpl.class, CountryMapperImpl.class, CurrencyMapperImpl.class})
+class CounterpartyMapperTest {
 
     @Autowired
     private CounterpartyMapper counterpartyMapper;
@@ -49,8 +55,7 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
         assertThat(entity.getEmail()).isEqualTo("contact@abc.com");
         assertThat(entity.getPhone()).isEqualTo("+380501234567");
         assertThat(entity.getAddress()).isEqualTo("123 Main Street, Kyiv");
-        assertThat(entity.getCountry()).isNotNull();
-        assertThat(entity.getCountry().getId()).isEqualTo(1L);
+        assertThat(entity.getCountry()).isNull(); // country is set by service, not mapper
         assertThat(entity.getIsActive()).isTrue();
         assertThat(entity.getNotes()).isEqualTo("Important customer");
         assertThat(entity.getCreatedAt()).isNull(); // should be ignored
@@ -120,7 +125,7 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
     }
 
     @Test
-    void toEntity_shouldCreateCountryWithOnlyIdSet() {
+    void toEntity_shouldIgnoreCountryMapping() {
         // Given
         CounterpartyRequestDto requestDto = new CounterpartyRequestDto();
         requestDto.setName("Test Counterparty");
@@ -131,11 +136,8 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
         // When
         Counterparty entity = counterpartyMapper.toEntity(requestDto);
 
-        // Then
-        assertThat(entity.getCountry()).isNotNull();
-        assertThat(entity.getCountry().getId()).isEqualTo(10L);
-        assertThat(entity.getCountry().getName()).isNull();
-        assertThat(entity.getCountry().getIsoCode()).isNull();
+        // Then - country is ignored by mapper, set by service
+        assertThat(entity.getCountry()).isNull();
     }
 
     @Test
@@ -345,7 +347,7 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
         assertThat(existingEntity.getPhone()).isEqualTo("+380222222222");
         assertThat(existingEntity.getAddress()).isEqualTo("New Address");
         assertThat(existingEntity.getCountry()).isNotNull();
-        assertThat(existingEntity.getCountry().getId()).isEqualTo(99L);
+        assertThat(existingEntity.getCountry().getId()).isEqualTo(1L); // country ignored by mapper, unchanged
         assertThat(existingEntity.getIsActive()).isTrue();
         assertThat(existingEntity.getNotes()).isEqualTo("New notes");
 
@@ -403,7 +405,7 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
     }
 
     @Test
-    void updateEntity_shouldChangeCountry() {
+    void updateEntity_shouldNotChangeCountry() {
         // Given
         Country oldCountry = new Country();
         oldCountry.setId(1L);
@@ -419,14 +421,14 @@ class CounterpartyMapperTest extends BaseIntegrationTest {
         updateDto.setName("Migrating Company");
         updateDto.setCode("MIG-001");
         updateDto.setType(Counterparty.CounterpartyType.CUSTOMER);
-        updateDto.setCountryId(2L); // change country
+        updateDto.setCountryId(2L); // country ignored by mapper, set by service
 
         // When
         counterpartyMapper.updateEntity(updateDto, existingEntity);
 
-        // Then
+        // Then - country unchanged because mapper ignores it (service handles it)
         assertThat(existingEntity.getCountry()).isNotNull();
-        assertThat(existingEntity.getCountry().getId()).isEqualTo(2L);
+        assertThat(existingEntity.getCountry().getId()).isEqualTo(1L);
     }
 
     @Test

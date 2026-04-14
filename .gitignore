@@ -27,3 +27,8 @@ badges/
 /.settings/
 
 /.mcp.json
+
+# Environment files (secrets)
+.env
+!.env.example
+
