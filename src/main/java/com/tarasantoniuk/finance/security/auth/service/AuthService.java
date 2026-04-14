@@ -157,10 +157,7 @@ public class AuthService {
 
     @Transactional
     public void logout(Long userId, String email, String accessToken) {
-        String jti = jwtService.extractClaims(accessToken).getId();
-        if (jti != null) {
-            tokenBlacklistService.blacklist(jti);
-        }
+        blacklistAccessToken(accessToken);
         refreshTokenRepository.revokeAllByUserId(userId);
         eventPublisher.publishEvent(SecurityAuditEvent.logout(email, clientIpResolver.resolve()));
     }
@@ -177,12 +174,20 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        String jti = jwtService.extractClaims(accessToken).getId();
-        if (jti != null) {
-            tokenBlacklistService.blacklist(jti);
-        }
-
+        blacklistAccessToken(accessToken);
         refreshTokenRepository.revokeAllByUserId(userId);
+    }
+
+    private void blacklistAccessToken(String accessToken) {
+        var claims = jwtService.extractClaims(accessToken);
+        String jti = claims.getId();
+        if (jti == null) {
+            return;
+        }
+        LocalDateTime expiresAt = claims.getExpiration().toInstant()
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDateTime();
+        tokenBlacklistService.blacklist(jti, expiresAt);
     }
 
     private AuthResponse generateTokenPair(User user) {

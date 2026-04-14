@@ -419,6 +419,7 @@ class AuthServiceTest {
 
         Map<String, Object> claimMap = new HashMap<>();
         claimMap.put("jti", "access-jti");
+        claimMap.put("exp", new java.util.Date(System.currentTimeMillis() + 900_000));
         Claims claims = new DefaultClaims(claimMap);
         when(jwtService.extractClaims("current-access-token")).thenReturn(claims);
 
@@ -426,7 +427,7 @@ class AuthServiceTest {
 
         assertEquals("newEncodedPassword", user.getPassword());
         verify(userRepository).save(user);
-        verify(tokenBlacklistService).blacklist("access-jti");
+        verify(tokenBlacklistService).blacklist(eq("access-jti"), any(java.time.LocalDateTime.class));
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 
@@ -456,13 +457,14 @@ class AuthServiceTest {
     void logout_ShouldBlacklistAccessTokenAndRevokeAllRefreshTokens() {
         Map<String, Object> claimMap = new HashMap<>();
         claimMap.put("jti", "test-jti");
+        claimMap.put("exp", new java.util.Date(System.currentTimeMillis() + 900_000));
         Claims claims = new DefaultClaims(claimMap);
 
         when(jwtService.extractClaims("access-token")).thenReturn(claims);
 
         authService.logout(1L, "test@example.com", "access-token");
 
-        verify(tokenBlacklistService).blacklist("test-jti");
+        verify(tokenBlacklistService).blacklist(eq("test-jti"), any(java.time.LocalDateTime.class));
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 
@@ -475,7 +477,7 @@ class AuthServiceTest {
 
         authService.logout(1L, "test@example.com", "access-token");
 
-        verify(tokenBlacklistService, never()).blacklist(anyString());
+        verify(tokenBlacklistService, never()).blacklist(anyString(), any(java.time.LocalDateTime.class));
         verify(refreshTokenRepository).revokeAllByUserId(1L);
     }
 }
