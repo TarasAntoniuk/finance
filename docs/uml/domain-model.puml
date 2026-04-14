@@ -213,6 +213,17 @@ class com.tarasantoniuk.finance.core.organization.entity.Organization {
 }
 
 
+class com.tarasantoniuk.finance.security.audit.entity.SecurityAuditEntry {
+	{field} +action : String
+	{field} +details : String
+	{field} +email : String
+	{field} +id : Long
+	{field} +ipAddress : String
+	{field} +occurredAt : java.time.LocalDateTime
+	{field} +success : boolean
+}
+
+
 class com.tarasantoniuk.finance.security.token.entity.BlacklistedToken {
 	{field} +expiresAt : java.time.LocalDateTime
 	{field} +jti : String
@@ -277,6 +288,7 @@ com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate 
 com.tarasantoniuk.finance.core.externalexchangerate.entity.ExternalExchangeRate --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 com.tarasantoniuk.finance.core.organization.entity.Organization -->  com.tarasantoniuk.finance.core.country.entity.Country : country
 com.tarasantoniuk.finance.core.organization.entity.Organization --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
+com.tarasantoniuk.finance.security.audit.entity.SecurityAuditEntry --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 com.tarasantoniuk.finance.security.token.entity.BlacklistedToken --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
 com.tarasantoniuk.finance.security.token.entity.RefreshToken -->  com.tarasantoniuk.finance.security.user.entity.User : user
 com.tarasantoniuk.finance.security.token.entity.RefreshToken --|>  com.tarasantoniuk.finance.common.entity.BaseEntity
