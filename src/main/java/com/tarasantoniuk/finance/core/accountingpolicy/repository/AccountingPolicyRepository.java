@@ -14,38 +14,21 @@ import java.util.Optional;
 @Repository
 public interface AccountingPolicyRepository extends JpaRepository<AccountingPolicy, Long> {
 
-    /**
-     * Find all accounting policies with organization and currency loaded in a single query.
-     * Uses JOIN FETCH to prevent N+1 queries.
-     *
-     * @return list of accounting policies with relationships eagerly loaded
-     */
     @Query(value = "SELECT DISTINCT ap FROM AccountingPolicy ap " +
-            "LEFT JOIN FETCH ap.organization " +
+            "LEFT JOIN FETCH ap.organization o " +
             "LEFT JOIN FETCH ap.currency " +
+            "WHERE (:orgId IS NULL OR o.id = :orgId) " +
             "ORDER BY ap.year DESC, ap.id DESC",
-            countQuery = "SELECT COUNT(ap) FROM AccountingPolicy ap")
-    Page<AccountingPolicy> findAllWithRelations(Pageable pageable);
+            countQuery = "SELECT COUNT(ap) FROM AccountingPolicy ap " +
+                    "WHERE (:orgId IS NULL OR ap.organization.id = :orgId)")
+    Page<AccountingPolicy> findAllWithRelations(@Param("orgId") Long orgId, Pageable pageable);
 
-    /**
-     * Find accounting policy by ID with relationships loaded.
-     *
-     * @param id accounting policy ID
-     * @return optional accounting policy with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
             "WHERE ap.id = :id")
     Optional<AccountingPolicy> findByIdWithRelations(@Param("id") Long id);
 
-    /**
-     * Find accounting policy by organization and year with relationships loaded.
-     *
-     * @param organizationId organization ID
-     * @param year           year
-     * @return optional accounting policy with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
@@ -54,37 +37,21 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             @Param("organizationId") Long organizationId,
             @Param("year") Integer year);
 
-    /**
-     * Find accounting policies by organization with relationships loaded.
-     *
-     * @param organizationId organization ID
-     * @return list of accounting policies with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
             "WHERE ap.organization.id = :organizationId")
     List<AccountingPolicy> findByOrganizationIdWithRelations(@Param("organizationId") Long organizationId, Pageable pageable);
 
-    /**
-     * Find accounting policies by year with relationships loaded.
-     *
-     * @param year year
-     * @return list of accounting policies with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
-            "LEFT JOIN FETCH ap.organization " +
+            "LEFT JOIN FETCH ap.organization o " +
             "LEFT JOIN FETCH ap.currency " +
-            "WHERE ap.year = :year")
-    List<AccountingPolicy> findByYearWithRelations(@Param("year") Integer year, Pageable pageable);
+            "WHERE ap.year = :year " +
+            "AND (:orgId IS NULL OR o.id = :orgId)")
+    List<AccountingPolicy> findByYearWithRelations(@Param("year") Integer year,
+                                                   @Param("orgId") Long orgId,
+                                                   Pageable pageable);
 
-    /**
-     * Find accounting policies by organization and active status with relationships loaded.
-     *
-     * @param organizationId organization ID
-     * @param isActive       active status
-     * @return list of accounting policies with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
             "LEFT JOIN FETCH ap.organization " +
             "LEFT JOIN FETCH ap.currency " +
@@ -94,34 +61,25 @@ public interface AccountingPolicyRepository extends JpaRepository<AccountingPoli
             @Param("isActive") Boolean isActive,
             Pageable pageable);
 
-    /**
-     * Find accounting policies by currency with relationships loaded.
-     *
-     * @param currencyId currency ID
-     * @return list of accounting policies with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
-            "LEFT JOIN FETCH ap.organization " +
+            "LEFT JOIN FETCH ap.organization o " +
             "LEFT JOIN FETCH ap.currency " +
-            "WHERE ap.currency.id = :currencyId")
-    List<AccountingPolicy> findByCurrencyIdWithRelations(@Param("currencyId") Long currencyId, Pageable pageable);
+            "WHERE ap.currency.id = :currencyId " +
+            "AND (:orgId IS NULL OR o.id = :orgId)")
+    List<AccountingPolicy> findByCurrencyIdWithRelations(@Param("currencyId") Long currencyId,
+                                                         @Param("orgId") Long orgId,
+                                                         Pageable pageable);
 
-    /**
-     * Find accounting policies by year range with relationships loaded.
-     *
-     * @param startYear start year
-     * @param endYear   end year
-     * @return list of accounting policies with relationships
-     */
     @Query("SELECT ap FROM AccountingPolicy ap " +
-            "LEFT JOIN FETCH ap.organization " +
+            "LEFT JOIN FETCH ap.organization o " +
             "LEFT JOIN FETCH ap.currency " +
-            "WHERE ap.year BETWEEN :startYear AND :endYear")
+            "WHERE ap.year BETWEEN :startYear AND :endYear " +
+            "AND (:orgId IS NULL OR o.id = :orgId)")
     List<AccountingPolicy> findByYearBetweenWithRelations(
             @Param("startYear") Integer startYear,
             @Param("endYear") Integer endYear,
+            @Param("orgId") Long orgId,
             Pageable pageable);
 
-    // Keep original method for duplicate check (doesn't need relationships)
     boolean existsByOrganizationIdAndYear(Long organizationId, Integer year);
 }
