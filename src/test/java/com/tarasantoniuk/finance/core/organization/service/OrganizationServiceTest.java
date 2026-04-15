@@ -10,6 +10,7 @@ import com.tarasantoniuk.finance.core.organization.exception.OrganizationAlready
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.mapper.OrganizationMapper;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,9 @@ class OrganizationServiceTest {
     @Mock
     private OrganizationMapper organizationMapper;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private OrganizationService organizationService;
 
@@ -52,6 +56,8 @@ class OrganizationServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(true);
+
         country = new Country();
         country.setId(1L);
         country.setName("Ukraine");
