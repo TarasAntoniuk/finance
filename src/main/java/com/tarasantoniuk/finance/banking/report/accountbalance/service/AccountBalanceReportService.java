@@ -10,6 +10,7 @@ import com.tarasantoniuk.finance.banking.report.accountbalance.dto.AccountBalanc
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,18 +32,21 @@ public class AccountBalanceReportService {
     private final BankAccountTransactionService transactionService;
     private final BankAccountBalanceService balanceService;
     private final OrganizationRepository organizationRepository;
+    private final OrganizationSecurityContext orgContext;
 
     @Autowired
     public AccountBalanceReportService(
             BankAccountRepository bankAccountRepository,
             BankAccountTransactionService transactionService,
             BankAccountBalanceService balanceService,
-            OrganizationRepository organizationRepository
+            OrganizationRepository organizationRepository,
+            OrganizationSecurityContext orgContext
     ) {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionService = transactionService;
         this.balanceService = balanceService;
         this.organizationRepository = organizationRepository;
+        this.orgContext = orgContext;
     }
 
     /**
@@ -61,8 +65,11 @@ public class AccountBalanceReportService {
         // Default to today if not specified
         LocalDate reportDate = asOfDate != null ? asOfDate : LocalDate.now();
 
+        // Scope organization filter to the caller (admin = pass-through, non-admin = forced to own org)
+        Long scopedOrganizationId = orgContext.resolveOptionalOrganizationId(organizationId);
+
         // Get all organization bank accounts
-        List<BankAccount> accounts = getFilteredAccounts(organizationId, currencyId);
+        List<BankAccount> accounts = getFilteredAccounts(scopedOrganizationId, currencyId);
 
         // Build report items
         List<AccountBalanceItemDto> items = accounts.stream()

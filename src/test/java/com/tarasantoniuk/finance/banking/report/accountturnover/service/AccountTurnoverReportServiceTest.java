@@ -18,6 +18,7 @@ import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,9 @@ class AccountTurnoverReportServiceTest {
     @Mock
     private OrganizationRepository organizationRepository;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private AccountTurnoverReportService reportService;
 
@@ -65,6 +69,10 @@ class AccountTurnoverReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(true);
+        lenient().when(orgContext.resolveOptionalOrganizationId(any())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(orgContext.resolveOrganizationId(any())).thenAnswer(inv -> inv.getArgument(0));
+
         startDateTime = LocalDateTime.of(2024, 1, 1, 1, 1, 1);
         endDateTime = LocalDateTime.of(2024, 1, 31, 23, 59, 59);
 

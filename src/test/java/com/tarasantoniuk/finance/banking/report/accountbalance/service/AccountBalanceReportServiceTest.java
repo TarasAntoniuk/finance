@@ -14,6 +14,7 @@ import com.tarasantoniuk.finance.core.country.entity.Country;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,9 @@ class AccountBalanceReportServiceTest {
     @Mock
     private OrganizationRepository organizationRepository;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private AccountBalanceReportService reportService;
 
@@ -59,6 +63,9 @@ class AccountBalanceReportServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(true);
+        lenient().when(orgContext.resolveOptionalOrganizationId(any())).thenAnswer(inv -> inv.getArgument(0));
+
         testDate = LocalDate.of(2024, 1, 15);
 
         // Create test country

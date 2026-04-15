@@ -59,4 +59,21 @@ public class OrganizationSecurityContext {
         }
         return active;
     }
+
+    /**
+     * Resolve an optional organization filter for cross-organization queries (e.g. reports).
+     * Admin: pass-through (null = all organizations).
+     * Non-admin: forced to active org; throws if a different org was requested.
+     */
+    public Long resolveOptionalOrganizationId(Long requested) {
+        if (isAdmin()) {
+            return requested;
+        }
+        Long active = getActiveOrganizationId();
+        if (requested != null && !requested.equals(active)) {
+            throw new AccessDeniedException(
+                    "User does not have access to organization " + requested);
+        }
+        return active;
+    }
 }
