@@ -18,6 +18,16 @@ public class OrganizationSecurityContext {
         return principal;
     }
 
+    /**
+     * Tells whether the current thread is running under an authenticated HTTP request.
+     * Used by defense-in-depth helpers to skip access checks for scheduler / internal
+     * callers that have no SecurityContext.
+     */
+    public boolean hasAuthenticatedPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getPrincipal() instanceof JwtPrincipal;
+    }
+
     public boolean isAdmin() {
         return getCurrentPrincipal().role() == UserRole.ADMIN;
     }

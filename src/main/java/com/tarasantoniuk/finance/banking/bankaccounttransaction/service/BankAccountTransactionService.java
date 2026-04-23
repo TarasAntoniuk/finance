@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankaccounttransaction.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
@@ -12,6 +13,7 @@ import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,18 +30,38 @@ public class BankAccountTransactionService {
     private final BankAccountRepository bankAccountRepository;
     private final OrganizationRepository organizationRepository;
     private final CurrencyRepository currencyRepository;
+    private final OrganizationSecurityContext orgContext;
 
     public BankAccountTransactionService(
             BankAccountTransactionEventRepository transactionEventRepository,
             BankAccountBalanceService balanceService,
             BankAccountRepository bankAccountRepository,
             OrganizationRepository organizationRepository,
-            CurrencyRepository currencyRepository) {
+            CurrencyRepository currencyRepository,
+            OrganizationSecurityContext orgContext) {
         this.transactionEventRepository = transactionEventRepository;
         this.balanceService = balanceService;
         this.bankAccountRepository = bankAccountRepository;
         this.organizationRepository = organizationRepository;
         this.currencyRepository = currencyRepository;
+        this.orgContext = orgContext;
+    }
+
+    /**
+     * Defense-in-depth: if the call is running under an authenticated HTTP request
+     * and the account belongs to an organization, verify the caller may access it.
+     * Internal / scheduler callers (no principal) pass through.
+     */
+    private void ensureAccess(Long bankAccountId) {
+        if (!orgContext.hasAuthenticatedPrincipal()) {
+            return;
+        }
+        BankAccount account = bankAccountRepository.findById(bankAccountId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Bank account not found with id: " + bankAccountId));
+        if (account.getHolderType() == AccountHolderType.ORGANIZATION) {
+            orgContext.validateAccess(account.getHolderId());
+        }
     }
 
     /**
@@ -201,6 +223,7 @@ public class BankAccountTransactionService {
      */
     @Transactional(readOnly = true)
     public List<BankAccountTransactionEvent> getAccountEvents(Long bankAccountId) {
+        ensureAccess(bankAccountId);
         return transactionEventRepository.findByBankAccountIdWithRelations(bankAccountId);
     }
 
@@ -210,6 +233,7 @@ public class BankAccountTransactionService {
     @Transactional(readOnly = true)
     public List<BankAccountTransactionEvent> getAccountEventsInDateTimeRange(
             Long bankAccountId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        ensureAccess(bankAccountId);
         return transactionEventRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
                 bankAccountId, startDateTime, endDateTime);
     }

@@ -11,6 +11,7 @@ import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -50,6 +51,9 @@ class BankAccountBalanceServiceTest {
     @Mock
     private BankAccountSnapshotValidityService validityService;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private BankAccountBalanceService balanceService;
 
@@ -78,6 +82,9 @@ class BankAccountBalanceServiceTest {
 
         // Default stub: all snapshots are valid (no invalidation)
         lenient().when(validityService.getInvalidFromDate(anyLong())).thenReturn(Optional.empty());
+
+        // Defense-in-depth helper skips for unauthenticated (scheduler-like) calls
+        lenient().when(orgContext.hasAuthenticatedPrincipal()).thenReturn(false);
     }
 
     @Nested
