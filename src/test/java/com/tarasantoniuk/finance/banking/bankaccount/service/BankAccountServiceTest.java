@@ -11,6 +11,7 @@ import com.tarasantoniuk.finance.banking.bankaccount.exception.DuplicateBankAcco
 import com.tarasantoniuk.finance.banking.bankaccount.mapper.BankAccountMapper;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +29,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class BankAccountServiceTest {
 
+    private static final Long CALLER_ORG_ID = 10L;
+
     @Mock
     private BankAccountRepository bankAccountRepository;
 
     @Mock
     private BankAccountMapper bankAccountMapper;
+
+    @Mock
+    private OrganizationSecurityContext orgContext;
 
     @InjectMocks
     private BankAccountService bankAccountService;
@@ -45,6 +51,10 @@ class BankAccountServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(false);
+        lenient().when(orgContext.getActiveOrganizationId()).thenReturn(CALLER_ORG_ID);
+        lenient().when(orgContext.resolveOrganizationId(any())).thenReturn(CALLER_ORG_ID);
+
         bank = new Bank();
         bank.setId(1L);
         bank.setName("PrivatBank");
@@ -57,7 +67,7 @@ class BankAccountServiceTest {
         bankAccount.setId(1L);
         bankAccount.setAccountNumber("UA213223130000026007233566001");
         bankAccount.setHolderType(AccountHolderType.ORGANIZATION);
-        bankAccount.setHolderId(10L);
+        bankAccount.setHolderId(CALLER_ORG_ID);
         bankAccount.setBank(bank);
         bankAccount.setCurrency(currency);
         bankAccount.setAccountName("Main UAH Account");
@@ -67,7 +77,7 @@ class BankAccountServiceTest {
         requestDTO = new BankAccountRequestDto();
         requestDTO.setAccountNumber("UA213223130000026007233566001");
         requestDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        requestDTO.setHolderId(10L);
+        requestDTO.setHolderId(CALLER_ORG_ID);
         requestDTO.setBankId(1L);
         requestDTO.setCurrencyId(1L);
         requestDTO.setAccountName("Main UAH Account");
@@ -78,20 +88,20 @@ class BankAccountServiceTest {
         responseDTO.setId(1L);
         responseDTO.setAccountNumber("UA213223130000026007233566001");
         responseDTO.setHolderType(AccountHolderType.ORGANIZATION);
-        responseDTO.setHolderId(10L);
+        responseDTO.setHolderId(CALLER_ORG_ID);
     }
 
     @Test
     void getAllBankAccounts_ShouldReturnListOfBankAccounts() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(bankAccounts);
+        when(bankAccountRepository.findAllWithRelations(CALLER_ORG_ID)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
         List<BankAccountResponseDto> result = bankAccountService.getAllBankAccounts();
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankAccountRepository, times(1)).findAllWithRelations();
+        verify(bankAccountRepository, times(1)).findAllWithRelations(CALLER_ORG_ID);
     }
 
     @Test
@@ -104,6 +114,7 @@ class BankAccountServiceTest {
         assertNotNull(result);
         assertEquals("UA213223130000026007233566001", result.getAccountNumber());
         verify(bankAccountRepository, times(1)).findByIdWithRelations(1L);
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
     }
 
     @Test
@@ -125,6 +136,7 @@ class BankAccountServiceTest {
         assertNotNull(result);
         assertEquals("UA213223130000026007233566001", result.getAccountNumber());
         verify(bankAccountRepository, times(1)).findByAccountNumberWithRelations("UA213223130000026007233566001");
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
     }
 
     @Test
@@ -138,56 +150,56 @@ class BankAccountServiceTest {
     @Test
     void getBankAccountsByHolder_ShouldReturnFilteredList() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L))
+        when(bankAccountRepository.findByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID))
                 .thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, CALLER_ORG_ID);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankAccountRepository, times(1)).findByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L);
+        verify(bankAccountRepository, times(1)).findByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID);
     }
 
     @Test
     void getBankAccountsByBank_ShouldReturnFilteredList() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findByBankIdWithRelations(1L)).thenReturn(bankAccounts);
+        when(bankAccountRepository.findByBankIdWithRelations(1L, CALLER_ORG_ID)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByBank(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankAccountRepository, times(1)).findByBankIdWithRelations(1L);
+        verify(bankAccountRepository, times(1)).findByBankIdWithRelations(1L, CALLER_ORG_ID);
     }
 
     @Test
     void getBankAccountsByStatus_ShouldReturnFilteredList() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE)).thenReturn(bankAccounts);
+        when(bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE, CALLER_ORG_ID)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByStatus(AccountStatus.ACTIVE);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankAccountRepository, times(1)).findByStatusWithRelations(AccountStatus.ACTIVE);
+        verify(bankAccountRepository, times(1)).findByStatusWithRelations(AccountStatus.ACTIVE, CALLER_ORG_ID);
     }
 
     @Test
     void getDefaultBankAccountsByHolder_ShouldReturnDefaultAccounts() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L))
+        when(bankAccountRepository.findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID))
                 .thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
-        List<BankAccountResponseDto> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, CALLER_ORG_ID);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(bankAccountRepository, times(1))
-                .findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L);
+                .findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID);
     }
 
     @Test
@@ -200,6 +212,7 @@ class BankAccountServiceTest {
         BankAccountResponseDto result = bankAccountService.createBankAccount(requestDTO);
 
         assertNotNull(result);
+        verify(orgContext, times(1)).resolveOrganizationId(CALLER_ORG_ID);
         verify(bankAccountRepository, times(1)).save(any(BankAccount.class));
     }
 
@@ -223,6 +236,7 @@ class BankAccountServiceTest {
         BankAccountResponseDto result = bankAccountService.updateBankAccount(1L, requestDTO);
 
         assertNotNull(result);
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
         verify(bankAccountRepository, times(1)).save(bankAccount);
         verify(bankAccountMapper, times(1)).updateEntity(requestDTO, bankAccount);
     }
@@ -260,6 +274,7 @@ class BankAccountServiceTest {
         bankAccountService.changeStatus(1L, AccountStatus.INACTIVE);
 
         assertEquals(AccountStatus.INACTIVE, bankAccount.getStatus());
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
         verify(bankAccountRepository, times(1)).save(bankAccount);
     }
 
@@ -273,6 +288,7 @@ class BankAccountServiceTest {
         bankAccountService.setAsDefault(1L);
 
         assertTrue(bankAccount.getIsDefault());
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
         verify(bankAccountRepository, times(1)).save(bankAccount);
     }
 
@@ -285,25 +301,27 @@ class BankAccountServiceTest {
         bankAccountService.unsetAsDefault(1L);
 
         assertFalse(bankAccount.getIsDefault());
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
         verify(bankAccountRepository, times(1)).save(bankAccount);
     }
 
     @Test
     void deleteBankAccount_WhenExists_ShouldDeleteSuccessfully() {
-        when(bankAccountRepository.existsById(1L)).thenReturn(true);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bankAccount));
 
         bankAccountService.deleteBankAccount(1L);
 
-        verify(bankAccountRepository, times(1)).deleteById(1L);
+        verify(orgContext, times(1)).validateAccess(CALLER_ORG_ID);
+        verify(bankAccountRepository, times(1)).delete(bankAccount);
     }
 
     @Test
     void deleteBankAccount_WhenNotExists_ShouldThrowException() {
-        when(bankAccountRepository.existsById(1L)).thenReturn(false);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.empty());
 
         assertThrows(BankAccountNotFoundException.class,
                 () -> bankAccountService.deleteBankAccount(1L));
-        verify(bankAccountRepository, never()).deleteById(anyLong());
+        verify(bankAccountRepository, never()).delete(any(BankAccount.class));
     }
 
     // ==================== getBankAccountsByHolderType Tests ====================
@@ -311,14 +329,14 @@ class BankAccountServiceTest {
     @Test
     void getBankAccountsByHolderType_WhenOrganization_ShouldReturnOrganizationAccounts() {
         List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
-        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(bankAccounts);
+        when(bankAccountRepository.findOrganizationAccountsWithRelations(CALLER_ORG_ID)).thenReturn(bankAccounts);
         when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolderType(AccountHolderType.ORGANIZATION);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(bankAccountRepository, times(1)).findOrganizationAccountsWithRelations();
+        verify(bankAccountRepository, times(1)).findOrganizationAccountsWithRelations(CALLER_ORG_ID);
         verify(bankAccountRepository, never()).findCounterpartyAccountsWithRelations();
     }
 
@@ -339,7 +357,7 @@ class BankAccountServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(bankAccountRepository, times(1)).findCounterpartyAccountsWithRelations();
-        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations();
+        verify(bankAccountRepository, never()).findOrganizationAccountsWithRelations(anyLong());
     }
 
     // ==================== Error Handling Tests ====================
@@ -375,23 +393,23 @@ class BankAccountServiceTest {
 
     @Test
     void getAllBankAccounts_WhenEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findAllWithRelations()).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findAllWithRelations(CALLER_ORG_ID)).thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         List<BankAccountResponseDto> result = bankAccountService.getAllBankAccounts();
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(bankAccountRepository, times(1)).findAllWithRelations();
+        verify(bankAccountRepository, times(1)).findAllWithRelations(CALLER_ORG_ID);
     }
 
     @Test
     void getBankAccountsByHolder_WhenEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L))
+        when(bankAccountRepository.findByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID))
                 .thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
-        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolder(AccountHolderType.ORGANIZATION, CALLER_ORG_ID);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -399,7 +417,7 @@ class BankAccountServiceTest {
 
     @Test
     void getBankAccountsByBank_WhenEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findByBankIdWithRelations(1L)).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findByBankIdWithRelations(1L, CALLER_ORG_ID)).thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByBank(1L);
@@ -410,7 +428,7 @@ class BankAccountServiceTest {
 
     @Test
     void getBankAccountsByStatus_WhenEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE)).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE, CALLER_ORG_ID)).thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByStatus(AccountStatus.ACTIVE);
@@ -421,11 +439,11 @@ class BankAccountServiceTest {
 
     @Test
     void getDefaultBankAccountsByHolder_WhenEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 10L))
+        when(bankAccountRepository.findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, CALLER_ORG_ID, CALLER_ORG_ID))
                 .thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
-        List<BankAccountResponseDto> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, 10L);
+        List<BankAccountResponseDto> result = bankAccountService.getDefaultBankAccountsByHolder(AccountHolderType.ORGANIZATION, CALLER_ORG_ID);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -433,7 +451,7 @@ class BankAccountServiceTest {
 
     @Test
     void getBankAccountsByHolderType_WhenOrganizationEmpty_ShouldReturnEmptyList() {
-        when(bankAccountRepository.findOrganizationAccountsWithRelations()).thenReturn(Collections.emptyList());
+        when(bankAccountRepository.findOrganizationAccountsWithRelations(CALLER_ORG_ID)).thenReturn(Collections.emptyList());
         when(bankAccountMapper.toResponseList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
         List<BankAccountResponseDto> result = bankAccountService.getBankAccountsByHolderType(AccountHolderType.ORGANIZATION);

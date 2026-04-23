@@ -105,9 +105,9 @@ public class AccountBalanceReportService {
         } else if (organizationId != null) {
             accounts = bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId);
         } else if (currencyId != null) {
-            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId, null);
         } else {
-            accounts = bankAccountRepository.findOrganizationAccountsWithRelations();
+            accounts = bankAccountRepository.findOrganizationAccountsWithRelations(null);
         }
 
         return accounts;

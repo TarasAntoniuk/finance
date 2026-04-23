@@ -157,9 +157,9 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     @Test
     void findByHolderWithRelations_ShouldReturnAccountsForSpecificHolder() {
         List<BankAccount> orgAccounts = bankAccountRepository.findByHolderWithRelations(
-                AccountHolderType.ORGANIZATION, 1L);
+                AccountHolderType.ORGANIZATION, 1L, null);
         List<BankAccount> counterpartyAccounts = bankAccountRepository.findByHolderWithRelations(
-                AccountHolderType.COUNTERPARTY, 5L);
+                AccountHolderType.COUNTERPARTY, 5L, null);
 
         assertThat(orgAccounts).hasSize(2);
         assertThat(orgAccounts).extracting(BankAccount::getAccountName)
@@ -172,15 +172,15 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     @Test
     void findByHolderWithRelations_WhenNoAccounts_ShouldReturnEmptyList() {
         List<BankAccount> accounts = bankAccountRepository.findByHolderWithRelations(
-                AccountHolderType.ORGANIZATION, 999L);
+                AccountHolderType.ORGANIZATION, 999L, null);
 
         assertThat(accounts).isEmpty();
     }
 
     @Test
     void findByBankIdWithRelations_ShouldReturnAccountsForSpecificBank() {
-        List<BankAccount> privatBankAccounts = bankAccountRepository.findByBankIdWithRelations(privatBank.getId());
-        List<BankAccount> monobankAccounts = bankAccountRepository.findByBankIdWithRelations(monobank.getId());
+        List<BankAccount> privatBankAccounts = bankAccountRepository.findByBankIdWithRelations(privatBank.getId(), null);
+        List<BankAccount> monobankAccounts = bankAccountRepository.findByBankIdWithRelations(monobank.getId(), null);
 
         assertThat(privatBankAccounts).hasSize(2);
         assertThat(privatBankAccounts).extracting(BankAccount::getAccountName)
@@ -192,9 +192,9 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findByStatusWithRelations_ShouldReturnAccountsWithSpecificStatus() {
-        List<BankAccount> activeAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE);
-        List<BankAccount> inactiveAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.INACTIVE);
-        List<BankAccount> closedAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.CLOSED);
+        List<BankAccount> activeAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.ACTIVE, null);
+        List<BankAccount> inactiveAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.INACTIVE, null);
+        List<BankAccount> closedAccounts = bankAccountRepository.findByStatusWithRelations(AccountStatus.CLOSED, null);
 
         assertThat(activeAccounts).hasSize(2);
         assertThat(activeAccounts).extracting(BankAccount::getAccountName)
@@ -209,7 +209,7 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     @Test
     void findDefaultByHolderWithRelations_ShouldReturnDefaultAccounts() {
         List<BankAccount> defaultAccounts = bankAccountRepository
-                .findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 1L);
+                .findDefaultByHolderWithRelations(AccountHolderType.ORGANIZATION, 1L, null);
 
         assertThat(defaultAccounts).hasSize(1);
         assertThat(defaultAccounts.get(0).getAccountName()).isEqualTo("Main UAH Account");
@@ -219,7 +219,7 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     @Test
     void findDefaultByHolderWithRelations_WhenNoDefault_ShouldReturnEmptyList() {
         List<BankAccount> defaultAccounts = bankAccountRepository
-                .findDefaultByHolderWithRelations(AccountHolderType.COUNTERPARTY, 5L);
+                .findDefaultByHolderWithRelations(AccountHolderType.COUNTERPARTY, 5L, null);
 
         assertThat(defaultAccounts).isEmpty();
     }
@@ -275,7 +275,7 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
 
     @Test
     void findAllWithRelations_ShouldReturnAllBankAccounts() {
-        List<BankAccount> allAccounts = bankAccountRepository.findAllWithRelations();
+        List<BankAccount> allAccounts = bankAccountRepository.findAllWithRelations(null);
 
         assertThat(allAccounts).hasSize(3);
     }
@@ -290,7 +290,7 @@ class BankAccountRepositoryTest extends BaseIntegrationTest {
     @Test
     void holderIndex_ShouldImproveQueryPerformance() {
         List<BankAccount> accounts = bankAccountRepository.findByHolderWithRelations(
-                AccountHolderType.ORGANIZATION, 1L);
+                AccountHolderType.ORGANIZATION, 1L, null);
 
         assertThat(accounts).hasSize(2);
     }

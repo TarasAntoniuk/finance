@@ -18,15 +18,21 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      * Find all bank accounts with bank and currency loaded in a single query.
      * Uses JOIN FETCH to prevent N+1 queries.
      *
-     * @return list of bank accounts with relationships eagerly loaded
+     * <p>When {@code orgId} is null (admin), all accounts are returned.
+     * Otherwise, returns counterparty accounts (global) and the caller's
+     * organization accounts only.
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
-            "LEFT JOIN FETCH ba.currency")
-    List<BankAccount> findAllWithRelations();
+            "LEFT JOIN FETCH ba.currency " +
+            "WHERE (:orgId IS NULL " +
+            "   OR ba.holderType = 'COUNTERPARTY' " +
+            "   OR (ba.holderType = 'ORGANIZATION' AND ba.holderId = :orgId))")
+    List<BankAccount> findAllWithRelations(@Param("orgId") Long orgId);
 
     /**
      * Find bank account by ID with relationships loaded.
+     * Org ownership must be validated by the caller via OrganizationSecurityContext.
      *
      * @param id bank account ID
      * @return optional bank account with relationships
@@ -39,6 +45,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     /**
      * Find bank account by account number with relationships loaded.
+     * Org ownership must be validated by the caller via OrganizationSecurityContext.
      *
      * @param accountNumber account number
      * @return optional bank account with relationships
@@ -51,48 +58,65 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     /**
      * Find bank accounts by holder with relationships loaded.
+     * When {@code orgId} is null (admin) the filter is bypassed.
      *
      * @param holderType holder type
      * @param holderId   holder ID
+     * @param orgId      caller's organization (null to bypass for admin)
      * @return list of bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
             "LEFT JOIN FETCH ba.currency " +
-            "WHERE ba.holderType = :holderType AND ba.holderId = :holderId")
+            "WHERE ba.holderType = :holderType AND ba.holderId = :holderId " +
+            "  AND (:orgId IS NULL " +
+            "   OR ba.holderType = 'COUNTERPARTY' " +
+            "   OR (ba.holderType = 'ORGANIZATION' AND ba.holderId = :orgId))")
     List<BankAccount> findByHolderWithRelations(
             @Param("holderType") AccountHolderType holderType,
-            @Param("holderId") Long holderId);
+            @Param("holderId") Long holderId,
+            @Param("orgId") Long orgId);
 
     /**
      * Find bank accounts by bank with relationships loaded.
      *
      * @param bankId bank ID
+     * @param orgId  caller's organization (null to bypass for admin)
      * @return list of bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
             "LEFT JOIN FETCH ba.currency " +
-            "WHERE ba.bank.id = :bankId")
-    List<BankAccount> findByBankIdWithRelations(@Param("bankId") Long bankId);
+            "WHERE ba.bank.id = :bankId " +
+            "  AND (:orgId IS NULL " +
+            "   OR ba.holderType = 'COUNTERPARTY' " +
+            "   OR (ba.holderType = 'ORGANIZATION' AND ba.holderId = :orgId))")
+    List<BankAccount> findByBankIdWithRelations(@Param("bankId") Long bankId,
+                                                @Param("orgId") Long orgId);
 
     /**
      * Find bank accounts by status with relationships loaded.
      *
      * @param status account status
+     * @param orgId  caller's organization (null to bypass for admin)
      * @return list of bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
             "LEFT JOIN FETCH ba.currency " +
-            "WHERE ba.status = :status")
-    List<BankAccount> findByStatusWithRelations(@Param("status") AccountStatus status);
+            "WHERE ba.status = :status " +
+            "  AND (:orgId IS NULL " +
+            "   OR ba.holderType = 'COUNTERPARTY' " +
+            "   OR (ba.holderType = 'ORGANIZATION' AND ba.holderId = :orgId))")
+    List<BankAccount> findByStatusWithRelations(@Param("status") AccountStatus status,
+                                                @Param("orgId") Long orgId);
 
     /**
      * Find default bank accounts by holder with relationships loaded.
      *
      * @param holderType holder type
      * @param holderId   holder ID
+     * @param orgId      caller's organization (null to bypass for admin)
      * @return list of default bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
@@ -100,10 +124,14 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
             "LEFT JOIN FETCH ba.currency " +
             "WHERE ba.holderType = :holderType " +
             "AND ba.holderId = :holderId " +
-            "AND ba.isDefault = true")
+            "AND ba.isDefault = true " +
+            "  AND (:orgId IS NULL " +
+            "   OR ba.holderType = 'COUNTERPARTY' " +
+            "   OR (ba.holderType = 'ORGANIZATION' AND ba.holderId = :orgId))")
     List<BankAccount> findDefaultByHolderWithRelations(
             @Param("holderType") AccountHolderType holderType,
-            @Param("holderId") Long holderId);
+            @Param("holderId") Long holderId,
+            @Param("orgId") Long orgId);
 
     // Keep original method for duplicate check (doesn't need relationships)
     Optional<BankAccount> findByAccountNumber(String accountNumber);
@@ -111,6 +139,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     /**
      * Find bank accounts by holder ID with relationships loaded.
      * Used for reports to get all accounts for specific organization.
+     * Caller must scope {@code holderId} via OrganizationSecurityContext.
      *
      * @param holderId holder ID (organization or counterparty)
      * @return list of bank accounts with relationships
@@ -136,7 +165,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     /**
      * Find bank accounts by holder ID and currency ID with relationships loaded.
-     * Used for reports with multiple filters.
+     * Used for reports with multiple filters. Caller must scope {@code holderId}.
      *
      * @param holderId   holder ID (organization or counterparty)
      * @param currencyId currency ID
@@ -153,20 +182,20 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     /**
      * Find all organization bank accounts with relationships loaded.
      * Only returns accounts where holderType = ORGANIZATION.
-     * Used for reports that should only include organization accounts.
      *
+     * @param orgId caller's organization (null to bypass for admin)
      * @return list of organization bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
             "LEFT JOIN FETCH ba.currency " +
-            "WHERE ba.holderType = 'ORGANIZATION'")
-    List<BankAccount> findOrganizationAccountsWithRelations();
+            "WHERE ba.holderType = 'ORGANIZATION' " +
+            "  AND (:orgId IS NULL OR ba.holderId = :orgId)")
+    List<BankAccount> findOrganizationAccountsWithRelations(@Param("orgId") Long orgId);
 
     /**
      * Find all counterparty bank accounts with relationships loaded.
-     * Only returns accounts where holderType = COUNTERPARTY.
-     * Used for getting all counterparty accounts across all counterparties.
+     * Counterparty accounts are global (shared directory), no org filtering applied.
      *
      * @return list of counterparty bank accounts with relationships
      */
@@ -196,13 +225,17 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      * Used for reports filtered by specific currency.
      *
      * @param currencyId currency ID
+     * @param orgId      caller's organization (null to bypass for admin)
      * @return list of organization bank accounts with relationships
      */
     @Query("SELECT ba FROM BankAccount ba " +
             "LEFT JOIN FETCH ba.bank " +
             "LEFT JOIN FETCH ba.currency " +
-            "WHERE ba.holderType = 'ORGANIZATION' AND ba.currency.id = :currencyId")
-    List<BankAccount> findOrganizationAccountsByCurrencyIdWithRelations(@Param("currencyId") Long currencyId);
+            "WHERE ba.holderType = 'ORGANIZATION' AND ba.currency.id = :currencyId " +
+            "  AND (:orgId IS NULL OR ba.holderId = :orgId)")
+    List<BankAccount> findOrganizationAccountsByCurrencyIdWithRelations(
+            @Param("currencyId") Long currencyId,
+            @Param("orgId") Long orgId);
 
     /**
      * Find organization bank accounts by holder ID and currency ID with relationships loaded.
@@ -223,7 +256,7 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
 
     /**
      * Find all active bank account IDs.
-     * Used by scheduler for batch snapshot creation.
+     * Used by scheduler for batch snapshot creation (no user context).
      *
      * @return list of active bank account IDs
      */
