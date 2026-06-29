@@ -13,6 +13,7 @@ import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundExcepti
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,24 +30,27 @@ public class AccountingPolicyService {
     private final OrganizationRepository organizationRepository;
     private final CurrencyRepository currencyRepository;
     private final AccountingPolicyMapper accountingPolicyMapper;
+    private final OrganizationSecurityContext orgContext;
 
     public AccountingPolicyService(AccountingPolicyRepository accountingPolicyRepository,
                                    OrganizationRepository organizationRepository,
                                    CurrencyRepository currencyRepository,
-                                   AccountingPolicyMapper accountingPolicyMapper) {
+                                   AccountingPolicyMapper accountingPolicyMapper,
+                                   OrganizationSecurityContext orgContext) {
         this.accountingPolicyRepository = accountingPolicyRepository;
         this.organizationRepository = organizationRepository;
         this.currencyRepository = currencyRepository;
         this.accountingPolicyMapper = accountingPolicyMapper;
+        this.orgContext = orgContext;
     }
 
-    /**
-     * Get all accounting policies with pagination and optimized query (solves N+1 problem).
-     * Uses JOIN FETCH to load organization and currency in a single query.
-     */
+    private Long queryOrgScope() {
+        return orgContext.isAdmin() ? null : orgContext.getActiveOrganizationId();
+    }
+
     public PageResponse<AccountingPolicyResponseDto> getAllAccountingPolicies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<AccountingPolicy> policyPage = accountingPolicyRepository.findAllWithRelations(pageable);
+        Page<AccountingPolicy> policyPage = accountingPolicyRepository.findAllWithRelations(queryOrgScope(), pageable);
 
         List<AccountingPolicyResponseDto> dtos = accountingPolicyMapper.toResponseDTOList(policyPage.getContent());
 
@@ -65,78 +69,60 @@ public class AccountingPolicyService {
                 .build();
     }
 
-    /**
-     * Get accounting policy by ID with optimized query.
-     */
     public AccountingPolicyResponseDto getAccountingPolicyById(Long id) {
-        AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
+        AccountingPolicy policy = findEntityByIdOrThrow(id);
         return accountingPolicyMapper.toResponseDTO(policy);
     }
 
-    /**
-     * Get accounting policy by organization and year with optimized query.
-     */
     public AccountingPolicyResponseDto getAccountingPolicyByOrganizationAndYear(Long organizationId, Integer year) {
-        AccountingPolicy policy = accountingPolicyRepository.findByOrganizationIdAndYearWithRelations(organizationId, year)
-                .orElseThrow(() -> AccountingPolicyNotFoundException.byOrganizationAndYear(organizationId, year));
+        Long scopedOrgId = orgContext.resolveOrganizationId(organizationId);
+        AccountingPolicy policy = accountingPolicyRepository.findByOrganizationIdAndYearWithRelations(scopedOrgId, year)
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byOrganizationAndYear(scopedOrgId, year));
         return accountingPolicyMapper.toResponseDTO(policy);
     }
 
-    /**
-     * Get accounting policies by organization with optimized query.
-     */
     public List<AccountingPolicyResponseDto> getAccountingPoliciesByOrganization(Long organizationId, int limit) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdWithRelations(organizationId, PageRequest.of(0, limit));
+        Long scopedOrgId = orgContext.resolveOrganizationId(organizationId);
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdWithRelations(scopedOrgId, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
-    /**
-     * Get accounting policies by year with optimized query.
-     */
     public List<AccountingPolicyResponseDto> getAccountingPoliciesByYear(Integer year, int limit) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearWithRelations(year, PageRequest.of(0, limit));
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearWithRelations(year, queryOrgScope(), PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
-    /**
-     * Get active accounting policies by organization with optimized query.
-     */
     public List<AccountingPolicyResponseDto> getActiveAccountingPoliciesByOrganization(Long organizationId, int limit) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(organizationId, true, PageRequest.of(0, limit));
+        Long scopedOrgId = orgContext.resolveOrganizationId(organizationId);
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByOrganizationIdAndIsActiveWithRelations(scopedOrgId, true, PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
-    /**
-     * Get accounting policies by currency with optimized query.
-     */
     public List<AccountingPolicyResponseDto> getAccountingPoliciesByCurrency(Long currencyId, int limit) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByCurrencyIdWithRelations(currencyId, PageRequest.of(0, limit));
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByCurrencyIdWithRelations(currencyId, queryOrgScope(), PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
-    /**
-     * Get accounting policies by year range with optimized query.
-     */
     public List<AccountingPolicyResponseDto> getAccountingPoliciesByYearRange(Integer startYear, Integer endYear, int limit) {
-        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearBetweenWithRelations(startYear, endYear, PageRequest.of(0, limit));
+        List<AccountingPolicy> policies = accountingPolicyRepository.findByYearBetweenWithRelations(startYear, endYear, queryOrgScope(), PageRequest.of(0, limit));
         return accountingPolicyMapper.toResponseDTOList(policies);
     }
 
     @Transactional
     public AccountingPolicyResponseDto createAccountingPolicy(AccountingPolicyRequestDto requestDTO) {
-        if (!organizationRepository.existsById(requestDTO.getOrganizationId())) {
-            throw OrganizationNotFoundException.byId(requestDTO.getOrganizationId());
+        Long scopedOrgId = orgContext.resolveOrganizationId(requestDTO.getOrganizationId());
+        requestDTO.setOrganizationId(scopedOrgId);
+
+        if (!organizationRepository.existsById(scopedOrgId)) {
+            throw OrganizationNotFoundException.byId(scopedOrgId);
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyId())) {
             throw CurrencyNotFoundException.byId(requestDTO.getCurrencyId());
         }
 
-        if (accountingPolicyRepository.existsByOrganizationIdAndYear(
-                requestDTO.getOrganizationId(), requestDTO.getYear())) {
-            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(
-                    requestDTO.getOrganizationId(), requestDTO.getYear());
+        if (accountingPolicyRepository.existsByOrganizationIdAndYear(scopedOrgId, requestDTO.getYear())) {
+            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(scopedOrgId, requestDTO.getYear());
         }
 
         AccountingPolicy policy = accountingPolicyMapper.toEntity(requestDTO);
@@ -146,23 +132,23 @@ public class AccountingPolicyService {
 
     @Transactional
     public AccountingPolicyResponseDto updateAccountingPolicy(Long id, AccountingPolicyRequestDto requestDTO) {
-        AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
+        AccountingPolicy policy = findEntityByIdOrThrow(id);
 
-        if (!organizationRepository.existsById(requestDTO.getOrganizationId())) {
-            throw OrganizationNotFoundException.byId(requestDTO.getOrganizationId());
+        Long scopedOrgId = orgContext.resolveOrganizationId(requestDTO.getOrganizationId());
+        requestDTO.setOrganizationId(scopedOrgId);
+
+        if (!organizationRepository.existsById(scopedOrgId)) {
+            throw OrganizationNotFoundException.byId(scopedOrgId);
         }
 
         if (!currencyRepository.existsById(requestDTO.getCurrencyId())) {
             throw CurrencyNotFoundException.byId(requestDTO.getCurrencyId());
         }
 
-        if ((!policy.getOrganization().getId().equals(requestDTO.getOrganizationId())
+        if ((!policy.getOrganization().getId().equals(scopedOrgId)
                 || !policy.getYear().equals(requestDTO.getYear()))
-                && accountingPolicyRepository.existsByOrganizationIdAndYear(
-                requestDTO.getOrganizationId(), requestDTO.getYear())) {
-            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(
-                    requestDTO.getOrganizationId(), requestDTO.getYear());
+                && accountingPolicyRepository.existsByOrganizationIdAndYear(scopedOrgId, requestDTO.getYear())) {
+            throw AccountingPolicyAlreadyExistsException.forOrganizationAndYear(scopedOrgId, requestDTO.getYear());
         }
 
         accountingPolicyMapper.updateEntityFromDTO(requestDTO, policy);
@@ -172,16 +158,13 @@ public class AccountingPolicyService {
 
     @Transactional
     public void deleteAccountingPolicy(Long id) {
-        if (!accountingPolicyRepository.existsById(id)) {
-            throw AccountingPolicyNotFoundException.byId(id);
-        }
-        accountingPolicyRepository.deleteById(id);
+        AccountingPolicy policy = findEntityByIdOrThrow(id);
+        accountingPolicyRepository.delete(policy);
     }
 
     @Transactional
     public AccountingPolicyResponseDto deactivateAccountingPolicy(Long id) {
-        AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
+        AccountingPolicy policy = findEntityByIdOrThrow(id);
         policy.setIsActive(false);
         AccountingPolicy updatedPolicy = accountingPolicyRepository.save(policy);
         return accountingPolicyMapper.toResponseDTO(updatedPolicy);
@@ -189,10 +172,16 @@ public class AccountingPolicyService {
 
     @Transactional
     public AccountingPolicyResponseDto activateAccountingPolicy(Long id) {
-        AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
-                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
+        AccountingPolicy policy = findEntityByIdOrThrow(id);
         policy.setIsActive(true);
         AccountingPolicy updatedPolicy = accountingPolicyRepository.save(policy);
         return accountingPolicyMapper.toResponseDTO(updatedPolicy);
+    }
+
+    private AccountingPolicy findEntityByIdOrThrow(Long id) {
+        AccountingPolicy policy = accountingPolicyRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> AccountingPolicyNotFoundException.byId(id));
+        orgContext.validateAccess(policy.getOrganization().getId());
+        return policy;
     }
 }

@@ -75,16 +75,47 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Auth endpoints
                         .requestMatchers("/api/auth/logout").authenticated()
                         .requestMatchers("/api/auth/change-password").authenticated()
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // Public read of ECB latest rates
                         .requestMatchers(HttpMethod.GET, "/api/exchange-rates/latest/{date}").permitAll()
+
+                        // Admin console
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
+
+                        // Master data — ADMIN-only for CUD (GET falls through to the authenticated default)
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/banks/**", "/api/currencies/**",
+                                "/api/countries/**", "/api/exchange-rates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/banks/**", "/api/currencies/**",
+                                "/api/countries/**", "/api/exchange-rates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/banks/**", "/api/currencies/**",
+                                "/api/countries/**", "/api/exchange-rates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE,
+                                "/api/banks/**", "/api/currencies/**",
+                                "/api/countries/**", "/api/exchange-rates/**").hasRole("ADMIN")
+
+                        // Organizations: POST/DELETE restricted to ADMIN; PUT/PATCH allowed for USER
+                        // (OrganizationService enforces that non-admin can only update own org)
+                        .requestMatchers(HttpMethod.POST, "/api/organizations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/organizations/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/organizations/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/organizations/**").hasAnyRole("USER", "ADMIN")
+
+                        // Operational default — USER|ADMIN for mutations, ADMIN for delete
+                        // Covers /api/counterparties, /api/accounting-policies, /api/bank-accounts,
+                        // /api/v1/bank-receipts, /api/v1/bank-payments
+                        .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers

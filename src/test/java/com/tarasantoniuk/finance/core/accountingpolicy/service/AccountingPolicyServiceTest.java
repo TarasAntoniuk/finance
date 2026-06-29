@@ -17,6 +17,7 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.exception.OrganizationNotFoundException;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,9 @@ class AccountingPolicyServiceTest {
     @Mock
     private AccountingPolicyMapper accountingPolicyMapper;
 
+    @Mock
+    private OrganizationSecurityContext orgContext;
+
     @InjectMocks
     private AccountingPolicyService accountingPolicyService;
 
@@ -63,6 +67,10 @@ class AccountingPolicyServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(orgContext.isAdmin()).thenReturn(false);
+        lenient().when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        lenient().when(orgContext.resolveOrganizationId(any())).thenReturn(1L);
+
         organization = new Organization();
         organization.setId(1L);
         organization.setName("Test Organization");
@@ -102,14 +110,14 @@ class AccountingPolicyServiceTest {
     void getAllAccountingPolicies_ShouldReturnListOfPolicies() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
         Page<AccountingPolicy> page = new PageImpl<>(policies);
-        when(accountingPolicyRepository.findAllWithRelations(any(Pageable.class))).thenReturn(page);
+        when(accountingPolicyRepository.findAllWithRelations(any(), any(Pageable.class))).thenReturn(page);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         PageResponse<AccountingPolicyResponseDto> result = accountingPolicyService.getAllAccountingPolicies(0, 50);
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(accountingPolicyRepository, times(1)).findAllWithRelations(any(Pageable.class));
+        verify(accountingPolicyRepository, times(1)).findAllWithRelations(any(), any(Pageable.class));
     }
 
     @Test
@@ -170,7 +178,7 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYear_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByYearWithRelations(eq(2024), any(Pageable.class))).thenReturn(policies);
+        when(accountingPolicyRepository.findByYearWithRelations(eq(2024), any(), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService.getAccountingPoliciesByYear(2024, 500);
@@ -182,7 +190,7 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByYearRange_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByYearBetweenWithRelations(eq(2020), eq(2024), any(Pageable.class))).thenReturn(policies);
+        when(accountingPolicyRepository.findByYearBetweenWithRelations(eq(2020), eq(2024), any(), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies)).thenReturn(Collections.singletonList(responseDTO));
 
         List<AccountingPolicyResponseDto> result = accountingPolicyService
@@ -282,24 +290,6 @@ class AccountingPolicyServiceTest {
     }
 
     @Test
-    void updateAccountingPolicy_WhenChangingOrganizationToExisting_ShouldThrowException() {
-        accountingPolicy.getOrganization().setId(1L);
-        accountingPolicy.setYear(2024);
-
-        requestDTO.setOrganizationId(2L);
-        requestDTO.setYear(2024);
-
-        when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(accountingPolicy));
-        when(organizationRepository.existsById(2L)).thenReturn(true);
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2024)).thenReturn(true);
-
-        assertThrows(AccountingPolicyAlreadyExistsException.class,
-                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
-        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
-    }
-
-    @Test
     void updateAccountingPolicy_WhenChangingYearToExisting_ShouldThrowException() {
         accountingPolicy.getOrganization().setId(1L);
         accountingPolicy.setYear(2024);
@@ -315,45 +305,6 @@ class AccountingPolicyServiceTest {
         assertThrows(AccountingPolicyAlreadyExistsException.class,
                 () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
         verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
-    }
-
-    @Test
-    void updateAccountingPolicy_WhenChangingBothOrganizationAndYearToExisting_ShouldThrowException() {
-        accountingPolicy.getOrganization().setId(1L);
-        accountingPolicy.setYear(2024);
-
-        requestDTO.setOrganizationId(2L);
-        requestDTO.setYear(2025);
-
-        when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(accountingPolicy));
-        when(organizationRepository.existsById(2L)).thenReturn(true);
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2025)).thenReturn(true);
-
-        assertThrows(AccountingPolicyAlreadyExistsException.class,
-                () -> accountingPolicyService.updateAccountingPolicy(1L, requestDTO));
-        verify(accountingPolicyRepository, never()).save(any(AccountingPolicy.class));
-    }
-
-    @Test
-    void updateAccountingPolicy_WhenChangingOrganizationToNonExisting_ShouldSucceed() {
-        accountingPolicy.getOrganization().setId(1L);
-        accountingPolicy.setYear(2024);
-
-        requestDTO.setOrganizationId(2L);
-        requestDTO.setYear(2024);
-
-        when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(accountingPolicy));
-        when(organizationRepository.existsById(2L)).thenReturn(true);
-        when(currencyRepository.existsById(1L)).thenReturn(true);
-        when(accountingPolicyRepository.existsByOrganizationIdAndYear(2L, 2024)).thenReturn(false);
-        when(accountingPolicyRepository.save(accountingPolicy)).thenReturn(accountingPolicy);
-        when(accountingPolicyMapper.toResponseDTO(accountingPolicy)).thenReturn(responseDTO);
-
-        AccountingPolicyResponseDto result = accountingPolicyService.updateAccountingPolicy(1L, requestDTO);
-
-        assertNotNull(result);
-        verify(accountingPolicyRepository, times(1)).save(accountingPolicy);
     }
 
     @Test
@@ -383,20 +334,20 @@ class AccountingPolicyServiceTest {
 
     @Test
     void deleteAccountingPolicy_WhenExists_ShouldDeleteSuccessfully() {
-        when(accountingPolicyRepository.existsById(1L)).thenReturn(true);
+        when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(accountingPolicy));
 
         accountingPolicyService.deleteAccountingPolicy(1L);
 
-        verify(accountingPolicyRepository, times(1)).deleteById(1L);
+        verify(accountingPolicyRepository, times(1)).delete(accountingPolicy);
     }
 
     @Test
     void deleteAccountingPolicy_WhenNotExists_ShouldThrowException() {
-        when(accountingPolicyRepository.existsById(1L)).thenReturn(false);
+        when(accountingPolicyRepository.findByIdWithRelations(1L)).thenReturn(Optional.empty());
 
         assertThrows(AccountingPolicyNotFoundException.class,
                 () -> accountingPolicyService.deleteAccountingPolicy(1L));
-        verify(accountingPolicyRepository, never()).deleteById(anyLong());
+        verify(accountingPolicyRepository, never()).delete(any(AccountingPolicy.class));
     }
 
     @Test
@@ -433,7 +384,7 @@ class AccountingPolicyServiceTest {
     @Test
     void getAccountingPoliciesByCurrency_ShouldReturnFilteredList() {
         List<AccountingPolicy> policies = Collections.singletonList(accountingPolicy);
-        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(Pageable.class))).thenReturn(policies);
+        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(), any(Pageable.class))).thenReturn(policies);
         when(accountingPolicyMapper.toResponseDTOList(policies))
                 .thenReturn(Collections.singletonList(responseDTO));
 
@@ -442,12 +393,12 @@ class AccountingPolicyServiceTest {
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(Pageable.class));
+        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(), any(Pageable.class));
     }
 
     @Test
     void getAccountingPoliciesByCurrency_WhenNoPolicies_ShouldReturnEmptyList() {
-        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(Pageable.class)))
+        when(accountingPolicyRepository.findByCurrencyIdWithRelations(eq(1L), any(), any(Pageable.class)))
                 .thenReturn(Collections.emptyList());
         when(accountingPolicyMapper.toResponseDTOList(Collections.emptyList()))
                 .thenReturn(Collections.emptyList());
@@ -457,6 +408,6 @@ class AccountingPolicyServiceTest {
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(Pageable.class));
+        verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(), any(Pageable.class));
     }
 }

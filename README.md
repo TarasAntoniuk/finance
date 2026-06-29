@@ -25,7 +25,7 @@
 **API**: https://api.tarasantoniuk.com
 **Swagger**: [Interactive Docs](https://api.tarasantoniuk.com/swagger-ui/index.html)
 
-![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)
+![Coverage](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/jacoco.svg)  
 ![Branches](https://raw.githubusercontent.com/TarasAntoniuk/finance/badges/branches.svg)
 
 ---

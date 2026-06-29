@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankaccountbalance.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBalanceSnapshot;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
@@ -10,6 +11,7 @@ import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankA
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,18 +34,38 @@ public class BankAccountBalanceService {
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionEventRepository transactionEventRepository;
     private final BankAccountSnapshotValidityService validityService;
+    private final OrganizationSecurityContext orgContext;
 
     public BankAccountBalanceService(
             BankAccountBalanceSnapshotRepository balanceSnapshotRepository,
             BankAccountRepository bankAccountRepository,
             OrganizationRepository organizationRepository,
             BankAccountTransactionEventRepository transactionEventRepository,
-            BankAccountSnapshotValidityService validityService) {
+            BankAccountSnapshotValidityService validityService,
+            OrganizationSecurityContext orgContext) {
         this.balanceSnapshotRepository = balanceSnapshotRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.organizationRepository = organizationRepository;
         this.transactionEventRepository = transactionEventRepository;
         this.validityService = validityService;
+        this.orgContext = orgContext;
+    }
+
+    /**
+     * Defense-in-depth: if the call is running under an authenticated HTTP request
+     * and the account belongs to an organization, verify the caller may access it.
+     * Internal / scheduler callers (no principal) pass through.
+     */
+    private void ensureAccess(Long bankAccountId) {
+        if (!orgContext.hasAuthenticatedPrincipal()) {
+            return;
+        }
+        BankAccount account = bankAccountRepository.findById(bankAccountId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Bank account not found with id: " + bankAccountId));
+        if (account.getHolderType() == AccountHolderType.ORGANIZATION) {
+            orgContext.validateAccess(account.getHolderId());
+        }
     }
 
     /**
@@ -56,6 +78,7 @@ public class BankAccountBalanceService {
      */
     @Transactional(readOnly = true)
     public BigDecimal calculateBalance(Long bankAccountId, LocalDateTime atDateTime) {
+        ensureAccess(bankAccountId);
         // Check if there are invalid snapshots
         Optional<LocalDate> invalidFromDateOpt = validityService.getInvalidFromDate(bankAccountId);
 
@@ -140,6 +163,7 @@ public class BankAccountBalanceService {
      * @return created snapshot
      */
     public BankAccountBalanceSnapshot createSnapshot(Long bankAccountId, LocalDateTime snapshotDateTime) {
+        ensureAccess(bankAccountId);
         BankAccount bankAccount = bankAccountRepository.findByIdWithRelations(bankAccountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank account not found with id: " + bankAccountId));
 
@@ -216,6 +240,7 @@ public class BankAccountBalanceService {
      */
     @Transactional(readOnly = true)
     public BankAccountBalanceSnapshot getSnapshot(Long bankAccountId, LocalDateTime snapshotDateTime) {
+        ensureAccess(bankAccountId);
         return balanceSnapshotRepository.findByBankAccountIdAndSnapshotDateTimeWithRelations(bankAccountId, snapshotDateTime)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Snapshot not found for account " + bankAccountId + " at datetime " + snapshotDateTime));
@@ -227,6 +252,7 @@ public class BankAccountBalanceService {
     @Transactional(readOnly = true)
     public List<BankAccountBalanceSnapshot> getSnapshotsInDateTimeRange(
             Long bankAccountId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        ensureAccess(bankAccountId);
         return balanceSnapshotRepository.findByBankAccountIdAndDateTimeRangeWithRelations(
                 bankAccountId, startDateTime, endDateTime);
     }
@@ -239,6 +265,7 @@ public class BankAccountBalanceService {
      * @param fromDateTime  datetime from which to delete snapshots (inclusive)
      */
     public void deleteSnapshotsFrom(Long bankAccountId, LocalDateTime fromDateTime) {
+        ensureAccess(bankAccountId);
         int deletedCount = balanceSnapshotRepository
                 .deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(bankAccountId, fromDateTime);
 

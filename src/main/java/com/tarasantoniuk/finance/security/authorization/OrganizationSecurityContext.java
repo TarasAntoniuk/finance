@@ -18,6 +18,16 @@ public class OrganizationSecurityContext {
         return principal;
     }
 
+    /**
+     * Tells whether the current thread is running under an authenticated HTTP request.
+     * Used by defense-in-depth helpers to skip access checks for scheduler / internal
+     * callers that have no SecurityContext.
+     */
+    public boolean hasAuthenticatedPrincipal() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.getPrincipal() instanceof JwtPrincipal;
+    }
+
     public boolean isAdmin() {
         return getCurrentPrincipal().role() == UserRole.ADMIN;
     }
@@ -50,6 +60,23 @@ public class OrganizationSecurityContext {
             if (requested == null) {
                 throw new AccessDeniedException("Organization id must be specified for admin");
             }
+            return requested;
+        }
+        Long active = getActiveOrganizationId();
+        if (requested != null && !requested.equals(active)) {
+            throw new AccessDeniedException(
+                    "User does not have access to organization " + requested);
+        }
+        return active;
+    }
+
+    /**
+     * Resolve an optional organization filter for cross-organization queries (e.g. reports).
+     * Admin: pass-through (null = all organizations).
+     * Non-admin: forced to active org; throws if a different org was requested.
+     */
+    public Long resolveOptionalOrganizationId(Long requested) {
+        if (isAdmin()) {
             return requested;
         }
         Long active = getActiveOrganizationId();

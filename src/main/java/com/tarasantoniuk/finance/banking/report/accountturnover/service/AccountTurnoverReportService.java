@@ -18,6 +18,7 @@ import com.tarasantoniuk.finance.common.period.dto.ReportPeriodDto;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,18 +40,21 @@ public class AccountTurnoverReportService {
     private final BankAccountTransactionService transactionService;
     private final BankAccountBalanceService balanceService;
     private final OrganizationRepository organizationRepository;
+    private final OrganizationSecurityContext orgContext;
 
     @Autowired
     public AccountTurnoverReportService(
             BankAccountRepository bankAccountRepository,
             BankAccountTransactionService transactionService,
             BankAccountBalanceService balanceService,
-            OrganizationRepository organizationRepository
+            OrganizationRepository organizationRepository,
+            OrganizationSecurityContext orgContext
     ) {
         this.bankAccountRepository = bankAccountRepository;
         this.transactionService = transactionService;
         this.balanceService = balanceService;
         this.organizationRepository = organizationRepository;
+        this.orgContext = orgContext;
     }
 
     /**
@@ -72,8 +76,11 @@ public class AccountTurnoverReportService {
         LocalDate startDate = period.getStartDate();
         LocalDate endDate = period.getEndDate();
 
+        // Scope organization filter to the caller (admin = pass-through, non-admin = forced to own org)
+        Long scopedOrganizationId = orgContext.resolveOptionalOrganizationId(organizationId);
+
         // Get filtered accounts
-        List<BankAccount> accounts = getFilteredAccounts(organizationId, accountId, currencyId);
+        List<BankAccount> accounts = getFilteredAccounts(scopedOrganizationId, accountId, currencyId);
 
         // Build turnover items
         List<AccountTurnoverSummaryDto> items = accounts.stream()
@@ -137,9 +144,9 @@ public class AccountTurnoverReportService {
         } else if (organizationId != null) {
             accounts = bankAccountRepository.findOrganizationAccountsByHolderIdWithRelations(organizationId);
         } else if (currencyId != null) {
-            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId);
+            accounts = bankAccountRepository.findOrganizationAccountsByCurrencyIdWithRelations(currencyId, null);
         } else {
-            accounts = bankAccountRepository.findOrganizationAccountsWithRelations();
+            accounts = bankAccountRepository.findOrganizationAccountsWithRelations(null);
         }
 
         return accounts;
@@ -282,12 +289,15 @@ public class AccountTurnoverReportService {
             throw new ValidationException("Organization ID is required");
         }
 
+        // Scope organization filter to the caller
+        Long scopedOrganizationId = orgContext.resolveOrganizationId(organizationId);
+
         // Get account with relations
         BankAccount account = bankAccountRepository.findByIdWithRelations(accountId)
                 .orElseThrow(() -> new ValidationException("Account not found with ID: " + accountId));
 
         // Verify account belongs to the organization
-        if (!organizationId.equals(account.getHolderId())) {
+        if (!scopedOrganizationId.equals(account.getHolderId())) {
             throw new ValidationException("Account does not belong to the specified organization");
         }
 
