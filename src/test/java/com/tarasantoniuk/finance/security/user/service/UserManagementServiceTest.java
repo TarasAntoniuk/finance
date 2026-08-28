@@ -190,4 +190,28 @@ class UserManagementServiceTest {
                 principal, null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
+
+    @Test
+    void changeRole_WhenAdminKeepsAdminRole_ShouldNotCheckAdminCount() {
+        User admin = createUser(2L, "admin@example.com", UserRole.ADMIN, true);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(admin));
+
+        userManagementService.changeRole(2L, UserRole.ADMIN);
+
+        assertEquals(UserRole.ADMIN, admin.getRole());
+        verify(userRepository, never()).countByRole(any(UserRole.class));
+        verify(userRepository).save(admin);
+    }
+
+    @Test
+    void setActive_WhenDeactivating_ShouldRevokeSessions() {
+        User user = createUser(3L, "user@example.com", UserRole.USER, true);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(user));
+
+        userManagementService.setActive(3L, false);
+
+        assertFalse(user.getIsActive());
+        verify(userRevocationService).revoke(3L);
+        verify(refreshTokenRepository).revokeAllByUserId(3L);
+    }
 }

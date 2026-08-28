@@ -256,4 +256,10 @@ class JwtAuthenticationFilterTest {
         }
         return new DefaultClaims(claimMap);
     }
+
+    @Test
+    void shouldNotFilter_WhenApiPath_ShouldReturnFalse() {
+        request.setRequestURI("/api/organizations");
+        assertFalse(filter.shouldNotFilter(request));
+    }
 }
