@@ -5,6 +5,9 @@ import com.tarasantoniuk.finance.common.BaseIntegrationTest;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
+import com.tarasantoniuk.finance.security.auth.exception.GoogleAuthenticationException;
+import com.tarasantoniuk.finance.security.auth.google.GoogleIdTokenVerifier;
+import com.tarasantoniuk.finance.security.auth.google.GoogleUserInfo;
 import com.tarasantoniuk.finance.security.user.entity.User;
 import com.tarasantoniuk.finance.security.user.enums.UserRole;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
@@ -15,10 +18,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -38,6 +44,9 @@ class AuthControllerTest extends BaseIntegrationTest {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    @MockitoBean
+    private GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @BeforeEach
     void setUp() {
@@ -217,6 +226,57 @@ class AuthControllerTest extends BaseIntegrationTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value(
                         org.hamcrest.Matchers.containsString("Account locked for")));
+    }
+
+    // ========== GOOGLE LOGIN ==========
+
+    @Test
+    void google_WhenValidTokenForExistingUser_ShouldReturn200WithAccessTokenAndRefreshCookie() throws Exception {
+        registerUser("google-existing@example.com", "SecureP@ss1");
+        when(googleIdTokenVerifier.verify(anyString()))
+                .thenReturn(new GoogleUserInfo("google-existing@example.com", true, "Existing", "google-sub"));
+
+        MvcResult result = mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("idToken", "valid-id-token"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andReturn();
+
+        assertRefreshTokenCookiePresent(result);
+    }
+
+    @Test
+    void google_WhenInvalidToken_ShouldReturn401() throws Exception {
+        when(googleIdTokenVerifier.verify(anyString()))
+                .thenThrow(new GoogleAuthenticationException("Invalid Google ID token"));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("idToken", "bad-id-token"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Invalid Google ID token"));
+    }
+
+    @Test
+    void google_WhenEmailNotVerified_ShouldReturn401() throws Exception {
+        when(googleIdTokenVerifier.verify(anyString()))
+                .thenReturn(new GoogleUserInfo("unverified@example.com", false, "Unverified", "google-sub"));
+
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("idToken", "valid-id-token"))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Google account email is not verified"));
+    }
+
+    @Test
+    void google_WhenMissingIdToken_ShouldReturn400() throws Exception {
+        mockMvc.perform(post("/api/auth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 
     // ========== CHANGE PASSWORD ==========

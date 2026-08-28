@@ -1,9 +1,15 @@
 package com.tarasantoniuk.finance.security.auth.service;
 
+import com.tarasantoniuk.finance.common.config.ProvisioningProperties;
+import com.tarasantoniuk.finance.core.organization.entity.Organization;
+import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import com.tarasantoniuk.finance.security.auth.LockoutProperties;
 import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
+import com.tarasantoniuk.finance.security.auth.exception.GoogleAuthenticationException;
+import com.tarasantoniuk.finance.security.auth.google.GoogleIdTokenVerifier;
+import com.tarasantoniuk.finance.security.auth.google.GoogleUserInfo;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.entity.RefreshToken;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
@@ -60,7 +66,14 @@ class AuthServiceTest {
     @Mock
     private ClientIpResolver clientIpResolver;
 
+    @Mock
+    private GoogleIdTokenVerifier googleIdTokenVerifier;
+
+    @Mock
+    private OrganizationRepository organizationRepository;
+
     private LockoutProperties lockoutProperties;
+    private ProvisioningProperties provisioningProperties;
 
     private AuthService authService;
 
@@ -71,8 +84,10 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         lockoutProperties = new LockoutProperties();
+        provisioningProperties = new ProvisioningProperties(1L);
         authService = new AuthService(userRepository, refreshTokenRepository, jwtService,
-                passwordEncoder, tokenBlacklistService, eventPublisher, clientIpResolver, lockoutProperties);
+                passwordEncoder, tokenBlacklistService, eventPublisher, clientIpResolver, lockoutProperties,
+                googleIdTokenVerifier, organizationRepository, provisioningProperties);
 
         user = new User();
         user.setId(1L);
@@ -251,6 +266,90 @@ class AuthServiceTest {
         AuthResponse response = authService.login(loginRequest);
 
         assertNotNull(response);
+    }
+
+    // ========== GOOGLE LOGIN ==========
+
+    @Test
+    void loginWithGoogle_WhenNewUser_ShouldProvisionGuestInDefaultOrganization() {
+        when(googleIdTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleUserInfo("new@example.com", true, "New User", "google-sub"));
+        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        Organization defaultOrg = new Organization();
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(defaultOrg));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedRandom");
+        when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.extractExpiration(anyString())).thenReturn(LocalDateTime.now().plusDays(7));
+
+        AuthResponse response = authService.loginWithGoogle("id-token");
+
+        assertEquals("access-token", response.accessToken());
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User savedUser = userCaptor.getValue();
+        assertEquals("new@example.com", savedUser.getEmail());
+        assertEquals(UserRole.GUEST, savedUser.getRole());
+        assertSame(defaultOrg, savedUser.getOrganization());
+        assertTrue(savedUser.getIsActive());
+    }
+
+    @Test
+    void loginWithGoogle_WhenExistingUser_ShouldLoginWithoutChangingRoleOrOrganization() {
+        when(googleIdTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleUserInfo("test@example.com", true, "Test", "google-sub"));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
+        when(jwtService.hashToken("refresh-token")).thenReturn("hashed-token");
+        when(jwtService.extractExpiration(anyString())).thenReturn(LocalDateTime.now().plusDays(7));
+
+        AuthResponse response = authService.loginWithGoogle("id-token");
+
+        assertEquals("access-token", response.accessToken());
+        assertEquals(UserRole.GUEST, user.getRole());
+        verify(userRepository, never()).save(any(User.class));
+        verify(organizationRepository, never()).findById(anyLong());
+        verify(refreshTokenRepository).revokeAllByUserId(1L);
+    }
+
+    @Test
+    void loginWithGoogle_WhenEmailNotVerified_ShouldThrowGoogleAuthenticationException() {
+        when(googleIdTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleUserInfo("new@example.com", false, "New", "google-sub"));
+
+        assertThrows(GoogleAuthenticationException.class,
+                () -> authService.loginWithGoogle("id-token"));
+
+        verify(userRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void loginWithGoogle_WhenExistingUserDisabled_ShouldThrowAccountDisabledException() {
+        user.setIsActive(false);
+        when(googleIdTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleUserInfo("test@example.com", true, "Test", "google-sub"));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        assertThrows(AccountDisabledException.class,
+                () -> authService.loginWithGoogle("id-token"));
+
+        verify(refreshTokenRepository, never()).revokeAllByUserId(anyLong());
+    }
+
+    @Test
+    void loginWithGoogle_WhenDefaultOrganizationMissing_ShouldThrowIllegalState() {
+        when(googleIdTokenVerifier.verify("id-token"))
+                .thenReturn(new GoogleUserInfo("new@example.com", true, "New", "google-sub"));
+        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(organizationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class,
+                () -> authService.loginWithGoogle("id-token"));
+
+        verify(userRepository, never()).save(any(User.class));
     }
 
     // ========== REFRESH ==========
