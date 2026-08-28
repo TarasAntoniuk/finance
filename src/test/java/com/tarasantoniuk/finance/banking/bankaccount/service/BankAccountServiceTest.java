@@ -500,4 +500,67 @@ class BankAccountServiceTest {
         assertEquals(AccountStatus.ACTIVE, bankAccount.getStatus());
         verify(bankAccountRepository, times(1)).save(bankAccount);
     }
+
+    // Admin scope and counterparty-owned accounts
+
+    @Test
+    void getAllBankAccounts_WhenAdmin_ShouldQueryWithoutOrganizationFilter() {
+        when(orgContext.isAdmin()).thenReturn(true);
+        List<BankAccount> bankAccounts = Collections.singletonList(bankAccount);
+        when(bankAccountRepository.findAllWithRelations(null)).thenReturn(bankAccounts);
+        when(bankAccountMapper.toResponseList(bankAccounts)).thenReturn(Collections.singletonList(responseDTO));
+
+        List<BankAccountResponseDto> result = bankAccountService.getAllBankAccounts();
+
+        assertEquals(1, result.size());
+        verify(bankAccountRepository, times(1)).findAllWithRelations(null);
+        verify(orgContext, never()).getActiveOrganizationId();
+    }
+
+    @Test
+    void getBankAccountById_WhenCounterpartyAccount_ShouldSkipOrganizationCheck() {
+        bankAccount.setHolderType(AccountHolderType.COUNTERPARTY);
+        bankAccount.setHolderId(99L);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bankAccount));
+        when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
+
+        BankAccountResponseDto result = bankAccountService.getBankAccountById(1L);
+
+        assertNotNull(result);
+        verify(orgContext, never()).validateAccess(any());
+    }
+
+    @Test
+    void createBankAccount_WhenCounterpartyAccount_ShouldNotResolveOrganization() {
+        requestDTO.setHolderType(AccountHolderType.COUNTERPARTY);
+        requestDTO.setHolderId(99L);
+        when(bankAccountRepository.findByAccountNumber("UA213223130000026007233566001")).thenReturn(Optional.empty());
+        when(bankAccountMapper.toEntity(requestDTO)).thenReturn(bankAccount);
+        when(bankAccountRepository.save(bankAccount)).thenReturn(bankAccount);
+        when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
+
+        BankAccountResponseDto result = bankAccountService.createBankAccount(requestDTO);
+
+        assertNotNull(result);
+        verify(orgContext, never()).resolveOrganizationId(any());
+    }
+
+    @Test
+    void updateBankAccount_WhenCounterpartyAccount_ShouldNotResolveOrganization() {
+        bankAccount.setHolderType(AccountHolderType.COUNTERPARTY);
+        bankAccount.setHolderId(99L);
+        requestDTO.setHolderType(AccountHolderType.COUNTERPARTY);
+        requestDTO.setHolderId(99L);
+        when(bankAccountRepository.findByIdWithRelations(1L)).thenReturn(Optional.of(bankAccount));
+        when(bankAccountRepository.findByAccountNumber("UA213223130000026007233566001"))
+                .thenReturn(Optional.of(bankAccount));
+        when(bankAccountRepository.save(bankAccount)).thenReturn(bankAccount);
+        when(bankAccountMapper.toResponse(bankAccount)).thenReturn(responseDTO);
+
+        BankAccountResponseDto result = bankAccountService.updateBankAccount(1L, requestDTO);
+
+        assertNotNull(result);
+        verify(orgContext, never()).validateAccess(any());
+        verify(orgContext, never()).resolveOrganizationId(any());
+    }
 }
