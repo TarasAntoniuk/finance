@@ -5,6 +5,8 @@ import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledExceptio
 import com.tarasantoniuk.finance.security.auth.exception.AccountLockedException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
+import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
+import com.tarasantoniuk.finance.security.user.exception.SelfModificationException;
 import com.tarasantoniuk.finance.security.user.exception.UserAlreadyExistsException;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,5 +97,27 @@ class SecurityExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(429, response.getBody().getStatus());
         assertEquals("Too many requests. Please try again later.", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleSelfModificationException_ShouldReturn403() {
+        SelfModificationException ex = new SelfModificationException("Cannot change your own role");
+
+        ResponseEntity<ErrorResponse> response = handler.handleSelfModificationException(ex, request);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Cannot change your own role", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleLastAdminException_ShouldReturn409() {
+        LastAdminException ex = new LastAdminException("Cannot remove the last admin role");
+
+        ResponseEntity<ErrorResponse> response = handler.handleLastAdminException(ex, request);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(409, response.getBody().getStatus());
     }
 }

@@ -34,8 +34,6 @@ import java.util.Comparator;
 @Transactional(readOnly = true)
 public class AccountTurnoverReportService {
 
-    private static final int MAX_PERIOD_DAYS = 365;
-
     private final BankAccountRepository bankAccountRepository;
     private final BankAccountTransactionService transactionService;
     private final BankAccountBalanceService balanceService;
@@ -99,27 +97,6 @@ public class AccountTurnoverReportService {
         report.setSummaryByCurrency(summaryByCurrency);
 
         return report;
-    }
-
-    /**
-     * Validate report period (max 365 days)
-     */
-    private void validatePeriod(LocalDate startDate, LocalDate endDate) {
-        if (startDate == null || endDate == null) {
-            throw new ValidationException("Start date and end date are required");
-        }
-
-        if (startDate.isAfter(endDate)) {
-            throw new ValidationException("Start date cannot be after end date");
-        }
-
-        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
-        if (daysBetween > MAX_PERIOD_DAYS) {
-            throw new ValidationException(
-                    String.format("Period cannot exceed %d days. Current period: %d days",
-                            MAX_PERIOD_DAYS, daysBetween)
-            );
-        }
     }
 
     /**
@@ -244,19 +221,11 @@ public class AccountTurnoverReportService {
 
             AccountTurnoverTotalDto summary = result.computeIfAbsent(currencyCode, k -> new AccountTurnoverTotalDto());
 
-            // Add to totals
-            summary.setTotalOpeningBalance(
-                    summary.getTotalOpeningBalance().add(item.getOpeningBalance() != null ? item.getOpeningBalance() : BigDecimal.ZERO)
-            );
-            summary.setTotalDebitTurnover(
-                    summary.getTotalDebitTurnover().add(item.getDebitTurnover() != null ? item.getDebitTurnover() : BigDecimal.ZERO)
-            );
-            summary.setTotalCreditTurnover(
-                    summary.getTotalCreditTurnover().add(item.getCreditTurnover() != null ? item.getCreditTurnover() : BigDecimal.ZERO)
-            );
-            summary.setTotalClosingBalance(
-                    summary.getTotalClosingBalance().add(item.getClosingBalance() != null ? item.getClosingBalance() : BigDecimal.ZERO)
-            );
+            // Amounts are guaranteed non-null by buildTurnoverItem
+            summary.setTotalOpeningBalance(summary.getTotalOpeningBalance().add(item.getOpeningBalance()));
+            summary.setTotalDebitTurnover(summary.getTotalDebitTurnover().add(item.getDebitTurnover()));
+            summary.setTotalCreditTurnover(summary.getTotalCreditTurnover().add(item.getCreditTurnover()));
+            summary.setTotalClosingBalance(summary.getTotalClosingBalance().add(item.getClosingBalance()));
             summary.setTotalTransactionCount(summary.getTotalTransactionCount() + item.getTransactionCount());
         }
 

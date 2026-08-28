@@ -21,6 +21,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -287,5 +288,20 @@ class BankAccountControllerTest {
         // When & Then
         mockMvc.perform(delete("/api/bank-accounts/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void getBankAccountsByHolderType_ShouldReturnAccountsOfThatType() throws Exception {
+        BankAccountResponseDto account = new BankAccountResponseDto();
+        account.setId(1L);
+        account.setHolderType(AccountHolderType.ORGANIZATION);
+        when(bankAccountService.getBankAccountsByHolderType(AccountHolderType.ORGANIZATION))
+                .thenReturn(List.of(account));
+
+        mockMvc.perform(get("/api/bank-accounts/holder/ORGANIZATION"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].holderType").value("ORGANIZATION"));
+
+        verify(bankAccountService).getBankAccountsByHolderType(AccountHolderType.ORGANIZATION);
     }
 }

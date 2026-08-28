@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -1026,5 +1028,32 @@ class BankAccountBalanceServiceTest {
             // Then
             assertThat(balance).isEqualByComparingTo(new BigDecimal("1200.00")); // 1000 + 200
         }
+    }
+
+    @Test
+    void calculateBalance_WhenAuthenticatedAndOrganizationAccount_ShouldValidateAccess() {
+        BankAccount account = new BankAccount();
+        account.setId(1L);
+        account.setHolderType(AccountHolderType.ORGANIZATION);
+        account.setHolderId(10L);
+
+        when(orgContext.hasAuthenticatedPrincipal()).thenReturn(true);
+        when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(account));
+        when(validityService.getInvalidFromDate(1L)).thenReturn(Optional.empty());
+        when(balanceSnapshotRepository.findLatestByBankAccountIdBeforeDateTimeWithRelations(eq(1L), any(LocalDateTime.class)))
+                .thenReturn(Optional.empty());
+
+        balanceService.calculateBalance(1L, LocalDateTime.now());
+
+        verify(orgContext).validateAccess(10L);
+    }
+
+    @Test
+    void calculateBalance_WhenAuthenticatedAndAccountMissing_ShouldThrow() {
+        when(orgContext.hasAuthenticatedPrincipal()).thenReturn(true);
+        when(bankAccountRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> balanceService.calculateBalance(99L, LocalDateTime.now()))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }
