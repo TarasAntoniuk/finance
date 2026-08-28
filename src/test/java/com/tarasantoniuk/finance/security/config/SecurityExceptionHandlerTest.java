@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -50,6 +51,18 @@ class SecurityExceptionHandlerTest {
         assertNotNull(response.getBody());
         assertEquals(401, response.getBody().getStatus());
         assertEquals("Invalid email or password", response.getBody().getMessage());
+    }
+
+    @Test
+    void handleAccessDeniedException_ShouldReturn403() {
+        AccessDeniedException ex = new AccessDeniedException("User does not have access to organization 2");
+
+        ResponseEntity<ErrorResponse> response = handler.handleAccessDeniedException(ex, request);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(403, response.getBody().getStatus());
+        assertEquals("User does not have access to organization 2", response.getBody().getMessage());
     }
 
     @Test
