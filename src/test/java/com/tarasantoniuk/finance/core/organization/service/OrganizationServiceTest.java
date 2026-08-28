@@ -310,4 +310,131 @@ class OrganizationServiceTest {
                 () -> organizationService.updateOrganization(1L, requestDTO));
         verify(organizationRepository, never()).save(any(Organization.class));
     }
+
+    // Non-admin paths: a regular user only ever sees their own organization
+
+    @Test
+    void getAllOrganizations_WhenNotAdmin_ShouldReturnOnlyOwnOrganization() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+        when(organizationMapper.toResponseDTOList(List.of(organization))).thenReturn(List.of(responseDTO));
+
+        PageResponse<OrganizationResponseDto> result = organizationService.getAllOrganizations(0, 50);
+
+        assertEquals(1, result.getContent().size());
+        verify(organizationRepository, never()).findAllWithCountry(any(Pageable.class));
+    }
+
+    @Test
+    void getAllOrganizations_WhenNotAdminAndOwnOrganizationMissing_ShouldReturnEmptyPage() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
+        when(organizationMapper.toResponseDTOList(List.of())).thenReturn(List.of());
+
+        PageResponse<OrganizationResponseDto> result = organizationService.getAllOrganizations(0, 50);
+
+        assertTrue(result.getContent().isEmpty());
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenNotAdminAndCountryMatches_ShouldReturnOwnOrganization() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+        when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
+
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L, 500);
+
+        assertEquals(1, result.size());
+        verify(organizationRepository, never()).findByCountryIdWithCountry(any(), any(Pageable.class));
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenNotAdminAndCountryDiffers_ShouldReturnEmptyList() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(99L, 500);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenNotAdminAndOrganizationHasNoCountry_ShouldReturnEmptyList() {
+        organization.setCountry(null);
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L, 500);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenNotAdminAndOwnOrganizationMissing_ShouldReturnEmptyList() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.empty());
+
+        List<OrganizationResponseDto> result = organizationService.getOrganizationsByCountry(1L, 500);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void searchOrganizationsByName_WhenNotAdminAndNameMatches_ShouldReturnOwnOrganization() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+        when(organizationMapper.toResponseDTOList(List.of(organization))).thenReturn(List.of(responseDTO));
+
+        PageResponse<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("test org", 0, 50);
+
+        assertEquals(1, result.getContent().size());
+        verify(organizationRepository, never())
+                .findByNameContainingIgnoreCaseWithCountry(any(), any(Pageable.class));
+    }
+
+    @Test
+    void searchOrganizationsByName_WhenNotAdminAndNameDoesNotMatch_ShouldReturnEmptyPage() {
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+        when(organizationMapper.toResponseDTOList(List.of())).thenReturn(List.of());
+
+        PageResponse<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("nothing", 0, 50);
+
+        assertTrue(result.getContent().isEmpty());
+    }
+
+    @Test
+    void searchOrganizationsByName_WhenNotAdminAndOrganizationNameIsNull_ShouldReturnEmptyPage() {
+        organization.setName(null);
+        when(orgContext.isAdmin()).thenReturn(false);
+        when(orgContext.getActiveOrganizationId()).thenReturn(1L);
+        when(organizationRepository.findByIdWithCountry(1L)).thenReturn(Optional.of(organization));
+        when(organizationMapper.toResponseDTOList(List.of())).thenReturn(List.of());
+
+        PageResponse<OrganizationResponseDto> result = organizationService.searchOrganizationsByName("test", 0, 50);
+
+        assertTrue(result.getContent().isEmpty());
+    }
+
+    @Test
+    void createOrganization_WhenRegistrationNumberIsNull_ShouldSkipDuplicateCheck() {
+        requestDTO.setRegistrationNumber(null);
+        when(countryRepository.existsById(1L)).thenReturn(true);
+        when(organizationMapper.toEntity(requestDTO)).thenReturn(organization);
+        when(organizationRepository.save(organization)).thenReturn(organization);
+        when(organizationMapper.toResponseDTO(organization)).thenReturn(responseDTO);
+
+        OrganizationResponseDto result = organizationService.createOrganization(requestDTO);
+
+        assertNotNull(result);
+        verify(organizationRepository, never()).existsByRegistrationNumber(any());
+    }
 }
