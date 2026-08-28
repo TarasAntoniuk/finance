@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -318,5 +319,74 @@ class AccountingPolicyControllerIntegrationTest {
         mockMvc.perform(get("/api/accounting-policies/organization/1")
                         .param("limit", "-1"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // Page size clamping: anything above MAX_PAGE_SIZE (500) is capped
+
+    @Test
+    void getAllAccountingPolicies_WhenSizeExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getAllAccountingPolicies(anyInt(), anyInt()))
+                .thenReturn(PageResponse.<AccountingPolicyResponseDto>builder()
+                        .content(List.of())
+                        .metadata(PageMetadata.builder()
+                                .currentPage(0).totalPages(0).pageSize(500)
+                                .totalElements(0).hasNext(false).hasPrevious(false).build())
+                        .build());
+
+        mockMvc.perform(get("/api/accounting-policies").param("size", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getAllAccountingPolicies(0, 500);
+    }
+
+    @Test
+    void getAccountingPoliciesByOrganization_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getAccountingPoliciesByOrganization(anyLong(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounting-policies/organization/1").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getAccountingPoliciesByOrganization(1L, 500);
+    }
+
+    @Test
+    void getActiveAccountingPoliciesByOrganization_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getActiveAccountingPoliciesByOrganization(anyLong(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounting-policies/organization/1/active").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getActiveAccountingPoliciesByOrganization(1L, 500);
+    }
+
+    @Test
+    void getAccountingPoliciesByYear_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getAccountingPoliciesByYear(anyInt(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounting-policies/year/2024").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getAccountingPoliciesByYear(2024, 500);
+    }
+
+    @Test
+    void getAccountingPoliciesByYearRange_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getAccountingPoliciesByYearRange(anyInt(), anyInt(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounting-policies/year-range")
+                        .param("startYear", "2020").param("endYear", "2024").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getAccountingPoliciesByYearRange(2020, 2024, 500);
+    }
+
+    @Test
+    void getAccountingPoliciesByCurrency_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(accountingPolicyService.getAccountingPoliciesByCurrency(anyLong(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounting-policies/currency/1").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(accountingPolicyService).getAccountingPoliciesByCurrency(1L, 500);
     }
 }

@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -230,5 +231,49 @@ class OrganizationControllerIntegrationTest {
         mockMvc.perform(get("/api/organizations/country/1")
                         .param("limit", "-1"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // Page size clamping: anything above MAX_PAGE_SIZE (500) is capped
+
+    @Test
+    void getAllOrganizations_WhenSizeExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(organizationService.getAllOrganizations(anyInt(), anyInt()))
+                .thenReturn(PageResponse.<OrganizationResponseDto>builder()
+                        .content(List.of())
+                        .metadata(PageMetadata.builder()
+                                .currentPage(0).totalPages(0).pageSize(500)
+                                .totalElements(0).hasNext(false).hasPrevious(false).build())
+                        .build());
+
+        mockMvc.perform(get("/api/organizations").param("size", "1000"))
+                .andExpect(status().isOk());
+
+        verify(organizationService).getAllOrganizations(0, 500);
+    }
+
+    @Test
+    void getOrganizationsByCountry_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(organizationService.getOrganizationsByCountry(anyLong(), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/organizations/country/1").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(organizationService).getOrganizationsByCountry(1L, 500);
+    }
+
+    @Test
+    void searchOrganizationsByName_WhenSizeExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(organizationService.searchOrganizationsByName(anyString(), anyInt(), anyInt()))
+                .thenReturn(PageResponse.<OrganizationResponseDto>builder()
+                        .content(List.of())
+                        .metadata(PageMetadata.builder()
+                                .currentPage(0).totalPages(0).pageSize(500)
+                                .totalElements(0).hasNext(false).hasPrevious(false).build())
+                        .build());
+
+        mockMvc.perform(get("/api/organizations/search").param("name", "Acme").param("size", "1000"))
+                .andExpect(status().isOk());
+
+        verify(organizationService).searchOrganizationsByName("Acme", 0, 500);
     }
 }

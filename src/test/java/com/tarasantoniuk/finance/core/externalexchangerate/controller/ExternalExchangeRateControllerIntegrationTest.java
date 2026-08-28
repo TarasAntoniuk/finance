@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -634,5 +635,40 @@ class ExternalExchangeRateControllerIntegrationTest {
         mockMvc.perform(get("/api/exchange-rates/date/2024-01-15")
                         .param("limit", "-1"))
                 .andExpect(status().isBadRequest());
+    }
+
+    // Page size clamping: anything above MAX_PAGE_SIZE (500) is capped
+
+    @Test
+    void getExchangeRatesByDate_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(exchangeRateService.getExchangeRatesByDate(any(LocalDate.class), anyInt())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/exchange-rates/date/2024-01-15").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(exchangeRateService).getExchangeRatesByDate(LocalDate.of(2024, 1, 15), 500);
+    }
+
+    @Test
+    void getExchangeRatesByDateAndSource_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(exchangeRateService.getExchangeRatesByDateAndSource(any(LocalDate.class), anyString(), anyInt()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/exchange-rates/date/2024-01-15/source/ECB").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(exchangeRateService).getExchangeRatesByDateAndSource(LocalDate.of(2024, 1, 15), "ECB", 500);
+    }
+
+    @Test
+    void getLatestRatesByDate_WhenLimitExceedsMaximum_ShouldClampToMaximum() throws Exception {
+        when(exchangeRateService.getLatestRatesByDateAndCurrencyFrom(any(LocalDate.class), anyLong(), anyInt()))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/exchange-rates/latest/2024-01-15")
+                        .param("currencyFromId", "1").param("limit", "1000"))
+                .andExpect(status().isOk());
+
+        verify(exchangeRateService).getLatestRatesByDateAndCurrencyFrom(LocalDate.of(2024, 1, 15), 1L, 500);
     }
 }
