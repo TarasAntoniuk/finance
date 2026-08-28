@@ -410,4 +410,17 @@ class AccountingPolicyServiceTest {
         assertTrue(result.isEmpty());
         verify(accountingPolicyRepository, times(1)).findByCurrencyIdWithRelations(eq(1L), any(), any(Pageable.class));
     }
+
+    @Test
+    void getAllAccountingPolicies_WhenAdmin_ShouldQueryWithoutOrganizationScope() {
+        when(orgContext.isAdmin()).thenReturn(true);
+        when(accountingPolicyRepository.findAllWithRelations(eq(null), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(accountingPolicyMapper.toResponseDTOList(List.of())).thenReturn(List.of());
+
+        accountingPolicyService.getAllAccountingPolicies(0, 50);
+
+        verify(accountingPolicyRepository).findAllWithRelations(eq(null), any(Pageable.class));
+        verify(orgContext, never()).getActiveOrganizationId();
+    }
 }

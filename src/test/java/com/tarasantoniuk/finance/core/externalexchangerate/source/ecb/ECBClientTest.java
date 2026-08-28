@@ -98,17 +98,41 @@ class ECBClientTest {
                 .hasMessageContaining("Failed to fetch ECB data from");
     }
 
-//    @Test
-//    void parseXml_InvalidXml_ThrowsException() {
-//        // Given - malformed XML
-//        String invalidXml = "This is not valid XML at all";
-//        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(invalidXml);
-//
-//        // When & Then
-//        assertThatThrownBy(() -> client.fetchDaily())
-//                .isInstanceOf(RuntimeException.class)
-//                .hasMessageContaining("ECB parse failed");
-//    }
+    @Test
+    void parseXml_InvalidXml_ThrowsException() {
+        // Given - malformed XML. parseXml wraps the parser error in ECBSyncException,
+        // which fetch() then rethrows as a fetch failure, so that is the message we get.
+        String invalidXml = "This is not valid XML at all";
+        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(invalidXml);
+
+        // When & Then
+        assertThatThrownBy(() -> client.fetchDaily())
+                .isInstanceOf(ECBSyncException.class)
+                .hasMessageContaining("Failed to fetch ECB data from");
+    }
+
+    @Test
+    void parseXml_RateCubeWithoutCurrencyAttribute_IsSkipped() {
+        // Given - a rate cube that carries no currency attribute
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <gesmes:Envelope xmlns:gesmes="http://www.gesmes.org/xml/2002-08-01" xmlns="http://www.ecb.int/vocabulary/2002-08-01/eurofxref">
+                    <Cube>
+                        <Cube time="2024-01-15">
+                            <Cube currency="USD" rate="1.0876"/>
+                            <Cube rate="9.9999"/>
+                        </Cube>
+                    </Cube>
+                </gesmes:Envelope>
+                """;
+        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(xml);
+
+        // When
+        Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
+
+        // Then
+        assertThat(result.get(LocalDate.of(2024, 1, 15))).hasSize(1).containsKey("USD");
+    }
 
     @Test
     void parseXml_EmptyXml_ReturnsEmptyMap() {
