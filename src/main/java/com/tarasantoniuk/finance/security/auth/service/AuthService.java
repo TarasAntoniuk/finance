@@ -1,9 +1,15 @@
 package com.tarasantoniuk.finance.security.auth.service;
 
+import com.tarasantoniuk.finance.common.config.ProvisioningProperties;
+import com.tarasantoniuk.finance.core.organization.entity.Organization;
+import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import com.tarasantoniuk.finance.security.auth.LockoutProperties;
 import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
+import com.tarasantoniuk.finance.security.auth.exception.GoogleAuthenticationException;
+import com.tarasantoniuk.finance.security.auth.google.GoogleIdTokenVerifier;
+import com.tarasantoniuk.finance.security.auth.google.GoogleUserInfo;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
 import com.tarasantoniuk.finance.security.token.entity.RefreshToken;
 import com.tarasantoniuk.finance.security.token.repository.RefreshTokenRepository;
@@ -26,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -40,6 +47,9 @@ public class AuthService {
     private final ApplicationEventPublisher eventPublisher;
     private final ClientIpResolver clientIpResolver;
     private final LockoutProperties lockoutProperties;
+    private final GoogleIdTokenVerifier googleIdTokenVerifier;
+    private final OrganizationRepository organizationRepository;
+    private final ProvisioningProperties provisioningProperties;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -48,7 +58,10 @@ public class AuthService {
                        TokenBlacklistService tokenBlacklistService,
                        ApplicationEventPublisher eventPublisher,
                        ClientIpResolver clientIpResolver,
-                       LockoutProperties lockoutProperties) {
+                       LockoutProperties lockoutProperties,
+                       GoogleIdTokenVerifier googleIdTokenVerifier,
+                       OrganizationRepository organizationRepository,
+                       ProvisioningProperties provisioningProperties) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtService = jwtService;
@@ -57,6 +70,9 @@ public class AuthService {
         this.eventPublisher = eventPublisher;
         this.clientIpResolver = clientIpResolver;
         this.lockoutProperties = lockoutProperties;
+        this.googleIdTokenVerifier = googleIdTokenVerifier;
+        this.organizationRepository = organizationRepository;
+        this.provisioningProperties = provisioningProperties;
     }
 
     @Transactional
@@ -119,6 +135,49 @@ public class AuthService {
         eventPublisher.publishEvent(SecurityAuditEvent.loginSuccess(user.getEmail(), clientIp));
 
         return generateTokenPair(user);
+    }
+
+    @Transactional
+    public AuthResponse loginWithGoogle(String idToken) {
+        GoogleUserInfo googleUser = googleIdTokenVerifier.verify(idToken);
+
+        if (!googleUser.emailVerified()) {
+            throw new GoogleAuthenticationException("Google account email is not verified");
+        }
+
+        String clientIp = clientIpResolver.resolve();
+        User user = userRepository.findByEmail(googleUser.email())
+                .map(existing -> authenticateExistingUser(existing, clientIp))
+                .orElseGet(() -> provisionGoogleUser(googleUser, clientIp));
+
+        return generateTokenPair(user);
+    }
+
+    private User authenticateExistingUser(User user, String clientIp) {
+        if (!user.getIsActive()) {
+            throw new AccountDisabledException("Account is disabled");
+        }
+        refreshTokenRepository.revokeAllByUserId(user.getId());
+        eventPublisher.publishEvent(SecurityAuditEvent.loginSuccess(user.getEmail(), clientIp));
+        return user;
+    }
+
+    private User provisionGoogleUser(GoogleUserInfo googleUser, String clientIp) {
+        Long defaultOrganizationId = provisioningProperties.defaultOrganizationId();
+        Organization organization = organizationRepository.findById(defaultOrganizationId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Default provisioning organization not found: id=" + defaultOrganizationId));
+
+        User user = new User();
+        user.setEmail(googleUser.email());
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setRole(UserRole.GUEST);
+        user.setOrganization(organization);
+        user.setIsActive(true);
+        userRepository.save(user);
+
+        eventPublisher.publishEvent(SecurityAuditEvent.registration(user.getEmail(), clientIp));
+        return user;
     }
 
     @Transactional

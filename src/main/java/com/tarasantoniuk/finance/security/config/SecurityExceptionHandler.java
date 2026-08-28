@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.config;
 import com.tarasantoniuk.finance.common.ErrorResponse;
 import com.tarasantoniuk.finance.security.auth.exception.AccountDisabledException;
 import com.tarasantoniuk.finance.security.auth.exception.AccountLockedException;
+import com.tarasantoniuk.finance.security.auth.exception.GoogleAuthenticationException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidCredentialsException;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.user.exception.LastAdminException;
