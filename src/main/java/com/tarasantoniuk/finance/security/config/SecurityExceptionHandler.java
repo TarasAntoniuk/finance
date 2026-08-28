@@ -52,6 +52,12 @@ public class SecurityExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(GoogleAuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleGoogleAuthenticationException(
+            GoogleAuthenticationException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
     /**
      * Handles denials raised inside the service layer (OrganizationSecurityContext).
      * Denials at the filter chain level are handled by CustomAccessDeniedHandler instead.
