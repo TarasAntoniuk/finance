@@ -3,6 +3,7 @@ package com.tarasantoniuk.finance.security.auth.controller;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.AuthResponse;
 import com.tarasantoniuk.finance.security.auth.dto.ChangePasswordRequest;
+import com.tarasantoniuk.finance.security.auth.dto.GoogleLoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
@@ -62,6 +63,20 @@ public class AuthController {
     public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
                                                      HttpServletResponse response) {
         AuthResponse authResponse = authService.login(request);
+        addRefreshTokenCookie(response, authResponse.refreshToken());
+        return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
+    }
+
+    @PostMapping("/google")
+    @RateLimiter(name = "auth")
+    @Operation(summary = "Authenticate with Google", description = "Verifies a Google ID token and returns access token; new users are auto-provisioned. Refresh token is set as HttpOnly cookie")
+    @ApiResponse(responseCode = "200", description = "Login successful")
+    @ApiResponse(responseCode = "401", description = "Invalid Google ID token or unverified email")
+    @ApiResponse(responseCode = "403", description = "Account is disabled")
+    @ApiResponse(responseCode = "429", description = "Too many requests")
+    public ResponseEntity<AccessTokenResponse> google(@Valid @RequestBody GoogleLoginRequest request,
+                                                      HttpServletResponse response) {
+        AuthResponse authResponse = authService.loginWithGoogle(request.idToken());
         addRefreshTokenCookie(response, authResponse.refreshToken());
         return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
     }
