@@ -62,11 +62,11 @@ jobs:
           
             if [ ! -f .env ]; then
               echo "❌ ERROR: .env file not found!"
-              echo "Please create .env with FINANCE_DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS"
+              echo "Please create .env with FINANCE_DB_PASSWORD, JWT_SECRET, CORS_ALLOWED_ORIGINS, GOOGLE_CLIENT_ID"
               exit 1
             fi
 
-            for key in FINANCE_DB_PASSWORD JWT_SECRET CORS_ALLOWED_ORIGINS; do
+            for key in FINANCE_DB_PASSWORD JWT_SECRET CORS_ALLOWED_ORIGINS GOOGLE_CLIENT_ID; do
               if ! grep -q "^${key}=" .env; then
                 echo "❌ ERROR: ${key} is missing from .env"
                 exit 1
