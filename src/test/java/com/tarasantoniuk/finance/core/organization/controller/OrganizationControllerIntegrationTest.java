@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -86,6 +87,19 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("Acme Corp"));
+    }
+
+    @Test
+    void getOrganizationById_WhenAccessDenied_ShouldReturn403() throws Exception {
+        // Given
+        when(organizationService.getOrganizationById(2L))
+                .thenThrow(new AccessDeniedException("User does not have access to organization 2"));
+
+        // When & Then
+        mockMvc.perform(get("/api/organizations/2"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.message").value("User does not have access to organization 2"));
     }
 
     @Test
