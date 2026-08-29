@@ -85,6 +85,7 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.GUEST);
+        user.setOrganization(resolveDefaultOrganization());
         userRepository.save(user);
 
         eventPublisher.publishEvent(SecurityAuditEvent.registration(user.getEmail(), clientIpResolver.resolve()));
@@ -163,21 +164,27 @@ public class AuthService {
     }
 
     private User provisionGoogleUser(GoogleUserInfo googleUser, String clientIp) {
-        Long defaultOrganizationId = provisioningProperties.defaultOrganizationId();
-        Organization organization = organizationRepository.findById(defaultOrganizationId)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Default provisioning organization not found: id=" + defaultOrganizationId));
-
         User user = new User();
         user.setEmail(googleUser.email());
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setRole(UserRole.GUEST);
-        user.setOrganization(organization);
+        user.setOrganization(resolveDefaultOrganization());
         user.setIsActive(true);
         userRepository.save(user);
 
         eventPublisher.publishEvent(SecurityAuditEvent.registration(user.getEmail(), clientIp));
         return user;
+    }
+
+    /**
+     * Every new account is attached to the default organization. Without it the principal
+     * carries organizationId = null and every organization-scoped read answers 403.
+     */
+    private Organization resolveDefaultOrganization() {
+        Long defaultOrganizationId = provisioningProperties.defaultOrganizationId();
+        return organizationRepository.findById(defaultOrganizationId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Default provisioning organization not found: id=" + defaultOrganizationId));
     }
 
     @Transactional

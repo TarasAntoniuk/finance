@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.security.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.common.DefaultOrganizationFixture;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.user.entity.User;
@@ -11,6 +12,7 @@ import com.tarasantoniuk.finance.security.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,6 +38,9 @@ class AdminUserControllerTest extends BaseIntegrationTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private String adminAccessToken;
 
     @BeforeEach
@@ -43,6 +48,7 @@ class AdminUserControllerTest extends BaseIntegrationTest {
         // Clean data from other non-@Transactional test classes
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        DefaultOrganizationFixture.ensureExists(jdbcTemplate, 1L);
 
         // Create admin user and get token
         RegisterRequest adminRegister = new RegisterRequest();
