@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.security.auth.dto.ChangePasswordRequest;
 import com.tarasantoniuk.finance.security.auth.dto.GoogleLoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
+import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
 import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
@@ -85,8 +86,12 @@ public class AuthController {
     @Operation(summary = "Refresh access token", description = "Exchanges a valid refresh token cookie for a new access token and refresh token cookie")
     @ApiResponse(responseCode = "200", description = "Tokens refreshed successfully")
     @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token")
-    public ResponseEntity<AccessTokenResponse> refresh(@CookieValue(name = REFRESH_TOKEN_COOKIE) String refreshToken,
-                                                       HttpServletResponse response) {
+    public ResponseEntity<AccessTokenResponse> refresh(
+            @CookieValue(name = REFRESH_TOKEN_COOKIE, required = false) String refreshToken,
+            HttpServletResponse response) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new InvalidTokenException("Refresh token is missing");
+        }
         AuthResponse authResponse = authService.refresh(refreshToken);
         addRefreshTokenCookie(response, authResponse.refreshToken());
         return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
