@@ -481,11 +481,16 @@ class AuthControllerTest extends BaseIntegrationTest {
     // ========== REFRESH - EDGE CASES ==========
 
     @Test
-    void refresh_WhenMissingCookie_ShouldReturnError() throws Exception {
+    void refresh_WhenMissingCookie_ShouldReturn401() throws Exception {
         mockMvc.perform(post("/api/auth/refresh"))
-                .andExpect(result -> assertTrue(
-                        result.getResponse().getStatus() >= 400,
-                        "Expected error status but got " + result.getResponse().getStatus()));
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refresh_WhenBlankCookie_ShouldReturn401() throws Exception {
+        mockMvc.perform(post("/api/auth/refresh")
+                        .cookie(new Cookie(REFRESH_TOKEN_COOKIE, "")))
+                .andExpect(status().isUnauthorized());
     }
 
     // ========== ROLE-BASED ACCESS CONTROL ==========
