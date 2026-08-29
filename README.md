@@ -47,16 +47,19 @@
 
 ### 🔒 Security Module
 ✅ **JWT Authentication** — Access tokens (15 min) + refresh tokens (7 days)
+✅ **Google Sign-In** — Google ID token verification with GUEST auto-provisioning
 ✅ **Role-Based Access Control** — ADMIN, USER, GUEST roles
+✅ **Organization-Scoped Reads** — Service-layer filtering closes cross-tenant data access
 ✅ **Account Lockout** — 5 failed attempts = 30-minute lock
 ✅ **Rate Limiting** — Resilience4j (5 requests/60s on auth endpoints)
 ✅ **HttpOnly Secure Cookies** — Refresh tokens via SameSite=Strict cookies
-✅ **Token Blacklist** — Immediate token invalidation on logout
-✅ **Security Audit Logging** — Login, registration, lockout events
+✅ **Token Blacklist** — Immediate token invalidation on logout, persisted to DB
+✅ **User Revocation** — Revoked users rejected at the JWT filter
+✅ **Security Audit Logging** — Login, registration, lockout events persisted
 ✅ **Multi-Tenancy Foundation** — User-to-organization binding
 
 ### 🔧 Technical Excellence
-✅ **1120+ test methods** across 67 test files
+✅ **1227 test methods** across 74 test files
 ✅ **PostgreSQL 17** with optimized queries
 ✅ **Testcontainers** for integration tests
 ✅ **N+1 Prevention** with `JOIN FETCH`

@@ -10,6 +10,36 @@ The project follows modular development: **Core Module** (foundation), **Banking
 
 ### Security Module
 
+#### [0.0.7] - August 2026 ✅
+**Security Hardening**
+
+**Fixed:**
+- **Cross-organization data exposure (P1 IDOR)** — any authenticated user could read another organization's data. Reads are now filtered by the caller's active organization in `OrganizationService`, `BankAccountService`, `AccountingPolicyService`, `BankReceiptService`, `BankPaymentService`, `AccountBalanceReportService` and `AccountTurnoverReportService`. ADMIN remains unrestricted; a caller with no active organization receives 403.
+- **Authorization gaps** — only `/api/v1/**` was covered by method-based role rules. Everything else (`/api/banks`, `/api/currencies`, `/api/countries`, `/api/exchange-rates`, `/api/organizations`, `/api/counterparties`, `/api/accounting-policies`, `/api/bank-accounts`) fell through to `anyRequest().authenticated()`, so a GUEST could create a bank or delete a currency.
+- **Service-layer denials returned 500** instead of 403 — `AccessDeniedException` reached the catch-all `@ExceptionHandler(Exception.class)`.
+- **Missing refresh cookie returned 500** instead of 401, leaking the framework message `Required cookie 'refresh_token' ... is not present`. `@CookieValue` is now optional and raises `InvalidTokenException`.
+- **Session renewal was broken end to end.** The client still expected a refresh token in the response body, stored the resulting `undefined` as a truthy string, and sent it as an `X-Refresh-Token` header — a header absent from the CORS allowlist, so Spring rejected the preflight with 403 and no `Access-Control-Allow-Origin`. Every refresh failed, tokens were cleared, and the UI degraded into a role-less state that looked like revoked permissions rather than an expired session.
+- Stacktraces removed from fallback `/error` responses.
+- `/error` permitted in the Swagger filter chain.
+
+**Added:**
+- **Google Sign-In** — `POST /api/auth/google` verifies a Google ID token via `GoogleIdTokenVerifier`; unknown emails are auto-provisioned as GUEST.
+- Defense-in-depth organization checks in the transaction and balance services.
+- Token blacklist persisted to the database (previously in-memory only).
+- Security audit entries persisted to the database.
+- User revocation checked in `JwtAuthenticationFilter`.
+- Public endpoint for latest exchange rates (`GET /api/exchange-rates/latest/{date}`).
+- Frontend: Google sign-in button, admin user management screen, explicit session-expiry messaging.
+
+**Changed:**
+- Spring Boot 3.5.10 → 3.5.11.
+- Coverage: 1227 test methods across 74 test files.
+
+**API Endpoints:**
+- `POST /api/auth/google` — Google sign-in (public)
+
+---
+
 #### [0.0.6] - February 2026 ✅
 **Spring Security & JWT Authentication**
 
