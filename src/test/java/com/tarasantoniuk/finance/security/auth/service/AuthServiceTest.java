@@ -105,12 +105,15 @@ class AuthServiceTest {
         loginRequest.setPassword("SecureP@ss1");
     }
 
+    private final Organization defaultOrganization = new Organization();
+
     // ========== REGISTER ==========
 
     @Test
     void register_WhenValidRequest_ShouldReturnAuthResponse() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
         when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(defaultOrganization));
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -130,6 +133,7 @@ class AuthServiceTest {
     void register_ShouldSaveUserWithCorrectFields() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
         when(passwordEncoder.encode("SecureP@ss1")).thenReturn("encodedPassword");
+        when(organizationRepository.findById(1L)).thenReturn(Optional.of(defaultOrganization));
         when(userRepository.save(any(User.class))).thenReturn(user);
         when(jwtService.generateAccessToken(any(User.class))).thenReturn("access-token");
         when(jwtService.generateRefreshToken(any(User.class))).thenReturn("refresh-token");
@@ -145,6 +149,18 @@ class AuthServiceTest {
         assertEquals("test@example.com", savedUser.getEmail());
         assertEquals("encodedPassword", savedUser.getPassword());
         assertEquals(UserRole.GUEST, savedUser.getRole());
+        assertSame(defaultOrganization, savedUser.getOrganization());
+    }
+
+    @Test
+    void register_WhenDefaultOrganizationMissing_ShouldThrowIllegalState() {
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(organizationRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalStateException.class,
+                () -> authService.register(registerRequest));
+
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

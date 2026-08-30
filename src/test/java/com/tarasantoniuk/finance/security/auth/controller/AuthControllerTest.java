@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.security.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.BaseIntegrationTest;
+import com.tarasantoniuk.finance.common.DefaultOrganizationFixture;
 import com.tarasantoniuk.finance.security.auth.dto.AccessTokenResponse;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest extends BaseIntegrationTest {
 
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
+    private static final long DEFAULT_ORGANIZATION_ID = 1L;
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,6 +48,9 @@ class AuthControllerTest extends BaseIntegrationTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @MockitoBean
     private GoogleIdTokenVerifier googleIdTokenVerifier;
 
@@ -53,6 +59,7 @@ class AuthControllerTest extends BaseIntegrationTest {
         // Clean data from other non-@Transactional test classes
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
+        DefaultOrganizationFixture.ensureExists(jdbcTemplate, DEFAULT_ORGANIZATION_ID);
     }
 
     // ========== REGISTER ==========
