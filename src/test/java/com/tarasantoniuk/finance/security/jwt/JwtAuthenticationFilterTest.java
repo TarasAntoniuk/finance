@@ -199,6 +199,48 @@ class JwtAuthenticationFilterTest {
         assertEquals("existing-user", SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 
+    @Test
+    void doFilterInternal_WhenSubjectIsNotNumeric_ShouldNotSetAuthentication() throws ServletException, IOException {
+        request.setRequestURI("/api/v1/currencies");
+        request.addHeader("Authorization", "Bearer malformed-subject-token");
+
+        Claims claims = createClaims(null, "not-a-number", "test@example.com", "USER", null);
+        when(jwtService.validateAndExtractClaims("malformed-subject-token")).thenReturn(Optional.of(claims));
+
+        assertDoesNotThrow(() -> filter.doFilterInternal(request, response, filterChain));
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilterInternal_WhenRoleIsUnknown_ShouldNotSetAuthentication() throws ServletException, IOException {
+        request.setRequestURI("/api/v1/currencies");
+        request.addHeader("Authorization", "Bearer renamed-role-token");
+
+        Claims claims = createClaims(null, "1", "test@example.com", "ACCOUNTANT", null);
+        when(jwtService.validateAndExtractClaims("renamed-role-token")).thenReturn(Optional.of(claims));
+
+        assertDoesNotThrow(() -> filter.doFilterInternal(request, response, filterChain));
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void doFilterInternal_WhenRoleClaimIsMissing_ShouldNotSetAuthentication() throws ServletException, IOException {
+        request.setRequestURI("/api/v1/currencies");
+        request.addHeader("Authorization", "Bearer no-role-token");
+
+        Claims claims = createClaims(null, "1", "test@example.com", null, null);
+        when(jwtService.validateAndExtractClaims("no-role-token")).thenReturn(Optional.of(claims));
+
+        assertDoesNotThrow(() -> filter.doFilterInternal(request, response, filterChain));
+
+        verify(filterChain).doFilter(request, response);
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
     // ========== shouldNotFilter ==========
 
     @Test
@@ -250,7 +292,9 @@ class JwtAuthenticationFilterTest {
         }
         claimMap.put("sub", sub);
         claimMap.put("email", email);
-        claimMap.put("role", role);
+        if (role != null) {
+            claimMap.put("role", role);
+        }
         if (orgId != null) {
             claimMap.put("orgId", orgId);
         }
