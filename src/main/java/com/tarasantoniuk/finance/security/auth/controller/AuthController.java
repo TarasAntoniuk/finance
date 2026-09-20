@@ -118,7 +118,7 @@ public class AuthController {
     @Operation(summary = "Logout user", description = "Revokes all refresh tokens, blacklists the access token, and clears the refresh token cookie")
     @SecurityRequirement(name = "bearerAuth")
     @ApiResponse(responseCode = "204", description = "Logout successful")
-    @ApiResponse(responseCode = "403", description = "Not authenticated")
+    @ApiResponse(responseCode = "401", description = "Not authenticated")
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorizationHeader,
                                        HttpServletResponse response) {
         JwtPrincipal principal = (JwtPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
