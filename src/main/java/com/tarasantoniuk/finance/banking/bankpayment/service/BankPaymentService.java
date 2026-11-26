@@ -1,5 +1,14 @@
 package com.tarasantoniuk.finance.banking.bankpayment.service;
 
+import java.math.BigDecimal;
+import com.tarasantoniuk.finance.settlement.service.SettlementService;
+import com.tarasantoniuk.finance.settlement.model.SettlementKey;
+import com.tarasantoniuk.finance.settlement.model.SettlementDocumentTypes;
+import com.tarasantoniuk.finance.settlement.model.PaymentAllocation;
+import com.tarasantoniuk.finance.settlement.model.DocumentRef;
+import com.tarasantoniuk.finance.common.exception.ValidationException;
+import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPaymentAllocation;
+import com.tarasantoniuk.finance.banking.bankpayment.dto.InvoiceAllocationDto;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
@@ -43,6 +52,7 @@ public class BankPaymentService {
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionService transactionService;
     private final BankAccountBalanceService balanceService;
+    private final SettlementService settlementService;
     private final OrganizationSecurityContext orgContext;
 
     public BankPaymentService(
@@ -54,6 +64,7 @@ public class BankPaymentService {
             OrganizationRepository organizationRepository,
             BankAccountTransactionService transactionService,
             BankAccountBalanceService balanceService,
+            SettlementService settlementService,
             OrganizationSecurityContext orgContext) {
         this.bankPaymentRepository = bankPaymentRepository;
         this.bankPaymentMapper = bankPaymentMapper;
@@ -63,6 +74,7 @@ public class BankPaymentService {
         this.organizationRepository = organizationRepository;
         this.transactionService = transactionService;
         this.balanceService = balanceService;
+        this.settlementService = settlementService;
         this.orgContext = orgContext;
     }
 
@@ -90,6 +102,7 @@ public class BankPaymentService {
 
         // Load related entities
         loadRelatedEntities(payment, requestDto);
+        payment.replaceAllocations(toAllocations(requestDto));
 
         // Set default status
         payment.setStatus(DocumentStatus.DRAFT);
@@ -120,6 +133,7 @@ public class BankPaymentService {
 
         // Reload related entities
         loadRelatedEntities(existing, requestDto);
+        existing.replaceAllocations(toAllocations(requestDto));
 
         // Save
         BankPayment updatedPayment = bankPaymentRepository.save(existing);
@@ -238,6 +252,11 @@ public class BankPaymentService {
         // The balance may not be negative on any date; a failure rolls the posting back
         balanceService.ensureBalanceNonNegativeFrom(payment.getAccount().getId(), payment.getTransactionDateTime());
 
+        if (payment.getPaymentType().settlesSupplierDebt()) {
+            settlementService.postPayment(settlementKey(payment), settlementRef(payment),
+                    payment.getTransactionDateTime(), payment.getAmount(), settlementAllocations(payment));
+        }
+
         // Update document status
         payment.setStatus(DocumentStatus.POSTED);
         BankPayment postedPayment = bankPaymentRepository.save(payment);
@@ -265,6 +284,9 @@ public class BankPaymentService {
                 payment.getDescription()
         );
 
+        // Refused with 409 while a purchase invoice has consumed this payment's prepayment
+        settlementService.reverse(settlementRef(payment));
+
         // Update document status
         payment.setStatus(DocumentStatus.DRAFT);
         BankPayment unpostedPayment = bankPaymentRepository.save(payment);
@@ -273,6 +295,50 @@ public class BankPaymentService {
     }
 
     // ========== PRIVATE HELPER METHODS ==========
+
+    /**
+     * Explicit invoice allocations are allowed only on supplier and contractor payments, must not
+     * repeat an invoice and must not exceed the payment. Whether each invoice is open is checked by
+     * settlements when the payment is posted.
+     */
+    private List<BankPaymentAllocation> toAllocations(BankPaymentRequestDto requestDto) {
+        List<InvoiceAllocationDto> requested = requestDto.getAllocations();
+        if (requested.isEmpty()) {
+            return List.of();
+        }
+        if (!requestDto.getPaymentType().settlesSupplierDebt()) {
+            throw new ValidationException("Invoice allocations are only allowed on supplier and contractor payments, not "
+                    + requestDto.getPaymentType());
+        }
+        long distinctInvoices = requested.stream().map(InvoiceAllocationDto::purchaseInvoiceId).distinct().count();
+        if (distinctInvoices != requested.size()) {
+            throw new ValidationException("Each purchase invoice may be allocated only once per payment");
+        }
+        BigDecimal allocated = requested.stream().map(InvoiceAllocationDto::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (allocated.compareTo(requestDto.getAmount()) > 0) {
+            throw new ValidationException("Allocations " + allocated + " exceed the payment amount " + requestDto.getAmount());
+        }
+        return requested.stream()
+                .map(allocation -> new BankPaymentAllocation(allocation.purchaseInvoiceId(), allocation.amount()))
+                .toList();
+    }
+
+    private static SettlementKey settlementKey(BankPayment payment) {
+        return new SettlementKey(payment.getOrganization().getId(), payment.getCounterparty().getId(),
+                payment.getCurrency().getId());
+    }
+
+    private static DocumentRef settlementRef(BankPayment payment) {
+        return new DocumentRef(SettlementDocumentTypes.BANK_PAYMENT, payment.getId());
+    }
+
+    private static List<PaymentAllocation> settlementAllocations(BankPayment payment) {
+        return payment.getAllocations().stream()
+                .map(allocation -> new PaymentAllocation(
+                        new DocumentRef(SettlementDocumentTypes.PURCHASE_INVOICE, allocation.getPurchaseInvoiceId()),
+                        allocation.getAmount()))
+                .toList();
+    }
 
     /**
      * Locks the payment row before reading it, so concurrent post/unpost requests for the same
