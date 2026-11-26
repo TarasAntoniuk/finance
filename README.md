@@ -39,11 +39,11 @@
 ✅ **Public API** — Real-time currency data
 
 ### 🏦 Banking Module
-✅ **Event Sourcing** — Immutable transaction audit trail
-✅ **Bank Receipts & Payments** — 10+ transaction types each
-✅ **Document Lifecycle** — DRAFT → POST → UNPOST
+✅ **Event Sourcing** — Every posting and reversal recorded; corrections never delete history
+✅ **Bank Receipts & Payments** — 7 receipt types, 10 payment types
+✅ **Document Lifecycle** — DRAFT → POSTED → (unpost) DRAFT, with row locks against concurrent posting
 ✅ **Financial Reports** — Balance & Turnover with filters
-✅ **Balance Snapshots** — Validity tracking with auto-invalidation
+✅ **Balance Snapshots** — Daily snapshots, invalidated by any backdated event and rebuilt nightly
 
 ### 🔒 Security Module
 ✅ **JWT Authentication** — Access tokens (15 min) + refresh tokens (7 days)
@@ -51,15 +51,15 @@
 ✅ **Role-Based Access Control** — ADMIN, USER, GUEST roles
 ✅ **Organization-Scoped Reads** — Service-layer filtering closes cross-tenant data access
 ✅ **Account Lockout** — 5 failed attempts = 30-minute lock
-✅ **Rate Limiting** — Resilience4j (5 requests/60s on auth endpoints)
+✅ **Rate Limiting** — 5 requests/60s per client address on register, login and Google sign-in
 ✅ **HttpOnly Secure Cookies** — Refresh tokens via SameSite=Strict cookies
 ✅ **Token Blacklist** — Immediate token invalidation on logout, persisted to DB
 ✅ **User Revocation** — Revoked users rejected at the JWT filter
 ✅ **Security Audit Logging** — Login, registration, lockout events persisted
-✅ **Multi-Tenancy Foundation** — User-to-organization binding
+✅ **Error Contract** — 401/403 split, 400/415/409 for client errors, generic 500 with server-side logging
 
 ### 🔧 Technical Excellence
-✅ **1230+ test methods** across 74 test files
+✅ **1240+ test methods** across 78 test files, including concurrency tests against PostgreSQL
 ✅ **PostgreSQL 17** with optimized queries
 ✅ **Testcontainers** for integration tests
 ✅ **N+1 Prevention** with `JOIN FETCH`
@@ -100,7 +100,7 @@
 |  |  Banking Module                           | |
 |  |  - Banks & Bank Accounts                  | |
 |  |  - Bank Receipts & Payments               | |
-|  |  - Event Sourcing (immutable events)      | |
+|  |  - Event Sourcing (posting events)        | |
 |  |  - Financial Reports                      | |
 |  +------------------------------------------+ |
 +-------------------+---------------------------+
@@ -109,7 +109,7 @@
 +-----------------------------------------------+
 |         PostgreSQL 17                         |
 |  - Transactional tables                       |
-|  - Event Store (append-only)                  |
+|  - Event store (reversals, no deletes)        |
 |  - User & refresh token tables                |
 |  - 190k+ exchange rate records                |
 +-----------------------------------------------+
@@ -155,20 +155,15 @@ mvn spring-boot:run
 
 ## 📦 Latest Release
 
-**v0.0.6** (2026-02) — Spring Security & JWT Authentication ✅
+**v0.0.7** (2026-09) — Security Hardening ✅
 
-**Added**:
-- Complete Spring Security with JWT authentication
-- Role-based access control (ADMIN, USER, GUEST)
-- Account lockout, rate limiting, token blacklist
-- HttpOnly secure cookies for refresh tokens
-- Admin user management endpoints
-- Security audit logging with event system
-- Multi-tenancy foundation (user-organization binding)
+- Organization-scoped reads close cross-tenant access (P1 IDOR)
+- Master data mutations ADMIN-only, operational data USER/ADMIN
+- Google Sign-In with GUEST auto-provisioning
+- 401/403 contract: missing refresh cookie → 401, service-layer denial → 403
+- Token blacklist and security audit persisted to the database
 
-**Improved**:
-- Test suite optimized: ~51s execution (down from 90-120s)
-- 1120+ test methods across 67 test files
+**In progress — v0.0.8**: Spring Boot 4.2, per-client rate limiting, balance snapshot and concurrent-posting fixes, production configuration cleanup. See the changelog.
 
 [Complete changelog](docs/CHANGELOG.md) | [Roadmap](docs/ROADMAP.md)
 
@@ -181,6 +176,7 @@ mvn spring-boot:run
 |--------|----------|------|-------------|
 | POST | `/api/auth/register` | No | Register new user |
 | POST | `/api/auth/login` | No | Login, receive access token + refresh cookie |
+| POST | `/api/auth/google` | No | Sign in with a Google ID token (new users become GUEST) |
 | POST | `/api/auth/refresh` | No | Refresh access token (cookie-based) |
 | POST | `/api/auth/change-password` | Yes | Change password |
 | POST | `/api/auth/logout` | Yes | Logout, blacklist token |
@@ -201,7 +197,7 @@ See [Swagger UI](https://api.tarasantoniuk.com/swagger-ui/index.html) for full i
 
 ## Development
 
-**Branch Strategy**: `feature/*` → `dev` → `stable`
+**Branch Strategy**: `feature/*` / `fix/*` → `dev`; every push to `dev` is tested and deployed
 **Commits**: Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `docs:`)
 
 ---

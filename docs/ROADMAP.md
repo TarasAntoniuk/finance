@@ -43,9 +43,9 @@ Planned features and enhancements for the Financial Accounting System.
 
 ### v0.0.4 — Event Sourcing ✅
 
-- Bank receipts & payments with 10+ types each
-- Immutable event store
-- Document lifecycle (DRAFT → POSTED → CANCELLED)
+- Bank receipts (7 types) and payments (10 types)
+- Event store with reversal events instead of deletes
+- Document lifecycle: DRAFT → POSTED, unpost back to DRAFT with a reversal event
 - Financial reports (balance & turnover)
 
 ### v0.0.3 — Performance Optimization ✅
@@ -65,15 +65,32 @@ Planned features and enhancements for the Financial Accounting System.
 
 ---
 
-## Next Priority (v0.0.8)
+## In Progress (v0.0.8)
 
-### 📦 Services & Products Catalog
-- Catalog of IT consulting services with flexible pricing models:
-    - Hourly / Daily / Monthly rates
-    - Developer level tiers (Junior, Middle, Senior)
-- Price list management per service type
-- Order creation for information & consulting services
-- Service assignment to developers by skill level
+- Spring Boot 4.2 upgrade ✅
+- Per-client rate limiting and forwarded-header hardening ✅
+- Balance snapshot correctness (unpost invalidation, nightly job transactions) ✅
+- Row locks against concurrent posting ✅
+- Production configuration cleanup ✅
+
+---
+
+## Next Priority
+
+### 🧾 Purchase Invoices & Counterparty Settlements
+- Purchase invoice for services received from suppliers, with fields aligned to EN 16931 (European e-invoicing)
+- Item catalog (services now, goods later) used by invoice lines
+- Counterparty settlements: how much is owed to whom, per organization and currency
+- Supplier payments reduce the debt; balance and turnover reports for settlements
+- A shared accumulation-register mechanism for bank balances and settlements, replacing the bank-specific event and snapshot code
+
+### 📦 Inventory & Lot Accounting
+- Goods balances per warehouse
+- Lot (batch) accounting on the same register mechanism
+
+### 🧑‍💻 Services Catalog
+- IT consulting services with hourly / daily / monthly rates and developer level tiers
+- Price lists and service orders
 
 ---
 
