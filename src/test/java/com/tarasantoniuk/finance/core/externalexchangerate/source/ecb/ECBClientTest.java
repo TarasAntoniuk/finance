@@ -1,12 +1,13 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.source.ecb;
 
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
+
+import java.io.IOException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,16 +15,22 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.anything;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-@ExtendWith(MockitoExtension.class)
 class ECBClientTest {
 
-    @Mock
-    private RestTemplate restTemplate;
+    private MockRestServiceServer server;
 
-    @InjectMocks
     private ECBClient client;
+
+    @BeforeEach
+    void setUp() {
+        RestClient.Builder builder = RestClient.builder();
+        server = MockRestServiceServer.bindTo(builder).build();
+        client = new ECBClient(builder.build());
+    }
 
     private static final String SAMPLE_XML = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -39,7 +46,7 @@ class ECBClientTest {
 
     @Test
     void fetchDaily_Success() {
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(SAMPLE_XML);
+        server.expect(anything()).andRespond(withSuccess(SAMPLE_XML, MediaType.APPLICATION_XML));
 
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
 
@@ -50,8 +57,8 @@ class ECBClientTest {
 
     @Test
     void fetchDaily_NetworkError_ThrowsException() {
-        when(restTemplate.getForObject(anyString(), eq(String.class)))
-                .thenThrow(new RuntimeException("Network error"));
+        server.expect(anything())
+                .andRespond(withException(new IOException("Network error")));
 
         assertThatThrownBy(() -> client.fetchDaily())
                 .isInstanceOf(ECBSyncException.class);
@@ -75,7 +82,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(historyXml);
+        server.expect(anything()).andRespond(withSuccess(historyXml, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchHistory();
@@ -89,8 +96,8 @@ class ECBClientTest {
     @Test
     void fetchHistory_NetworkError_ThrowsException() {
         // Given
-        when(restTemplate.getForObject(anyString(), eq(String.class)))
-                .thenThrow(new RuntimeException("Network error"));
+        server.expect(anything())
+                .andRespond(withException(new IOException("Network error")));
 
         // When & Then
         assertThatThrownBy(() -> client.fetchHistory())
@@ -103,7 +110,7 @@ class ECBClientTest {
         // Given - malformed XML. parseXml wraps the parser error in ECBSyncException,
         // which fetch() then rethrows as a fetch failure, so that is the message we get.
         String invalidXml = "This is not valid XML at all";
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(invalidXml);
+        server.expect(anything()).andRespond(withSuccess(invalidXml, MediaType.APPLICATION_XML));
 
         // When & Then
         assertThatThrownBy(() -> client.fetchDaily())
@@ -125,7 +132,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(xml);
+        server.expect(anything()).andRespond(withSuccess(xml, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
@@ -144,7 +151,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(emptyXml);
+        server.expect(anything()).andRespond(withSuccess(emptyXml, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
@@ -169,7 +176,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(xmlWithoutTime);
+        server.expect(anything()).andRespond(withSuccess(xmlWithoutTime, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
@@ -194,7 +201,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(xmlWithEmptyDate);
+        server.expect(anything()).andRespond(withSuccess(xmlWithEmptyDate, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
@@ -221,7 +228,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(xmlMultipleCurrencies);
+        server.expect(anything()).andRespond(withSuccess(xmlMultipleCurrencies, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchDaily();
@@ -261,7 +268,7 @@ class ECBClientTest {
                     </Cube>
                 </gesmes:Envelope>
                 """;
-        when(restTemplate.getForObject(anyString(), eq(String.class))).thenReturn(largeHistoryXml);
+        server.expect(anything()).andRespond(withSuccess(largeHistoryXml, MediaType.APPLICATION_XML));
 
         // When
         Map<LocalDate, Map<String, BigDecimal>> result = client.fetchHistory();
