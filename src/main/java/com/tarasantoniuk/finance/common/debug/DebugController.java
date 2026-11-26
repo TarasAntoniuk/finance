@@ -2,10 +2,10 @@ package com.tarasantoniuk.finance.common.debug;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,20 +15,26 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Hibernate statistics for local performance work. Statistics are collected only in the
+ * {@code dev} profile ({@code hibernate.generate_statistics=true}), so the endpoints exist only there.
+ */
+@Profile("dev")
 @RestController
 @RequestMapping("/api/debug")
 @Tag(name = "Debug", description = "Debug and performance monitoring endpoints")
 public class DebugController {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final SessionFactory sessionFactory;
+
+    public DebugController(EntityManagerFactory entityManagerFactory) {
+        this.sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
+    }
 
     @GetMapping("/hibernate-stats")
     @Operation(summary = "Get Hibernate statistics",
             description = "Returns Hibernate performance statistics including query counts")
     public ResponseEntity<Map<String, Object>> getHibernateStats() {
-        SessionFactory sessionFactory = entityManager.getEntityManagerFactory()
-                .unwrap(SessionFactory.class);
         Statistics stats = sessionFactory.getStatistics();
 
         Map<String, Object> result = new HashMap<>();
@@ -51,8 +57,6 @@ public class DebugController {
     @Operation(summary = "Clear Hibernate statistics",
             description = "Resets all Hibernate statistics counters")
     public ResponseEntity<Map<String, String>> clearStats() {
-        SessionFactory sessionFactory = entityManager.getEntityManagerFactory()
-                .unwrap(SessionFactory.class);
         Statistics stats = sessionFactory.getStatistics();
         stats.clear();
 
