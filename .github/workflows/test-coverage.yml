@@ -27,8 +27,8 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run tests with coverage
-        run: mvn clean test
+      - name: Run tests and enforce the coverage gate
+        run: mvn clean verify -Pci
 
       - name: Generate JaCoCo Badge
         id: jacoco
