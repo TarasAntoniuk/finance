@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.common.dto.PageMetadata;
 import com.tarasantoniuk.finance.common.dto.PageResponse;
 import com.tarasantoniuk.finance.core.externalexchangerate.dto.ExternalExchangeRateRequestDto;
@@ -9,8 +9,8 @@ import com.tarasantoniuk.finance.core.externalexchangerate.service.ExternalExcha
 import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
