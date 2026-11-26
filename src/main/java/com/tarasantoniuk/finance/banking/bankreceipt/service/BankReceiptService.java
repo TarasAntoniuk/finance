@@ -2,6 +2,7 @@ package com.tarasantoniuk.finance.banking.bankreceipt.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
@@ -41,6 +42,7 @@ public class BankReceiptService {
     private final CurrencyRepository currencyRepository;
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionService transactionService;
+    private final BankAccountBalanceService balanceService;
     private final OrganizationSecurityContext orgContext;
 
     public BankReceiptService(
@@ -51,6 +53,7 @@ public class BankReceiptService {
             CurrencyRepository currencyRepository,
             OrganizationRepository organizationRepository,
             BankAccountTransactionService transactionService,
+            BankAccountBalanceService balanceService,
             OrganizationSecurityContext orgContext) {
         this.bankReceiptRepository = bankReceiptRepository;
         this.bankReceiptMapper = bankReceiptMapper;
@@ -59,6 +62,7 @@ public class BankReceiptService {
         this.currencyRepository = currencyRepository;
         this.organizationRepository = organizationRepository;
         this.transactionService = transactionService;
+        this.balanceService = balanceService;
         this.orgContext = orgContext;
     }
 
@@ -252,12 +256,17 @@ public class BankReceiptService {
             );
         }
 
+        bankAccountRepository.findByIdForUpdate(receipt.getAccount().getId());
+
         // Use unified method to reverse document
         transactionService.reverseDocument(
                 "BankReceipt",
                 receipt.getId(),
                 receipt.getDescription()
         );
+
+        // Removing money received in the past must not make any later balance negative
+        balanceService.ensureBalanceNonNegativeFrom(receipt.getAccount().getId(), receipt.getTransactionDateTime());
 
         // Update document status
         receipt.setStatus(DocumentStatus.DRAFT);

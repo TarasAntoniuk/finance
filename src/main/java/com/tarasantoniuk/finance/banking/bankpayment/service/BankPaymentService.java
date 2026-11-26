@@ -9,7 +9,6 @@ import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
 import com.tarasantoniuk.finance.banking.bankpayment.mapper.BankPaymentMapper;
 import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepository;
-import com.tarasantoniuk.finance.banking.common.exception.InsufficientBalanceException;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.dto.PageMetadata;
@@ -28,7 +27,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -224,13 +222,6 @@ public class BankPaymentService {
 
         // Lock the account so concurrent payments cannot both pass the balance check
         bankAccountRepository.findByIdForUpdate(payment.getAccount().getId());
-        BigDecimal currentBalance = balanceService.getCurrentBalance(payment.getAccount().getId());
-        if (currentBalance.compareTo(payment.getAmount()) < 0) {
-            throw new InsufficientBalanceException(
-                    "Insufficient balance. Current balance: " + currentBalance +
-                            ", required: " + payment.getAmount()
-            );
-        }
 
         // Use unified method to post document
         transactionService.postDocument(
@@ -243,6 +234,9 @@ public class BankPaymentService {
                 "BankPayment",
                 payment.getId()
         );
+
+        // The balance may not be negative on any date; a failure rolls the posting back
+        balanceService.ensureBalanceNonNegativeFrom(payment.getAccount().getId(), payment.getTransactionDateTime());
 
         // Update document status
         payment.setStatus(DocumentStatus.POSTED);

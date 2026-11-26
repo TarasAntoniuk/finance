@@ -642,9 +642,8 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
         @Test
         @DisplayName("Should handle complete invalidation and recalculation workflow")
         void shouldHandleCompleteInvalidationAndRecalculationWorkflow() {
-            // Given: bank account created with daily receipts for past 10 days
-            // Note: Use recent timestamps (within 30 minutes) to avoid triggering backdated invalidation
-            LocalDateTime baseTime = LocalDateTime.now().minusMinutes(25);
+            // Given: ten receipts of 100 six days ago, so the backdated payment below is covered
+            LocalDateTime baseTime = LocalDateTime.now().minusDays(6);
 
             // Create initial balance
             BankReceipt initialReceipt = factoryBanking.createBankReceipt(

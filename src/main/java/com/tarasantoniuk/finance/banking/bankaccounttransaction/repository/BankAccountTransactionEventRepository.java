@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -172,4 +173,24 @@ public interface BankAccountTransactionEventRepository extends JpaRepository<Ban
      * Check if non-reversed event exists for document
      */
     boolean existsByDocumentTypeAndDocumentIdAndIsReversedFalse(String documentType, Long documentId);
+
+    /**
+     * Lowest cumulative change of the balance from {@code fromDateTime} on, future-dated events
+     * included, in posting order. Reversed originals and reversal events cancel each other out and
+     * are excluded, as in balance calculation. Returns 0 when nothing follows.
+     */
+    @Query(value = """
+            SELECT COALESCE(MIN(running_change), 0) FROM (
+                SELECT SUM(CASE WHEN e.transaction_type = 'DEBIT' THEN e.amount ELSE -e.amount END)
+                       OVER (ORDER BY e.transaction_date_time, e.id) AS running_change
+                FROM bank_account_transaction_events e
+                WHERE e.bank_account_id = :bankAccountId
+                  AND e.transaction_date_time >= :fromDateTime
+                  AND e.is_reversed = false
+                  AND e.document_type NOT LIKE '%Reversal'
+            ) changes
+            """, nativeQuery = true)
+    BigDecimal findLowestRunningChangeFrom(
+            @Param("bankAccountId") Long bankAccountId,
+            @Param("fromDateTime") LocalDateTime fromDateTime);
 }
