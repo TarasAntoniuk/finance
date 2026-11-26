@@ -7,13 +7,14 @@ import com.tarasantoniuk.finance.security.auth.dto.GoogleLoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.LoginRequest;
 import com.tarasantoniuk.finance.security.auth.dto.RegisterRequest;
 import com.tarasantoniuk.finance.security.auth.exception.InvalidTokenException;
+import com.tarasantoniuk.finance.security.auth.ratelimit.ClientRateLimiter;
 import com.tarasantoniuk.finance.security.auth.service.AuthService;
 import com.tarasantoniuk.finance.security.jwt.JwtPrincipal;
 import com.tarasantoniuk.finance.security.jwt.service.JwtService;
-import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -34,49 +35,54 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final ClientRateLimiter clientRateLimiter;
 
-    public AuthController(AuthService authService, JwtService jwtService) {
+    public AuthController(AuthService authService, JwtService jwtService, ClientRateLimiter clientRateLimiter) {
         this.authService = authService;
         this.jwtService = jwtService;
+        this.clientRateLimiter = clientRateLimiter;
     }
 
     @PostMapping("/register")
-    @RateLimiter(name = "auth")
     @Operation(summary = "Register a new user", description = "Creates a new user account and returns access token; refresh token is set as HttpOnly cookie")
     @ApiResponse(responseCode = "201", description = "User registered successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input data")
     @ApiResponse(responseCode = "409", description = "User with this email already exists")
     @ApiResponse(responseCode = "429", description = "Too many requests")
     public ResponseEntity<AccessTokenResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                        HttpServletRequest httpRequest,
                                                         HttpServletResponse response) {
+        clientRateLimiter.acquirePermission(httpRequest.getRemoteAddr());
         AuthResponse authResponse = authService.register(request);
         addRefreshTokenCookie(response, authResponse.refreshToken());
         return ResponseEntity.status(HttpStatus.CREATED).body(new AccessTokenResponse(authResponse.accessToken()));
     }
 
     @PostMapping("/login")
-    @RateLimiter(name = "auth")
     @Operation(summary = "Authenticate user", description = "Validates credentials and returns access token; refresh token is set as HttpOnly cookie")
     @ApiResponse(responseCode = "200", description = "Login successful")
     @ApiResponse(responseCode = "401", description = "Invalid email or password")
     @ApiResponse(responseCode = "403", description = "Account is disabled")
     @ApiResponse(responseCode = "429", description = "Too many requests")
     public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request,
+                                                     HttpServletRequest httpRequest,
                                                      HttpServletResponse response) {
+        clientRateLimiter.acquirePermission(httpRequest.getRemoteAddr());
         AuthResponse authResponse = authService.login(request);
         addRefreshTokenCookie(response, authResponse.refreshToken());
         return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
     }
 
     @PostMapping("/google")
-    @RateLimiter(name = "auth")
     @Operation(summary = "Authenticate with Google", description = "Verifies a Google ID token and returns access token; new users are auto-provisioned. Refresh token is set as HttpOnly cookie")
     @ApiResponse(responseCode = "200", description = "Login successful")
     @ApiResponse(responseCode = "401", description = "Invalid Google ID token or unverified email")
     @ApiResponse(responseCode = "403", description = "Account is disabled")
     @ApiResponse(responseCode = "429", description = "Too many requests")
     public ResponseEntity<AccessTokenResponse> google(@Valid @RequestBody GoogleLoginRequest request,
+                                                      HttpServletRequest httpRequest,
                                                       HttpServletResponse response) {
+        clientRateLimiter.acquirePermission(httpRequest.getRemoteAddr());
         AuthResponse authResponse = authService.loginWithGoogle(request.idToken());
         addRefreshTokenCookie(response, authResponse.refreshToken());
         return ResponseEntity.ok(new AccessTokenResponse(authResponse.accessToken()));
