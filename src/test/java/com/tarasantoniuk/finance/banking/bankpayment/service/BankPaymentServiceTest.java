@@ -636,6 +636,7 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
             when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
@@ -661,7 +662,7 @@ class BankPaymentServiceTest {
         @DisplayName("Should throw exception when posting non-existent payment")
         void shouldThrowExceptionWhenPostingNonExistentPayment() {
             // Arrange
-            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.empty());
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.post(10L))
@@ -679,6 +680,7 @@ class BankPaymentServiceTest {
             // Arrange
             payment.setStatus(DocumentStatus.POSTED);
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.post(10L))
@@ -695,6 +697,7 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
             when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
@@ -711,6 +714,7 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenInsufficientBalance() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
             when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(500.00));
 
             // Act & Assert
@@ -731,6 +735,7 @@ class BankPaymentServiceTest {
             mockEvent.setId(100L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
             when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(1000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
@@ -764,6 +769,7 @@ class BankPaymentServiceTest {
             reversalEvent.setId(101L);
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
             when(transactionService.reverseDocument(
                     anyString(), anyLong(), anyString()
             )).thenReturn(reversalEvent);
@@ -788,7 +794,7 @@ class BankPaymentServiceTest {
         @DisplayName("Should throw exception when unposting non-existent payment")
         void shouldThrowExceptionWhenUnpostingNonExistentPayment() {
             // Arrange
-            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.empty());
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.unpost(10L))
@@ -803,6 +809,7 @@ class BankPaymentServiceTest {
         void shouldThrowExceptionWhenUnpostingDraftPayment() {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.unpost(10L))
@@ -818,6 +825,7 @@ class BankPaymentServiceTest {
             // Arrange
             payment.setStatus(DocumentStatus.CANCELLED);
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.unpost(10L))

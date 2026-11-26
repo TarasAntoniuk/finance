@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankpayment.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
@@ -121,4 +123,12 @@ public interface BankPaymentRepository extends JpaRepository<BankPayment, Long> 
     );
 
     boolean existsByExternalTransactionId(String externalTransactionId);
+
+    /**
+     * Load the payment with a row lock held until the transaction ends.
+     * Serialises concurrent status changes and postings on the same row.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT bp FROM BankPayment bp WHERE bp.id = :id")
+    Optional<BankPayment> findByIdForUpdate(@Param("id") Long id);
 }

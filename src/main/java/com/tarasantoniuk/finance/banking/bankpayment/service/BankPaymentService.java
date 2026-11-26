@@ -213,7 +213,7 @@ public class BankPaymentService {
      * Post bank payment - create transaction event in Event Sourcing
      */
     public BankPaymentResponseDto post(Long id) {
-        BankPayment payment = findEntityByIdOrThrow(id);
+        BankPayment payment = findEntityForStatusChange(id);
 
         // Only DRAFT documents can be posted
         if (payment.getStatus() != DocumentStatus.DRAFT) {
@@ -222,7 +222,8 @@ public class BankPaymentService {
             );
         }
 
-        // Check if account has sufficient balance
+        // Lock the account so concurrent payments cannot both pass the balance check
+        bankAccountRepository.findByIdForUpdate(payment.getAccount().getId());
         BigDecimal currentBalance = balanceService.getCurrentBalance(payment.getAccount().getId());
         if (currentBalance.compareTo(payment.getAmount()) < 0) {
             throw new InsufficientBalanceException(
@@ -254,7 +255,7 @@ public class BankPaymentService {
      * Unpost bank payment - reverse transaction event
      */
     public BankPaymentResponseDto unpost(Long id) {
-        BankPayment payment = findEntityByIdOrThrow(id);
+        BankPayment payment = findEntityForStatusChange(id);
 
         // Only POSTED documents can be unposted
         if (payment.getStatus() != DocumentStatus.POSTED) {
@@ -278,6 +279,18 @@ public class BankPaymentService {
     }
 
     // ========== PRIVATE HELPER METHODS ==========
+
+    /**
+     * Locks the payment row before reading it, so concurrent post/unpost requests for the same
+     * document run one after another and the second one sees the status set by the first.
+     */
+    private BankPayment findEntityForStatusChange(Long id) {
+        bankPaymentRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Bank payment not found with id: " + id
+                ));
+        return findEntityByIdOrThrow(id);
+    }
 
     private BankPayment findEntityByIdOrThrow(Long id) {
         BankPayment payment = bankPaymentRepository.findByIdWithDetails(id)

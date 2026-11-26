@@ -351,6 +351,7 @@ class BankReceiptServiceTest {
     void shouldPostBankReceipt() {
         // Given
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
 
         BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
         mockEvent.setId(1L);
@@ -390,6 +391,7 @@ class BankReceiptServiceTest {
         // Given
         receipt.setStatus(DocumentStatus.POSTED);
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
 
         // When & Then
         assertThrows(InvalidDocumentStatusException.class, () -> {
@@ -406,6 +408,7 @@ class BankReceiptServiceTest {
     void shouldThrowExceptionWhenTransactionEventAlreadyExists() {
         // Given
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
         when(transactionService.postDocument(
                 anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
                 .thenThrow(new ResourceAlreadyExistsException("Transaction event already exists"));
@@ -424,6 +427,7 @@ class BankReceiptServiceTest {
         // Given
         receipt.setStatus(DocumentStatus.POSTED);
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
 
         BankAccountTransactionEvent reversalEvent = new BankAccountTransactionEvent();
         reversalEvent.setId(2L);
@@ -456,6 +460,7 @@ class BankReceiptServiceTest {
         // Given
         receipt.setStatus(DocumentStatus.DRAFT);
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
 
         // When & Then
         assertThrows(InvalidDocumentStatusException.class, () -> {
@@ -472,6 +477,7 @@ class BankReceiptServiceTest {
     void shouldThrowExceptionWhenUnpostingDraftReceipt() {
         // Given
         when(bankReceiptRepository.findByIdWithDetails(receipt.getId())).thenReturn(Optional.of(receipt));
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.of(receipt));
 
         // When & Then
         assertThrows(InvalidDocumentStatusException.class, () -> {
@@ -485,8 +491,7 @@ class BankReceiptServiceTest {
     @DisplayName("Should throw exception when receipt not found for unpost")
     void shouldThrowExceptionWhenReceiptNotFoundForUnpost() {
         // Given
-        when(bankReceiptRepository.findByIdWithDetails(receipt.getId()))
-                .thenReturn(Optional.empty());
+        when(bankReceiptRepository.findByIdForUpdate(receipt.getId())).thenReturn(Optional.empty());
 
         // When & Then
         assertThrows(ResourceNotFoundException.class, () -> {

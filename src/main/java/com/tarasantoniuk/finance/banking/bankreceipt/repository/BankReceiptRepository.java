@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankreceipt.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import com.tarasantoniuk.finance.banking.bankreceipt.entity.BankReceipt;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import org.springframework.data.domain.Page;
@@ -159,4 +161,12 @@ public interface BankReceiptRepository extends JpaRepository<BankReceipt, Long> 
     Optional<BankReceipt> findByExternalTransactionId(
             @Param("externalTransactionId") String externalTransactionId
     );
+
+    /**
+     * Load the receipt with a row lock held until the transaction ends.
+     * Serialises concurrent status changes and postings on the same row.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT br FROM BankReceipt br WHERE br.id = :id")
+    Optional<BankReceipt> findByIdForUpdate(@Param("id") Long id);
 }

@@ -211,7 +211,7 @@ public class BankReceiptService {
      * Post bank receipt - create transaction event in Event Sourcing
      */
     public BankReceiptResponseDto post(Long id) {
-        BankReceipt receipt = findEntityByIdOrThrow(id);
+        BankReceipt receipt = findEntityForStatusChange(id);
 
         // Only DRAFT documents can be posted
         if (receipt.getStatus() != DocumentStatus.DRAFT) {
@@ -243,7 +243,7 @@ public class BankReceiptService {
      * Unpost bank receipt - reverse transaction event
      */
     public BankReceiptResponseDto unpost(Long id) {
-        BankReceipt receipt = findEntityByIdOrThrow(id);
+        BankReceipt receipt = findEntityForStatusChange(id);
 
         // Only POSTED documents can be unposted
         if (receipt.getStatus() != DocumentStatus.POSTED) {
@@ -267,6 +267,18 @@ public class BankReceiptService {
     }
 
     // ========== PRIVATE HELPER METHODS ==========
+
+    /**
+     * Locks the receipt row before reading it, so concurrent post/unpost requests for the same
+     * document run one after another and the second one sees the status set by the first.
+     */
+    private BankReceipt findEntityForStatusChange(Long id) {
+        bankReceiptRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Bank receipt not found with id: " + id
+                ));
+        return findEntityByIdOrThrow(id);
+    }
 
     private BankReceipt findEntityByIdOrThrow(Long id) {
         BankReceipt receipt = bankReceiptRepository.findByIdWithDetails(id)
