@@ -2,9 +2,6 @@ package com.tarasantoniuk.finance.banking.bankreceipt.service;
 
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
-import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountSnapshotValidityService;
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
-import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.service.BankAccountTransactionService;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptRequestDto;
 import com.tarasantoniuk.finance.banking.bankreceipt.dto.BankReceiptResponseDto;
@@ -24,8 +21,6 @@ import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
 import com.tarasantoniuk.finance.security.authorization.OrganizationSecurityContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,7 +33,6 @@ import java.util.List;
 @Transactional
 public class BankReceiptService {
 
-    private static final Logger log = LoggerFactory.getLogger(BankReceiptService.class);
 
     private final BankReceiptRepository bankReceiptRepository;
     private final BankReceiptMapper bankReceiptMapper;
@@ -47,8 +41,6 @@ public class BankReceiptService {
     private final CurrencyRepository currencyRepository;
     private final OrganizationRepository organizationRepository;
     private final BankAccountTransactionService transactionService;
-    private final BankAccountTransactionEventRepository transactionEventRepository;
-    private final BankAccountSnapshotValidityService snapshotValidityService;
     private final OrganizationSecurityContext orgContext;
 
     public BankReceiptService(
@@ -59,8 +51,6 @@ public class BankReceiptService {
             CurrencyRepository currencyRepository,
             OrganizationRepository organizationRepository,
             BankAccountTransactionService transactionService,
-            BankAccountTransactionEventRepository transactionEventRepository,
-            BankAccountSnapshotValidityService snapshotValidityService,
             OrganizationSecurityContext orgContext) {
         this.bankReceiptRepository = bankReceiptRepository;
         this.bankReceiptMapper = bankReceiptMapper;
@@ -69,8 +59,6 @@ public class BankReceiptService {
         this.currencyRepository = currencyRepository;
         this.organizationRepository = organizationRepository;
         this.transactionService = transactionService;
-        this.transactionEventRepository = transactionEventRepository;
-        this.snapshotValidityService = snapshotValidityService;
         this.orgContext = orgContext;
     }
 
@@ -243,33 +231,6 @@ public class BankReceiptService {
                 "BankReceipt",
                 receipt.getId()
         );
-
-        // Get the created transaction event
-        BankAccountTransactionEvent event = transactionEventRepository
-                .findActiveByDocumentTypeAndDocumentId("BankReceipt", receipt.getId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Transaction event not found after posting receipt " + receipt.getId()));
-
-        // Check if transaction is backdated (older than 1 hour)
-        LocalDateTime transactionDateTime = receipt.getTransactionDateTime();
-        LocalDateTime now = LocalDateTime.now();
-
-        if (transactionDateTime.isBefore(now.minusHours(1))) {
-            // Calculate invalidation date (start of day after transaction date)
-            LocalDateTime invalidFromDateTime = transactionDateTime.toLocalDate()
-                    .plusDays(1)
-                    .atStartOfDay();
-
-            // Invalidate snapshots for this bank account
-            snapshotValidityService.invalidateSnapshots(
-                    receipt.getAccount().getId(),
-                    invalidFromDateTime,
-                    event.getId()  // The transaction event that caused invalidation
-            );
-
-            log.info("Invalidated snapshots for account {} from date {} due to backdated transaction",
-                    receipt.getAccount().getId(), invalidFromDateTime);
-        }
 
         // Update document status
         receipt.setStatus(DocumentStatus.POSTED);

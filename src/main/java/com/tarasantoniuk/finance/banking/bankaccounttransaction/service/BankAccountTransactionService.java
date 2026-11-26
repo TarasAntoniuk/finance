@@ -3,7 +3,9 @@ package com.tarasantoniuk.finance.banking.bankaccounttransaction.service;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
+import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountSnapshotValidityService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
@@ -31,6 +33,8 @@ public class BankAccountTransactionService {
     private final OrganizationRepository organizationRepository;
     private final CurrencyRepository currencyRepository;
     private final OrganizationSecurityContext orgContext;
+    private final BankAccountBalanceSnapshotRepository balanceSnapshotRepository;
+    private final BankAccountSnapshotValidityService snapshotValidityService;
 
     public BankAccountTransactionService(
             BankAccountTransactionEventRepository transactionEventRepository,
@@ -38,13 +42,17 @@ public class BankAccountTransactionService {
             BankAccountRepository bankAccountRepository,
             OrganizationRepository organizationRepository,
             CurrencyRepository currencyRepository,
-            OrganizationSecurityContext orgContext) {
+            OrganizationSecurityContext orgContext,
+            BankAccountBalanceSnapshotRepository balanceSnapshotRepository,
+            BankAccountSnapshotValidityService snapshotValidityService) {
         this.transactionEventRepository = transactionEventRepository;
         this.balanceService = balanceService;
         this.bankAccountRepository = bankAccountRepository;
         this.organizationRepository = organizationRepository;
         this.currencyRepository = currencyRepository;
         this.orgContext = orgContext;
+        this.balanceSnapshotRepository = balanceSnapshotRepository;
+        this.snapshotValidityService = snapshotValidityService;
     }
 
     /**
@@ -109,7 +117,24 @@ public class BankAccountTransactionService {
                 : currentBalance.subtract(amount);
         event.setBalanceAfter(balanceAfter);
 
-        return transactionEventRepository.save(event);
+        BankAccountTransactionEvent savedEvent = transactionEventRepository.save(event);
+        invalidateSnapshotsCovering(savedEvent);
+        return savedEvent;
+    }
+
+    /**
+     * A snapshot of day D is stored at D+1 00:00 and covers every event before that moment.
+     * Any event written behind an existing snapshot (backdated post, reversal of an old document)
+     * makes that snapshot and all later ones stale, whatever the age of the document.
+     */
+    private void invalidateSnapshotsCovering(BankAccountTransactionEvent event) {
+        Long bankAccountId = event.getBankAccount().getId();
+        LocalDateTime eventDateTime = event.getTransactionDateTime();
+        if (!balanceSnapshotRepository.existsByBankAccountIdAndSnapshotDateTimeAfter(bankAccountId, eventDateTime)) {
+            return;
+        }
+        LocalDateTime firstStaleSnapshotDateTime = eventDateTime.toLocalDate().plusDays(1).atStartOfDay();
+        snapshotValidityService.invalidateSnapshots(bankAccountId, firstStaleSnapshotDateTime, event.getId());
     }
 
     /**

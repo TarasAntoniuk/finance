@@ -135,4 +135,6 @@ public interface BankAccountBalanceSnapshotRepository extends JpaRepository<Bank
     int deleteByBankAccountIdAndSnapshotDateTimeGreaterThanEqual(
             @Param("bankAccountId") Long bankAccountId,
             @Param("fromDateTime") LocalDateTime fromDateTime);
+
+    boolean existsByBankAccountIdAndSnapshotDateTimeAfter(Long bankAccountId, LocalDateTime dateTime);
 }
