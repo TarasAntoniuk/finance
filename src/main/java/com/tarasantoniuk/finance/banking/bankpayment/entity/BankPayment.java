@@ -1,5 +1,13 @@
 package com.tarasantoniuk.finance.banking.bankpayment.entity;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.JoinColumn;
+import org.hibernate.annotations.BatchSize;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
 import com.tarasantoniuk.finance.banking.common.entity.MonetaryDocument;
 import com.tarasantoniuk.finance.banking.common.enums.TransactionType;
@@ -49,6 +57,15 @@ public class BankPayment extends MonetaryDocument {
     @Column(length = 100)
     private String outgoingDocumentNumber;
 
+    /**
+     * Explicit invoice allocations of a supplier payment. Empty means: settle the supplier's unpaid
+     * invoices oldest due date first.
+     */
+    @ElementCollection
+    @CollectionTable(name = "bank_payment_allocations", joinColumns = @JoinColumn(name = "payment_id"))
+    @BatchSize(size = 50)
+    private List<BankPaymentAllocation> allocations = new ArrayList<>();
+
     // Getters and Setters
 
     public Long getId() {
@@ -57,6 +74,15 @@ public class BankPayment extends MonetaryDocument {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public List<BankPaymentAllocation> getAllocations() {
+        return Collections.unmodifiableList(allocations);
+    }
+
+    public void replaceAllocations(List<BankPaymentAllocation> newAllocations) {
+        allocations.clear();
+        allocations.addAll(newAllocations);
     }
 
     public PaymentType getPaymentType() {

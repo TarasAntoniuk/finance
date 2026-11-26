@@ -1,5 +1,8 @@
 package com.tarasantoniuk.finance.banking.bankpayment.dto;
 
+import java.util.List;
+import java.util.ArrayList;
+import jakarta.validation.Valid;
 import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -91,6 +94,11 @@ public abstract class BaseBankPaymentDto {
     )
     private String bankReference;
 
+    @Schema(description = "Supplier and contractor payments only: invoices this payment settles. "
+            + "Empty: unpaid invoices are settled oldest due date first; any remainder is a prepayment.")
+    @Valid
+    private List<InvoiceAllocationDto> allocations = new ArrayList<>();
+
     // Getters and Setters
 
     public LocalDateTime getTransactionDateTime() {
@@ -179,5 +187,13 @@ public abstract class BaseBankPaymentDto {
 
     public void setBankReference(String bankReference) {
         this.bankReference = bankReference;
+    }
+
+    public List<InvoiceAllocationDto> getAllocations() {
+        return allocations;
+    }
+
+    public void setAllocations(List<InvoiceAllocationDto> allocations) {
+        this.allocations = allocations == null ? new ArrayList<>() : allocations;
     }
 }
