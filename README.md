@@ -144,10 +144,10 @@ mvn spring-boot:run
 
 ## 💻 Technology Stack
 
-**Backend**: Java 21, Spring Boot 3.5.10, Spring Security 6.x
-**Security**: JWT (JJWT 0.12.6), Resilience4j, Caffeine cache
+**Backend**: Java 21, Spring Boot 4.2.0, Spring Security 7.x
+**Security**: JWT (JJWT 0.13.0), Resilience4j, Caffeine cache
 **Database**: PostgreSQL 17
-**Testing**: JUnit 5, Testcontainers, JaCoCo (80% line / 75% branch)
+**Testing**: JUnit Jupiter 6, Testcontainers, JaCoCo (80% line / 75% branch)
 **API**: REST, Swagger/OpenAPI 3, MapStruct 1.6.3
 **DevOps**: Docker, GitHub Actions
 
