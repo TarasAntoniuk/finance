@@ -110,6 +110,16 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
         bankAccount = factoryBanking.createOrganizationBankAccount(bank, currency, organization);
     }
 
+    /**
+     * Invalidation only concerns snapshots that exist, so backdating scenarios start from a
+     * history of daily snapshots, as the nightly job would have produced.
+     */
+    private void createDailySnapshotsForPastDays(int days) {
+        for (int i = days; i >= 1; i--) {
+            balanceService.createSnapshot(bankAccount.getId(), LocalDate.now().minusDays(i).atStartOfDay());
+        }
+    }
+
     @Nested
     @DisplayName("Snapshot Creation and Invalidation Tests")
     class SnapshotCreationAndInvalidationTests {
@@ -208,6 +218,8 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
                     organization,
                     new BigDecimal("1000.00")
             );
+
+            createDailySnapshotsForPastDays(7);
 
             // Post first backdated transaction (2 days ago)
             BankReceipt receipt1 = factoryBanking.createBankReceipt(
@@ -665,6 +677,8 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
             BigDecimal initialBalance = balanceService.calculateBalance(bankAccount.getId(), LocalDateTime.now());
             assertThat(initialBalance).isEqualByComparingTo(new BigDecimal("1000.00"));
 
+            createDailySnapshotsForPastDays(7);
+
             // When: backdated payment of 500 posted 5 days ago
             BankPayment backdatedPayment = factoryBanking.createBankPayment(
                     bankAccount,
@@ -795,6 +809,92 @@ class BankAccountSnapshotValidityIntegrationTest extends BaseIntegrationTest {
             assertThat(validityRepository.count()).isEqualTo(0);
             BigDecimal balance = balanceService.calculateBalance(bankAccount.getId(), LocalDateTime.now());
             assertThat(balance).isEqualByComparingTo(new BigDecimal("1225.00")); // 1000 + 100 + 50 + 75
+        }
+    }
+
+    @Nested
+    @DisplayName("Events written behind an existing snapshot")
+    class EventsBehindSnapshotTests {
+
+        private static final BigDecimal AMOUNT = new BigDecimal("1000.00");
+
+        @Test
+        @DisplayName("Unpost of an old receipt after snapshots were recalculated should remove its amount")
+        void unpostOfOldReceiptShouldInvalidateSnapshots() {
+            BankReceipt receipt = postReceiptDated(LocalDateTime.now().minusDays(10));
+            scheduler.recalculateInvalidSnapshots();
+            createDailySnapshotsForPastDays(5);
+
+            bankReceiptService.unpost(receipt.getId());
+
+            assertThat(balanceService.calculateBalance(bankAccount.getId(), LocalDateTime.now()))
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(validityService.getInvalidFromDate(bankAccount.getId())).isPresent();
+        }
+
+        @Test
+        @DisplayName("Unpost of an old payment after snapshots were recalculated should restore the balance")
+        void unpostOfOldPaymentShouldInvalidateSnapshots() {
+            postReceiptDated(LocalDateTime.now().minusDays(10));
+            BankPayment payment = factoryBanking.createBankPayment(
+                    bankAccount, counterparty, currency, organization, new BigDecimal("400.00"));
+            payment.setTransactionDateTime(LocalDateTime.now().minusDays(8));
+            bankPaymentRepository.save(payment);
+            bankPaymentService.post(payment.getId());
+            scheduler.recalculateInvalidSnapshots();
+            createDailySnapshotsForPastDays(5);
+
+            bankPaymentService.unpost(payment.getId());
+
+            assertThat(balanceService.calculateBalance(bankAccount.getId(), LocalDateTime.now()))
+                    .isEqualByComparingTo(AMOUNT);
+        }
+
+        @Test
+        @DisplayName("Repost after a recalculated unpost should count the amount exactly once")
+        void repostAfterRecalculatedUnpostShouldCountOnce() {
+            BankReceipt receipt = postReceiptDated(LocalDateTime.now().minusDays(10));
+            scheduler.recalculateInvalidSnapshots();
+            createDailySnapshotsForPastDays(5);
+            bankReceiptService.unpost(receipt.getId());
+            scheduler.recalculateInvalidSnapshots();
+
+            bankReceiptService.post(receipt.getId());
+
+            assertThat(balanceService.calculateBalance(bankAccount.getId(), LocalDateTime.now()))
+                    .isEqualByComparingTo(AMOUNT);
+        }
+
+        @Test
+        @DisplayName("A recent event behind an existing snapshot should invalidate it regardless of its age")
+        void recentEventBehindSnapshotShouldInvalidate() {
+            balanceService.createSnapshot(bankAccount.getId(), LocalDate.now().atStartOfDay());
+
+            postReceiptDated(LocalDateTime.now().minusMinutes(10));
+
+            LocalDateTime afterSnapshot = LocalDate.now().plusDays(1).atStartOfDay().plusHours(1);
+            assertThat(validityService.getInvalidFromDate(bankAccount.getId())).isPresent();
+            assertThat(balanceService.calculateBalance(bankAccount.getId(), afterSnapshot))
+                    .isEqualByComparingTo(AMOUNT);
+        }
+
+        @Test
+        @DisplayName("An event after the newest snapshot should not invalidate anything")
+        void eventAfterNewestSnapshotShouldNotInvalidate() {
+            balanceService.createSnapshot(bankAccount.getId(), LocalDate.now().minusDays(2).atStartOfDay());
+
+            postReceiptDated(LocalDateTime.now().minusMinutes(10));
+
+            assertThat(validityService.getInvalidFromDate(bankAccount.getId())).isEmpty();
+        }
+
+        private BankReceipt postReceiptDated(LocalDateTime transactionDateTime) {
+            BankReceipt receipt = factoryBanking.createBankReceipt(
+                    bankAccount, counterparty, currency, organization, AMOUNT);
+            receipt.setTransactionDateTime(transactionDateTime);
+            bankReceiptRepository.save(receipt);
+            bankReceiptService.post(receipt.getId());
+            return receipt;
         }
     }
 }
