@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.banking.common.exeption;
+package com.tarasantoniuk.finance.banking.common.exception;
 
 /**
  * Exception thrown when trying to post a payment with insufficient account balance

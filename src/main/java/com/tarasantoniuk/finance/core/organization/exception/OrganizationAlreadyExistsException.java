@@ -11,7 +11,6 @@ public class OrganizationAlreadyExistsException extends ResourceAlreadyExistsExc
         super("Organization", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи
     public static OrganizationAlreadyExistsException byRegistrationNumber(String registrationNumber) {
         return new OrganizationAlreadyExistsException("registrationNumber", registrationNumber);
     }

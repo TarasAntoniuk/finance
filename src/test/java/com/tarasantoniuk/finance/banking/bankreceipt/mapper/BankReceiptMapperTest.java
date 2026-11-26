@@ -97,7 +97,7 @@ class BankReceiptMapperTest {
 
         // Then
         assertNotNull(entity);
-        // MapStruct може створити пустий об'єкт з null ID - це прийнятно
+        // MapStruct may create an empty object with a null id; that is acceptable
         if (entity.getCounterpartyBankAccount() != null) {
             assertNull(entity.getCounterpartyBankAccount().getId(),
                     "Should have null ID when DTO had null counterpartyBankAccountId");

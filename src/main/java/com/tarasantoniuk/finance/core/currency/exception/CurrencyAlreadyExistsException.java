@@ -11,7 +11,6 @@ public class CurrencyAlreadyExistsException extends ResourceAlreadyExistsExcepti
         super("Currency", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи
     public static CurrencyAlreadyExistsException byCode(String code) {
         return new CurrencyAlreadyExistsException("code", code);
     }

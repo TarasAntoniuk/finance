@@ -75,7 +75,6 @@ public class AccountBalanceReportController {
             @RequestParam(required = false)
             Long currencyId
     ) {
-        // Якщо дата не передана, використовуємо сьогоднішню
         LocalDate reportDate = asOfDate != null ? asOfDate : LocalDate.now();
 
         AccountBalanceReportDto report = reportService.generateReport(reportDate, organizationId, currencyId);

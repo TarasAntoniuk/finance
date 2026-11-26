@@ -16,7 +16,7 @@ import static com.tarasantoniuk.finance.security.common.TestDataFactorySecurity.
 import static org.junit.jupiter.api.Assertions.*;
 
 
-@ExtendWith(MockitoExtension.class) // не потрібен, але для консистентності
+@ExtendWith(MockitoExtension.class) // not required; kept for consistency with other mapper tests
 class UserMapperTest {
 
     private final UserMapper userMapper = new UserMapperImpl();

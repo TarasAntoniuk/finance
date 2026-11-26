@@ -16,7 +16,7 @@ public class OpenApiConfig {
             if (operation.getParameters() != null) {
                 operation.getParameters().forEach(parameter -> {
                     if ("sort".equals(parameter.getName())) {
-                        // Замінюємо некоректний приклад на правильний
+                        // springdoc derives an invalid example for Pageable sort; replace it
                         parameter.setExample("documentDate,desc");
                         parameter.setDescription("Sort order. Format: property,(asc|desc). Example: documentDate,desc");
                         parameter.setSchema(new StringSchema()

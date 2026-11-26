@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.core.currency.exeption;
+package com.tarasantoniuk.finance.core.currency.exception;
 
 import tools.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.currency.controller.CurrencyController;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Тести для помилкових сценаріїв Currency
+ * Error scenarios for Currency
  */
 @WebMvcTest(CurrencyController.class)
 @AutoConfigureMockMvc(addFilters = false)

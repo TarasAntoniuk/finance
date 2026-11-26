@@ -219,7 +219,7 @@ class AccountBalanceReportControllerIntegrationTest extends BaseIntegrationTest 
         mockMvc.perform(get("/api/v1/banking/reports/account-balances"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalAccounts").value(3))
-                .andExpect(jsonPath("$.accounts[?(@.accountId == " + emptyAccount.getId() + ")].balance").value(0)); // Без .0
+                .andExpect(jsonPath("$.accounts[?(@.accountId == " + emptyAccount.getId() + ")].balance").value(0)); // integer zero, not 0.0
     }
 
     @Test

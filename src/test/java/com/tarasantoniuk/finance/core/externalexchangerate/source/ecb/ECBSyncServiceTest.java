@@ -285,8 +285,8 @@ class ECBSyncServiceTest {
 
         int result = syncService.syncHistory();
 
-        assertThat(result).isEqualTo(25 * 49); // 25 днів * 49 валют
-        verify(rateRepository, atLeast(2)).saveAll(any()); // Має бути кілька батчів
+        assertThat(result).isEqualTo(25 * 49); // 25 days * 49 currencies
+        verify(rateRepository, atLeast(2)).saveAll(any()); // expect several batches
         verify(rateRepository, atLeast(2)).flush();
     }
 

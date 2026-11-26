@@ -22,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Тести для помилкових сценаріїв Organization
+ * Error scenarios for Organization
  */
 @WebMvcTest(OrganizationController.class)
 @AutoConfigureMockMvc(addFilters = false)
