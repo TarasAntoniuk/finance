@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.core.counterparty.repository;
 
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,4 +40,12 @@ public interface CounterpartyRepository extends JpaRepository<Counterparty, Long
 
     // Keep original method for duplicate check (doesn't need country)
     boolean existsByCode(String code);
+
+    /**
+     * Row lock on the counterparty. Settlement writes take it first, so all postings that change
+     * what is owed to one counterparty run one after another.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Counterparty c WHERE c.id = :id")
+    Optional<Counterparty> findByIdForUpdate(@Param("id") Long id);
 }

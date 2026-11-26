@@ -4,6 +4,8 @@ import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyReposi
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.settlement.repository.SettlementMovementRepository;
+import com.tarasantoniuk.finance.settlement.repository.SettlementOpenItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -28,6 +30,12 @@ public class TestDataCleanerCore {
     @Autowired
     private CountryRepository countryRepository;
 
+    @Autowired
+    private SettlementMovementRepository settlementMovementRepository;
+
+    @Autowired
+    private SettlementOpenItemRepository settlementOpenItemRepository;
+
     /**
      * Deletes all core domain test data in correct order
      * CRITICAL ORDER (most dependent first):
@@ -38,6 +46,8 @@ public class TestDataCleanerCore {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanAll() {
+        settlementMovementRepository.deleteAllInBatch();
+        settlementOpenItemRepository.deleteAllInBatch();
         counterpartyRepository.deleteAllInBatch();
         organizationRepository.deleteAllInBatch();
         currencyRepository.deleteAllInBatch();
