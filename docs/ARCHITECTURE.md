@@ -308,14 +308,14 @@ Events with `is_reversed = true` and reversal events themselves are excluded, so
 
 ### Why Event Sourcing?
 
-✅ **Complete Audit Trail** — every posting and reversal recorded
-✅ **Temporal Queries** — balance as of any date
+✅ **Complete Audit Trail** — every posting and reversal recorded  
+✅ **Temporal Queries** — balance as of any date  
 ✅ **Reversal Support** — unpost without deleting history
 
 ### Why Modular Monolith?
 
-✅ **Simplicity** — single deployable unit
-✅ **Clear Boundaries** — modules can be split later
+✅ **Simplicity** — single deployable unit  
+✅ **Clear Boundaries** — modules can be split later  
 ✅ **Performance** — no network overhead between modules
 
 ### Why JWT (not session-based)?
@@ -411,5 +411,5 @@ All endpoints are documented in [Swagger UI](https://api.tarasantoniuk.com/swagg
 
 ---
 
-**Version**: 0.0.8-SNAPSHOT
+**Version**: 0.0.8-SNAPSHOT  
 **Last Updated**: November 2026
