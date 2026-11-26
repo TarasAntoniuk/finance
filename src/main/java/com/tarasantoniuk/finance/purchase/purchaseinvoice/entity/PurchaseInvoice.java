@@ -4,6 +4,7 @@ import com.tarasantoniuk.finance.common.document.entity.BaseDocument;
 import com.tarasantoniuk.finance.core.counterparty.entity.Counterparty;
 import com.tarasantoniuk.finance.core.currency.entity.Currency;
 import com.tarasantoniuk.finance.core.item.enums.VatCategory;
+import com.tarasantoniuk.finance.settlement.model.SettlementDocumentTypes;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,7 +48,7 @@ import java.util.TreeMap;
 )
 public class PurchaseInvoice extends BaseDocument {
 
-    public static final String DOCUMENT_TYPE = "PurchaseInvoice";
+    public static final String DOCUMENT_TYPE = SettlementDocumentTypes.PURCHASE_INVOICE;
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
