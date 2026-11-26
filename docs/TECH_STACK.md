@@ -108,14 +108,14 @@
 - **Testcontainers**
     - Docker-based integration tests
     - Real PostgreSQL instance
-    - Container reuse for performance (~51s total test suite)
+    - One shared container for the whole suite
 
 ### Coverage
 - **JaCoCo 0.8.16**
     - Code coverage reports
     - Maven plugin integration
-    - CI enforcement: 80% line, 75% branch coverage
-    - 1230+ test methods across 74 test files
+    - Gate in the `ci` Maven profile: 80% line, 75% branch coverage, enforced in CI
+    - 1240+ test methods across 78 test files
 
 ---
 
@@ -123,16 +123,13 @@
 
 ### Continuous Integration
 - **GitHub Actions**
-    - Automated test execution
-    - Build verification
-    - Coverage badge generation
-    - Runs on push to `dev` and `stable`
+    - `Test Coverage` workflow on every pull request and push to `dev`: `mvn clean verify -Pci`, coverage badge
+    - `CI/CD Deploy` workflow on push to `dev`: tests, JAR build, deploy over SSH, health check
 
 ### Containerization
 - **Docker**
-    - Production deployment with Docker Compose
+    - Production: the app container (`finance-app`, `stable` profile) behind shared nginx and PostgreSQL from the `server-prod` repository
     - Required for Testcontainers (integration testing)
-    - Multi-container orchestration (app + database)
 
 ---
 
@@ -269,5 +266,5 @@ plantuml-generator-maven-plugin (1.6.0)
 
 ---
 
-**Document Version**: 0.0.6
-**Last Updated**: February 2026
+**Document Version**: 0.0.8-SNAPSHOT
+**Last Updated**: November 2026

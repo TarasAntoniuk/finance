@@ -8,6 +8,33 @@ The project follows modular development: **Core Module** (foundation), **Banking
 
 ## Version History
 
+### Platform, Banking and Security
+
+#### [0.0.8] - Unreleased
+**Spring Boot 4.2, balance correctness, production hardening**
+
+**Fixed — Banking:**
+- **Unpost did not invalidate balance snapshots.** The reversal event carries the original date, but only `post` invalidated snapshots. Unposting an old document after the nightly recalculation left its amount in the balance. Invalidation now happens in the single method that writes events, for post, reversal and repost alike (#38).
+- **Snapshot invalidation used a "document older than one hour" rule.** A document dated just before midnight and posted after the nightly snapshot was never counted. The rule is now "any event behind an existing snapshot" (#38).
+- **One failure rolled back the whole nightly snapshot run**, including the "snapshot already exists" case the job treated as harmless. Each account now runs in its own transaction (#39).
+- **The nightly job processed counterparty-held accounts**, resolving an organization by the counterparty's id. Only organization accounts are processed now (#39).
+- **Recalculation skipped the snapshot of the backdated day itself** (#39).
+- **Concurrent posting.** A double-clicked post wrote two events, and two simultaneous payments could overdraw the account. Post and unpost now lock the document row and the bank account row (#40).
+
+**Fixed — API and Security:**
+- **Auth rate limit was one global bucket**; five requests from anyone locked sign-in for everyone. It is now per client address (#37).
+- **Client address was spoofable** through the leftmost `X-Forwarded-For` value. The forwarded-header strategy is now `web-server` (Tomcat `RemoteIpValve`) (#37).
+- **Malformed JSON and unsupported media types returned 500** with the parser message. They now return 400 and 415. Spring MVC exceptions keep their status, integrity violations return 409, and the catch-all logs at ERROR and returns a generic message (#36, #41).
+
+**Changed:**
+- Spring Boot 3.5.11 → 4.2.0: Spring Framework 7.1, Spring Security 7.2, Hibernate 7.4, Jackson 3, Tomcat 11, Testcontainers 2, JUnit Jupiter 6. IDE vulnerability warnings on `pom.xml` dropped from 57 to 1 (test scope) (#35).
+- ECB client moved from the deprecated `RestTemplate` to `RestClient` (#35).
+- Production profile: no SQL or DEBUG logging, `include-message=never`, `open-in-view=false`, no explicit dialect; the Hibernate statistics endpoint exists only in the `dev` profile (#42).
+- Repository hygiene: `.mcp.json` untracked, debug workflows and the unused `AbstractSnapshotScheduler` removed, `exeption` packages renamed, English-only comments (#43).
+- Coverage: 1240+ test methods across 78 test files.
+
+---
+
 ### Security Module
 
 #### [0.0.7] - September 2026 ✅

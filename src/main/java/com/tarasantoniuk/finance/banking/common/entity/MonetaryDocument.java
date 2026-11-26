@@ -14,12 +14,11 @@ import java.time.LocalDate;
  * Base class for all monetary documents (bank receipts, payments, cash operations).
  * Represents a single payment transaction from bank statement or manual entry.
  * <p>
- * One document can create multiple accounting events (main transaction + bank commission).
- * <p>
  * Document Lifecycle:
  * - DRAFT: mutable, can be edited or deleted
- * - POSTED: immutable, creates AccountTransactionEvent(s)
- * - CANCELLED: immutable, creates reversal AccountTransactionEvent(s)
+ * - POSTED: read-only; posting writes one BankAccountTransactionEvent
+ * - unpost returns the document to DRAFT and writes a reversal event
+ * - CANCELLED: defined in DocumentStatus, not set by any operation yet
  */
 @MappedSuperclass
 public abstract class MonetaryDocument extends BaseDocument {
