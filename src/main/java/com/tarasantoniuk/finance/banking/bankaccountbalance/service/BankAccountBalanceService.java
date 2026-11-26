@@ -236,6 +236,15 @@ public class BankAccountBalanceService {
     }
 
     /**
+     * Whether the snapshot of the given day (stored at the start of the next day) exists.
+     */
+    @Transactional(readOnly = true)
+    public boolean hasSnapshotForDay(Long bankAccountId, LocalDate day) {
+        return balanceSnapshotRepository.existsByBankAccountIdAndSnapshotDateTime(
+                bankAccountId, day.plusDays(1).atStartOfDay());
+    }
+
+    /**
      * Get balance snapshot for specific datetime
      */
     @Transactional(readOnly = true)
