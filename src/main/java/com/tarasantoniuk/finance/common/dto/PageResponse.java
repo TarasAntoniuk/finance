@@ -1,6 +1,7 @@
 package com.tarasantoniuk.finance.common.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -35,6 +36,21 @@ public class PageResponse<T> {
 
     public void setMetadata(PageMetadata metadata) {
         this.metadata = metadata;
+    }
+
+    /**
+     * Wraps already-mapped content with the paging metadata of the page it came from.
+     */
+    public static <T> PageResponse<T> of(Page<?> page, List<T> content) {
+        PageMetadata metadata = PageMetadata.builder()
+                .currentPage(page.getNumber())
+                .totalPages(page.getTotalPages())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .hasNext(page.hasNext())
+                .hasPrevious(page.hasPrevious())
+                .build();
+        return new PageResponse<>(content, metadata);
     }
 
     public static <T> Builder<T> builder() {
