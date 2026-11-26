@@ -1,25 +1,27 @@
 package com.tarasantoniuk.finance.core.externalexchangerate.config;
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
+
+import java.time.Duration;
 
 @Configuration
 @EnableScheduling
 public class ExternalRateSourceConfig {
 
-    @Bean("ecbRestTemplate")
-    public RestTemplate ecbRestTemplate(RestTemplateBuilder builder) {
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
+
+    @Bean("ecbRestClient")
+    public RestClient ecbRestClient(RestClient.Builder builder) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(CONNECT_TIMEOUT);
+        factory.setReadTimeout(READ_TIMEOUT);
         return builder
-                .requestFactory(() -> {
-                    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-                    factory.setConnectTimeout(10_000);
-                    factory.setReadTimeout(30_000);
-                    return factory;
-                })
+                .requestFactory(factory)
                 .build();
     }
 }

@@ -9,24 +9,24 @@
     - Modern LTS version
     - Records, pattern matching, virtual threads support
 
-- **Spring Boot 3.5.11**
+- **Spring Boot 4.2.0**
     - Enterprise-grade framework
     - Auto-configuration
     - Production-ready features
 
 ### Security
-- **Spring Security 6.x**
+- **Spring Security 7.x**
     - Authentication and authorization
     - SecurityFilterChain configuration
     - Method-level security (`@PreAuthorize`)
     - Custom exception handlers (401/403 JSON responses)
 
-- **JJWT 0.12.6** (io.jsonwebtoken)
+- **JJWT 0.13.0** (io.jsonwebtoken)
     - JWT token generation and validation
     - HMAC-SHA256 signing
     - Claims management
 
-- **Resilience4j 2.2.0**
+- **Resilience4j 2.4.0**
     - Rate limiting on authentication endpoints
     - 5 requests per 60 seconds
 
@@ -41,7 +41,7 @@
     - Query derivation
     - Pagination and sorting
 
-- **Hibernate 6.5**
+- **Hibernate 7.4**
     - JPA implementation
     - ORM capabilities
     - Database schema management
@@ -64,7 +64,7 @@
     - RESTful service development
     - HTTP request handling
 
-- **SpringDoc OpenAPI 2.8.4**
+- **SpringDoc OpenAPI 3.2.1**
     - Automatic API documentation
     - Swagger UI integration
     - OpenAPI 3 specification
@@ -90,7 +90,7 @@
 ## Testing
 
 ### Frameworks
-- **JUnit 5**
+- **JUnit Jupiter 6**
     - Modern testing framework
     - Annotations and assertions
     - Parameterized tests
@@ -111,11 +111,11 @@
     - Container reuse for performance (~51s total test suite)
 
 ### Coverage
-- **JaCoCo 0.8.12**
+- **JaCoCo 0.8.16**
     - Code coverage reports
     - Maven plugin integration
     - CI enforcement: 80% line, 75% branch coverage
-    - 1120+ test methods across 67 test files
+    - 1230+ test methods across 74 test files
 
 ---
 
@@ -202,50 +202,50 @@
 ### Production Dependencies
 ```
 <!-- Core -->
-spring-boot-starter-web
+spring-boot-starter-webmvc
+spring-boot-starter-restclient
 spring-boot-starter-data-jpa
 spring-boot-starter-security
 spring-boot-starter-validation
 spring-boot-starter-actuator
-spring-boot-starter-aop
+spring-boot-starter-aspectj
 postgresql
 
 <!-- Security -->
-jjwt-api (0.12.6)
-jjwt-impl (0.12.6)
-jjwt-jackson (0.12.6)
+jjwt-api (0.13.0)
+jjwt-impl (0.13.0)
+jjwt-jackson (0.13.0)
 caffeine
 
 <!-- Rate Limiting -->
-resilience4j-spring-boot3 (2.2.0)
-resilience4j-ratelimiter (2.2.0)
+resilience4j-spring-boot4 (2.4.0)
+resilience4j-ratelimiter (2.4.0)
 
 <!-- Mapping -->
 mapstruct (1.6.3)
 
 <!-- Documentation -->
-springdoc-openapi-starter-webmvc-ui (2.8.4)
+springdoc-openapi-starter-webmvc-ui (3.2.1)
 
 <!-- Utilities -->
 dotenv-java (3.0.0)
-commons-lang3
 ```
 
 ### Test Dependencies
 ```
 spring-boot-starter-test
-spring-security-test
+spring-boot-starter-webmvc-test
 spring-boot-testcontainers
 testcontainers-postgresql
-junit-jupiter
+testcontainers-junit-jupiter
 ```
 
 ### Build Plugins
 ```
 spring-boot-maven-plugin
 mapstruct-processor (1.6.3)
-jacoco-maven-plugin (0.8.12)
-maven-surefire-plugin (3.2.5)
+jacoco-maven-plugin (0.8.16)
+maven-surefire-plugin (managed by Spring Boot)
 plantuml-generator-maven-plugin (1.6.0)
 ```
 
@@ -253,7 +253,7 @@ plantuml-generator-maven-plugin (1.6.0)
 
 ## Version Strategy
 
-- **Spring Boot**: Latest stable (3.5.11)
+- **Spring Boot**: Latest stable (4.2.0)
 - **Java**: LTS version (21)
 - **PostgreSQL**: Latest major (17)
 - **Dependencies**: Regular security updates

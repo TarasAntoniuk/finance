@@ -1,14 +1,14 @@
 package com.tarasantoniuk.finance.core.organization.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationRequestDto;
 import com.tarasantoniuk.finance.core.organization.dto.OrganizationResponseDto;
 import com.tarasantoniuk.finance.core.organization.service.OrganizationService;
 import com.tarasantoniuk.finance.security.jwt.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

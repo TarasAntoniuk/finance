@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -26,10 +26,10 @@ public class ECBClient {
     private static final String DAILY_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
     private static final String HISTORY_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist.xml";
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
 
-    public ECBClient(@Qualifier("ecbRestTemplate") RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
+    public ECBClient(@Qualifier("ecbRestClient") RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public Map<LocalDate, Map<String, BigDecimal>> fetchDaily() {
@@ -42,7 +42,10 @@ public class ECBClient {
 
     private Map<LocalDate, Map<String, BigDecimal>> fetch(String url) {
         try {
-            String xml = restTemplate.getForObject(url, String.class);
+            String xml = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
             return parseXml(xml);
         } catch (Exception e) {
             log.error("Failed to fetch from ECB: {}", url, e);
