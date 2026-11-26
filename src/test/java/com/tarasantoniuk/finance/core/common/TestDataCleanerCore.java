@@ -3,7 +3,9 @@ package com.tarasantoniuk.finance.core.common;
 import com.tarasantoniuk.finance.core.counterparty.repository.CounterpartyRepository;
 import com.tarasantoniuk.finance.core.country.repository.CountryRepository;
 import com.tarasantoniuk.finance.core.currency.repository.CurrencyRepository;
+import com.tarasantoniuk.finance.core.item.repository.ItemRepository;
 import com.tarasantoniuk.finance.core.organization.repository.OrganizationRepository;
+import com.tarasantoniuk.finance.purchase.purchaseinvoice.repository.PurchaseInvoiceRepository;
 import com.tarasantoniuk.finance.settlement.repository.SettlementMovementRepository;
 import com.tarasantoniuk.finance.settlement.repository.SettlementOpenItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,12 @@ public class TestDataCleanerCore {
     private CountryRepository countryRepository;
 
     @Autowired
+    private PurchaseInvoiceRepository purchaseInvoiceRepository;
+
+    @Autowired
+    private ItemRepository itemRepository;
+
+    @Autowired
     private SettlementMovementRepository settlementMovementRepository;
 
     @Autowired
@@ -46,6 +54,9 @@ public class TestDataCleanerCore {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void cleanAll() {
+        purchaseInvoiceRepository.deleteAll();
+        purchaseInvoiceRepository.flush();
+        itemRepository.deleteAllInBatch();
         settlementMovementRepository.deleteAllInBatch();
         settlementOpenItemRepository.deleteAllInBatch();
         counterpartyRepository.deleteAllInBatch();
