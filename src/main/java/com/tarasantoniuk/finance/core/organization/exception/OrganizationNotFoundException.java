@@ -15,7 +15,6 @@ public class OrganizationNotFoundException extends ResourceNotFoundException {
         super("Organization", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи для зручності
     public static OrganizationNotFoundException byId(Long id) {
         return new OrganizationNotFoundException(id);
     }

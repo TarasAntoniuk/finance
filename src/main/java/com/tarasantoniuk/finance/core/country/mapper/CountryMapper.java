@@ -11,7 +11,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
-        uses = {CurrencyMapper.class})  // Використовуємо CurrencyMapper для маппінгу Currency
+        uses = {CurrencyMapper.class})
 public interface CountryMapper {
 
     @Mapping(target = "id", ignore = true)
@@ -20,7 +20,6 @@ public interface CountryMapper {
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
     Country toEntity(CountryRequestDto requestDTO);
 
-    // MapStruct автоматично використає CurrencyMapper.toResponseDTO() для currency
     CountryResponseDto toResponseDTO(Country country);
 
     List<CountryResponseDto> toResponseDTOList(List<Country> countries);
@@ -31,7 +30,6 @@ public interface CountryMapper {
     @Mapping(target = "currency", source = "currencyId", qualifiedByName = "currencyIdToCurrency")
     void updateEntityFromDTO(CountryRequestDto requestDTO, @MappingTarget Country country);
 
-    // Helper method для конвертації currencyId в Currency
     @Named("currencyIdToCurrency")
     default Currency currencyIdToCurrency(Long currencyId) {
         if (currencyId == null) {

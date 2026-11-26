@@ -13,7 +13,6 @@ public class ExchangeRateAlreadyExistsException extends ResourceAlreadyExistsExc
         super(message);
     }
 
-    // Статичний фабричний метод
     public static ExchangeRateAlreadyExistsException forDateCurrencyAndSource(
             LocalDate date, Long currencyFromId, Long currencyToId, String source) {
         return new ExchangeRateAlreadyExistsException(

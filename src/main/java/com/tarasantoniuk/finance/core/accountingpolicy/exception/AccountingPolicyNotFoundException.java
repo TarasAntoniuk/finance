@@ -15,7 +15,6 @@ public class AccountingPolicyNotFoundException extends ResourceNotFoundException
         super(message);
     }
 
-    // Статичні фабричні методи
     public static AccountingPolicyNotFoundException byId(Long id) {
         return new AccountingPolicyNotFoundException(id);
     }

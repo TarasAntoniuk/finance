@@ -2,7 +2,7 @@ package com.tarasantoniuk.finance.banking.bankaccounttransaction.service;
 
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
-import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
+import com.tarasantoniuk.finance.banking.common.exception.InsufficientBalanceException;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.RepeatedTest;

@@ -1,6 +1,6 @@
 package com.tarasantoniuk.finance.common;
 
-import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
+import com.tarasantoniuk.finance.banking.common.exception.InsufficientBalanceException;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;

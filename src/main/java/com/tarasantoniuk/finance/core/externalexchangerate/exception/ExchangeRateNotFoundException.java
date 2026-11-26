@@ -17,7 +17,6 @@ public class ExchangeRateNotFoundException extends ResourceNotFoundException {
         super(message);
     }
 
-    // Статичні фабричні методи
     public static ExchangeRateNotFoundException byId(Long id) {
         return new ExchangeRateNotFoundException(id);
     }

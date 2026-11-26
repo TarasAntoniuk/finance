@@ -9,7 +9,7 @@ import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
 import com.tarasantoniuk.finance.banking.bankpayment.mapper.BankPaymentMapper;
 import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepository;
-import com.tarasantoniuk.finance.banking.common.exeption.InsufficientBalanceException;
+import com.tarasantoniuk.finance.banking.common.exception.InsufficientBalanceException;
 import com.tarasantoniuk.finance.common.document.enums.DocumentStatus;
 import com.tarasantoniuk.finance.common.document.exception.InvalidDocumentStatusException;
 import com.tarasantoniuk.finance.common.dto.PageMetadata;

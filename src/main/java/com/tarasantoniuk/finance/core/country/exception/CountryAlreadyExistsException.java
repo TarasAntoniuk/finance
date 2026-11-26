@@ -12,7 +12,6 @@ public class CountryAlreadyExistsException extends ResourceAlreadyExistsExceptio
         super("Country", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи
     public static CountryAlreadyExistsException byIsoCode(String isoCode) {
         return new CountryAlreadyExistsException("isoCode", isoCode);
     }

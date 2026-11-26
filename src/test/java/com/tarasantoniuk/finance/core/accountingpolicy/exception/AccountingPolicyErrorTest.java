@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.core.accountingpolicy.exeption;
+package com.tarasantoniuk.finance.core.accountingpolicy.exception;
 
 import tools.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.accountingpolicy.controller.AccountingPolicyController;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Тести для помилкових сценаріїв AccountingPolicy
+ * Error scenarios for AccountingPolicy
  */
 @WebMvcTest(AccountingPolicyController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -204,7 +204,7 @@ class AccountingPolicyErrorTest {
     @Test
     void deleteAccountingPolicy_WhenNotFound_ShouldReturn404() throws Exception {
         // Given
-        // Мокаємо метод deleteAccountingPolicy, а не getAccountingPolicyById!
+        // Stub deleteAccountingPolicy itself, not getAccountingPolicyById
         doThrow(AccountingPolicyNotFoundException.byId(999L))
                 .when(accountingPolicyService).deleteAccountingPolicy(999L);
 

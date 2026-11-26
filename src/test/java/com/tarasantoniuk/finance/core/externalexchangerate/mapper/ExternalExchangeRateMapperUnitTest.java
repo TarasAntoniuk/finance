@@ -17,7 +17,7 @@ class ExternalExchangeRateMapperUnitTest {
 
     @BeforeEach
     void setUp() {
-        // Створюємо mapper БЕЗ Spring - тільки MapStruct
+        // Plain MapStruct mapper, no Spring context
         mapper = Mappers.getMapper(ExternalExchangeRateMapper.class);
     }
 

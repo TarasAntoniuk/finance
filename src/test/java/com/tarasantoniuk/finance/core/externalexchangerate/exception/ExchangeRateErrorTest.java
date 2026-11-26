@@ -1,4 +1,4 @@
-package com.tarasantoniuk.finance.core.externalexchangerate.exeption;
+package com.tarasantoniuk.finance.core.externalexchangerate.exception;
 
 import tools.jackson.databind.ObjectMapper;
 import com.tarasantoniuk.finance.core.currency.exception.CurrencyNotFoundException;
@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Тести для помилкових сценаріїв ExchangeRate
+ * Error scenarios for ExchangeRate
  */
 @WebMvcTest(ExternalExchangeRateController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -177,7 +177,7 @@ class ExchangeRateErrorTest {
     void createExchangeRate_WhenMissingRequiredFields_ShouldReturn400() throws Exception {
         // Given - missing required fields
         ExternalExchangeRateRequestDto requestDTO = new ExternalExchangeRateRequestDto();
-        // Всі поля пусті
+        // All fields empty
 
         // When & Then
         mockMvc.perform(post("/api/exchange-rates")

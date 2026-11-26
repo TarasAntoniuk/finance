@@ -101,14 +101,14 @@ class ECBIntegrationTest extends BaseIntegrationTest {
                 date, Map.of("USD", new BigDecimal("1.0850"))
         ));
 
-        // Перший раз - зберегти
+        // First call saves
         syncService.syncDaily();
         assertThat(rateRepo.count()).isEqualTo(1);
 
-        // When - другий раз з тим самим
+        // When - the same rates again
         int result = syncService.syncDaily();
 
-        // Then - пропустить дублікат
+        // Then - the duplicate is skipped
         assertThat(result).isZero();
         assertThat(rateRepo.count()).isEqualTo(1);
     }
@@ -126,7 +126,7 @@ class ECBIntegrationTest extends BaseIntegrationTest {
         // When
         int result = syncService.syncDaily();
 
-        // Then - тільки USD збережено
+        // Then - only USD is saved
         assertThat(result).isEqualTo(1);
         assertThat(rateRepo.count()).isEqualTo(1);
         assertThat(rateRepo.findAll().get(0).getCurrencyTo().getCode()).isEqualTo("USD");
@@ -152,13 +152,13 @@ class ECBIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void syncHistory_LargeDataset_UsesBatchProcessing() {
-        // Given - імітуємо 2500 записів (> 2 батча по 1000)
+        // Given - 2500 records, more than two batches of 1000
         Map<String, BigDecimal> rates = Map.of(
                 "USD", new BigDecimal("1.0850"),
                 "GBP", new BigDecimal("0.8345")
         );
 
-        // Створюємо багато дат
+        // Many dates
         Map<LocalDate, Map<String, BigDecimal>> largeDataset = new java.util.HashMap<>();
         for (int i = 0; i < 1250; i++) {
             largeDataset.put(LocalDate.now().minusDays(i), rates);
@@ -170,7 +170,7 @@ class ECBIntegrationTest extends BaseIntegrationTest {
         int result = syncService.syncHistory();
 
         // Then
-        assertThat(result).isEqualTo(2500); // 1250 днів * 2 валюти
+        assertThat(result).isEqualTo(2500); // 1250 days * 2 currencies
         assertThat(rateRepo.count()).isEqualTo(2500);
     }
 

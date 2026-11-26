@@ -15,7 +15,6 @@ public class CurrencyNotFoundException extends ResourceNotFoundException {
         super("Currency", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи
     public static CurrencyNotFoundException byId(Long id) {
         return new CurrencyNotFoundException(id);
     }

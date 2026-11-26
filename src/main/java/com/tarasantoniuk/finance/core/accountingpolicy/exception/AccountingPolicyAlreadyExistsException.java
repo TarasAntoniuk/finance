@@ -11,7 +11,6 @@ public class AccountingPolicyAlreadyExistsException extends ResourceAlreadyExist
         super(message);
     }
 
-    // Статичний фабричний метод
     public static AccountingPolicyAlreadyExistsException forOrganizationAndYear(Long organizationId, Integer year) {
         return new AccountingPolicyAlreadyExistsException(
                 String.format("AccountingPolicy already exists for organization %d and year %d", organizationId, year)

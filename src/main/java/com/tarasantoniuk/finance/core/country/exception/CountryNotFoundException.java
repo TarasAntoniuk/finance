@@ -16,7 +16,6 @@ public class CountryNotFoundException extends ResourceNotFoundException {
         super("Country", fieldName, fieldValue);
     }
 
-    // Статичні фабричні методи для зручності використання
     public static CountryNotFoundException byId(Long id) {
         return new CountryNotFoundException(id);
     }
