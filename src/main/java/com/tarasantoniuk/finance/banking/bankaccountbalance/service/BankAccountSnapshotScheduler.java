@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -41,10 +41,13 @@ import java.util.List;
  * <ul>
  *     <li>Runs at 01:00 every day (30 minutes after snapshot creation)</li>
  *     <li>Finds all accounts with invalid snapshots</li>
- *     <li>Marks them as RECALCULATING to prevent concurrent processing</li>
  *     <li>Deletes invalid snapshots and recreates them</li>
  *     <li>Removes validity record on successful completion</li>
  * </ul>
+ * <p>
+ * Each account is processed in its own transaction, so a failure for one account is logged and
+ * leaves the other accounts' snapshots committed. A failed recalculation keeps its validity record
+ * INVALID and is retried on the next run.
  * <p>
  * Manual recalculation trigger is also available via {@link #triggerRecalculationForAccount(Long)}.
  */
@@ -56,35 +59,29 @@ public class BankAccountSnapshotScheduler {
     private final BankAccountBalanceService balanceService;
     private final BankAccountSnapshotValidityService validityService;
     private final BankAccountRepository bankAccountRepository;
+    private final TransactionTemplate perAccountTransaction;
 
     public BankAccountSnapshotScheduler(
             BankAccountBalanceService balanceService,
             BankAccountSnapshotValidityService validityService,
-            BankAccountRepository bankAccountRepository) {
+            BankAccountRepository bankAccountRepository,
+            PlatformTransactionManager transactionManager) {
         this.balanceService = balanceService;
         this.validityService = validityService;
         this.bankAccountRepository = bankAccountRepository;
+        this.perAccountTransaction = new TransactionTemplate(transactionManager);
     }
 
     /**
-     * Create daily snapshots for all active bank accounts.
-     * <p>
-     * Runs every day at 00:30 (30 minutes after midnight). Creates snapshots for the previous
-     * day (yesterday) for all active bank accounts. Skips accounts with invalid snapshots,
-     * as they will be recalculated by the recalculation job at 01:00.
-     * <p>
-     * Statistics are logged on completion showing the number of successful creations,
-     * skipped accounts, and errors.
+     * Create yesterday's snapshot for every active bank account. Runs at 00:30.
+     * Accounts with invalid snapshots are left to the recalculation job at 01:00.
      */
-    @Scheduled(cron = "0 30 0 * * *") // 00:30 daily
-    @Transactional
+    @Scheduled(cron = "0 30 0 * * *")
     public void createDailySnapshots() {
         log.info("Starting daily bank account snapshot creation job");
 
         LocalDate yesterday = LocalDate.now().minusDays(1);
-        LocalDateTime snapshotDateTime = yesterday.atStartOfDay();
-
-        List<Long> activeAccountIds = bankAccountRepository.findAllActiveAccountIds();
+        List<Long> activeAccountIds = bankAccountRepository.findAllActiveOrganizationAccountIds();
         log.info("Found {} active bank accounts", activeAccountIds.size());
 
         int successCount = 0;
@@ -92,29 +89,16 @@ public class BankAccountSnapshotScheduler {
         int errorCount = 0;
 
         for (Long accountId : activeAccountIds) {
-            try {
-                // Check if snapshot for this date is valid (not invalidated)
-                boolean isValid = validityService.isSnapshotValidForDate(accountId, yesterday);
-
-                if (!isValid) {
-                    log.debug("Skipping snapshot for account {} on date {} - marked as invalid",
-                            accountId, yesterday);
-                    skipCount++;
-                    continue;
-                }
-
-                // Create snapshot
-                balanceService.createSnapshot(accountId, snapshotDateTime);
-                successCount++;
-
-            } catch (IllegalStateException e) {
-                // Snapshot already exists - this is OK
-                log.debug("Snapshot already exists for account {} on date {}", accountId, yesterday);
+            if (!validityService.isSnapshotValidForDate(accountId, yesterday)
+                    || balanceService.hasSnapshotForDay(accountId, yesterday)) {
                 skipCount++;
-
-            } catch (Exception e) {
-                log.error("Failed to create daily snapshot for account {} on date {}",
-                        accountId, yesterday, e);
+                continue;
+            }
+            try {
+                balanceService.createSnapshot(accountId, yesterday.atStartOfDay());
+                successCount++;
+            } catch (RuntimeException e) {
+                log.error("Failed to create daily snapshot for account {} on date {}", accountId, yesterday, e);
                 errorCount++;
             }
         }
@@ -124,18 +108,9 @@ public class BankAccountSnapshotScheduler {
     }
 
     /**
-     * Recalculate invalid snapshots for all accounts.
-     * <p>
-     * Runs every day at 01:00 (1 hour after midnight, 30 minutes after daily snapshot creation).
-     * Retrieves all accounts with invalid snapshots, marks them as RECALCULATING to prevent
-     * concurrent processing, then recalculates all invalid snapshots from the invalidation
-     * date to yesterday.
-     * <p>
-     * On successful recalculation, the validity record is deleted, indicating that all
-     * snapshots are now valid.
+     * Rebuild invalidated snapshots for every account that has them. Runs at 01:00.
      */
-    @Scheduled(cron = "0 0 1 * * *") // 01:00 daily
-    @Transactional
+    @Scheduled(cron = "0 0 1 * * *")
     public void recalculateInvalidSnapshots() {
         log.info("Starting invalid bank account snapshots recalculation job");
 
@@ -147,13 +122,9 @@ public class BankAccountSnapshotScheduler {
 
         for (SnapshotValidity validity : invalidRecords) {
             try {
-                // Mark as recalculating to prevent concurrent processing
-                validityService.markAsRecalculating(validity);
-
-                recalculateSnapshotsForAccount(validity);
+                recalculateInOwnTransaction(validity);
                 successCount++;
-
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 log.error("Failed to recalculate snapshots for account {} from date {}",
                         validity.getEntityId(), validity.getInvalidFromDate(), e);
                 errorCount++;
@@ -165,98 +136,46 @@ public class BankAccountSnapshotScheduler {
     }
 
     /**
-     * Recalculate snapshots for single account.
-     * <p>
-     * Deletes all invalid snapshots from the invalidation date to yesterday, then recreates
-     * them day by day. On successful completion, the validity record is deleted to indicate
-     * that all snapshots are now valid.
-     * <p>
-     * If any snapshot creation fails during recalculation, the exception is re-thrown to
-     * mark the recalculation as failed, preserving the validity record for retry.
-     *
-     * @param validity the validity record containing account ID and invalidation date
-     * @throws Exception if snapshot creation fails during recalculation
+     * Manually trigger recalculation of invalid snapshots for one bank account.
      */
-    private void recalculateSnapshotsForAccount(SnapshotValidity validity) throws Exception {
-        Long bankAccountId = validity.getEntityId();
-        LocalDate invalidFromDate = validity.getInvalidFromDate();
-        LocalDate today = LocalDate.now().minusDays(1); // Yesterday, as today's snapshot will be created tonight
-
-        log.info("Recalculating snapshots for account {} from {} to {}",
-                bankAccountId, invalidFromDate, today);
-
-        // Delete invalid snapshots (from invalidFromDate to today, inclusive)
-        LocalDateTime invalidFromDateTime = invalidFromDate.atStartOfDay();
-        balanceService.deleteSnapshotsFrom(bankAccountId, invalidFromDateTime);
-
-        // Recalculate snapshots from invalidFromDate to today
-        int recalculatedCount = 0;
-        LocalDate currentDate = invalidFromDate;
-
-        while (!currentDate.isAfter(today)) {
-            try {
-                balanceService.createSnapshot(bankAccountId, currentDate.atStartOfDay());
-                recalculatedCount++;
-
-            } catch (IllegalStateException e) {
-                // Snapshot already exists - this should not happen after deletion, but log it
-                log.warn("Snapshot already exists for account {} on date {} during recalculation",
-                        bankAccountId, currentDate);
-
-            } catch (Exception e) {
-                log.error("Failed to create snapshot for account {} on date {} during recalculation",
-                        bankAccountId, currentDate, e);
-                throw e; // Re-throw to mark this recalculation as failed
-            }
-
-            currentDate = currentDate.plusDays(1);
-        }
-
-        log.info("Recalculated {} snapshots for account {}", recalculatedCount, bankAccountId);
-
-        // Delete validity record - all snapshots are now valid
-        validityService.deleteValidity(validity);
-    }
-
-    /**
-     * Manually trigger recalculation for specific account.
-     * <p>
-     * Can be called via API or admin panel to manually trigger recalculation for a specific
-     * bank account. If no invalid snapshots exist for the account, the method logs this
-     * and returns without performing any action.
-     * <p>
-     * This is useful for:
-     * <ul>
-     *     <li>Immediate recalculation without waiting for scheduled job</li>
-     *     <li>Retry after failed automatic recalculation</li>
-     *     <li>Manual intervention when needed</li>
-     * </ul>
-     *
-     * @param bankAccountId the ID of the bank account to recalculate
-     */
-    @Transactional
     public void triggerRecalculationForAccount(Long bankAccountId) {
         log.info("Manual recalculation triggered for account {}", bankAccountId);
 
-        List<SnapshotValidity> invalidRecords = validityService.getAllInvalidRecords();
-
-        SnapshotValidity validity = invalidRecords.stream()
-                .filter(v -> v.getEntityId().equals(bankAccountId))
+        validityService.getAllInvalidRecords().stream()
+                .filter(validity -> validity.getEntityId().equals(bankAccountId))
                 .findFirst()
-                .orElse(null);
+                .ifPresentOrElse(
+                        this::recalculateInOwnTransaction,
+                        () -> log.info("No invalid snapshots found for account {}", bankAccountId));
+    }
 
-        if (validity == null) {
-            log.info("No invalid snapshots found for account {}", bankAccountId);
-            return;
-        }
-
-        try {
+    private void recalculateInOwnTransaction(SnapshotValidity validity) {
+        perAccountTransaction.executeWithoutResult(status -> {
             validityService.markAsRecalculating(validity);
             recalculateSnapshotsForAccount(validity);
-            log.info("Manual recalculation completed for account {}", bankAccountId);
-        } catch (Exception e) {
-            log.error("Failed to manually recalculate snapshots for account {}", bankAccountId, e);
-            throw new RuntimeException("Failed to recalculate snapshots for account " + bankAccountId, e);
+        });
+    }
+
+    /**
+     * The validity record marks snapshots stored at {@code invalidFromDate} 00:00 and later as stale.
+     * The first of them is the snapshot of the day before, so rebuilding starts there.
+     */
+    private void recalculateSnapshotsForAccount(SnapshotValidity validity) {
+        Long bankAccountId = validity.getEntityId();
+        LocalDate firstStaleDay = validity.getInvalidFromDate().minusDays(1);
+        LocalDate lastClosedDay = LocalDate.now().minusDays(1);
+
+        log.info("Recalculating snapshots for account {} from {} to {}", bankAccountId, firstStaleDay, lastClosedDay);
+
+        balanceService.deleteSnapshotsFrom(bankAccountId, validity.getInvalidFromDate().atStartOfDay());
+
+        int recalculatedCount = 0;
+        for (LocalDate day = firstStaleDay; !day.isAfter(lastClosedDay); day = day.plusDays(1)) {
+            balanceService.createSnapshot(bankAccountId, day.atStartOfDay());
+            recalculatedCount++;
         }
+
+        log.info("Recalculated {} snapshots for account {}", recalculatedCount, bankAccountId);
+        validityService.deleteValidity(validity);
     }
 }
