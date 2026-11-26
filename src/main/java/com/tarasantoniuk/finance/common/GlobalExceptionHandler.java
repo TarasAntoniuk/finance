@@ -6,6 +6,7 @@ import com.tarasantoniuk.finance.common.exception.InvalidOperationException;
 import com.tarasantoniuk.finance.common.exception.ResourceAlreadyExistsException;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.externalexchangerate.exception.ECBSyncException;
+import com.tarasantoniuk.finance.settlement.exception.SettlementConflictException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -67,6 +68,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidDocumentStatusException.class)
     public ResponseEntity<ErrorResponse> handleInvalidDocumentStatus(
             InvalidDocumentStatusException ex, HttpServletRequest request) {
+        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(SettlementConflictException.class)
+    public ResponseEntity<ErrorResponse> handleSettlementConflict(
+            SettlementConflictException ex, HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
