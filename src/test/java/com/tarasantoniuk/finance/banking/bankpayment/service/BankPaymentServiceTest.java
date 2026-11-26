@@ -637,7 +637,6 @@ class BankPaymentServiceTest {
 
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
             when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
-            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(LocalDateTime.class),
                     any(BigDecimal.class), anyString(), anyString(), anyLong()
@@ -698,7 +697,6 @@ class BankPaymentServiceTest {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
             when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
-            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(5000.00));
             when(transactionService.postDocument(
                     anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()))
                     .thenThrow(new ResourceAlreadyExistsException("Transaction event already exists"));
@@ -715,42 +713,17 @@ class BankPaymentServiceTest {
             // Arrange
             when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
             when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
-            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(500.00));
+            doThrow(new InsufficientBalanceException("Insufficient balance: the account balance would fall to -500.00 on or after 2024-01-15"))
+                    .when(balanceService).ensureBalanceNonNegativeFrom(eq(1L), any(LocalDateTime.class));
 
             // Act & Assert
             assertThatThrownBy(() -> bankPaymentService.post(10L))
                     .isInstanceOf(InsufficientBalanceException.class)
                     .hasMessageContaining("Insufficient balance");
 
-            verify(transactionService, never()).postDocument(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
-            );
-        }
-
-        @Test
-        @DisplayName("Should allow posting when balance equals payment amount")
-        void shouldAllowPostingWhenBalanceEqualsPaymentAmount() {
-            // Arrange
-            BankAccountTransactionEvent mockEvent = new BankAccountTransactionEvent();
-            mockEvent.setId(100L);
-
-            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
-            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
-            when(balanceService.getCurrentBalance(1L)).thenReturn(BigDecimal.valueOf(1000.00));
-            when(transactionService.postDocument(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
-            )).thenReturn(mockEvent);
-            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
-            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
-
-            // Act
-            BankPaymentResponseDto result = bankPaymentService.post(10L);
-
-            // Assert
-            assertThat(result).isNotNull();
-            verify(transactionService).postDocument(
-                    anyLong(), anyLong(), anyLong(), any(), any(), anyString(), anyString(), anyLong()
-            );
+            // The event is written first; the exception rolls the transaction back and the
+            // document is never saved as POSTED
+            verify(bankPaymentRepository, never()).save(any(BankPayment.class));
         }
 
         }

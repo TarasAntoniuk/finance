@@ -7,6 +7,7 @@ import com.tarasantoniuk.finance.banking.bankaccountbalance.entity.BankAccountBa
 import com.tarasantoniuk.finance.banking.bankaccountbalance.repository.BankAccountBalanceSnapshotRepository;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.entity.BankAccountTransactionEvent;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.enums.TransactionType;
+import com.tarasantoniuk.finance.banking.common.exception.InsufficientBalanceException;
 import com.tarasantoniuk.finance.banking.bankaccounttransaction.repository.BankAccountTransactionEventRepository;
 import com.tarasantoniuk.finance.common.exception.ResourceNotFoundException;
 import com.tarasantoniuk.finance.core.organization.entity.Organization;
@@ -143,6 +144,33 @@ public class BankAccountBalanceService {
         }
 
         return balance;
+    }
+
+    /**
+     * Lowest balance the account reaches at or after {@code fromDateTime}, including future-dated events.
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal calculateLowestBalanceFrom(Long bankAccountId, LocalDateTime fromDateTime) {
+        BigDecimal openingBalance = calculateBalance(bankAccountId, fromDateTime);
+        BigDecimal lowestChange = transactionEventRepository.findLowestRunningChangeFrom(bankAccountId, fromDateTime);
+        return openingBalance.add(lowestChange.min(BigDecimal.ZERO));
+    }
+
+    /**
+     * The balance may not be negative on any date. Called after a posting that takes money out
+     * (a payment, or the reversal of a receipt) has been written: if the balance now drops below
+     * zero at or after {@code fromDateTime}, the exception rolls the whole posting back.
+     *
+     * @throws InsufficientBalanceException if the balance is negative on some date from then on
+     */
+    @Transactional(readOnly = true)
+    public void ensureBalanceNonNegativeFrom(Long bankAccountId, LocalDateTime fromDateTime) {
+        BigDecimal lowestBalance = calculateLowestBalanceFrom(bankAccountId, fromDateTime);
+        if (lowestBalance.signum() < 0) {
+            throw new InsufficientBalanceException(
+                    "Insufficient balance: the account balance would fall to " + lowestBalance
+                            + " on or after " + fromDateTime.toLocalDate());
+        }
     }
 
     /**

@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
         name = "bank_account_transaction_events",
         indexes = {
                 @Index(name = "idx_bank_account_transaction_account_id", columnList = "bank_account_id"),
+                @Index(name = "idx_bank_account_transaction_account_datetime", columnList = "bank_account_id, transaction_date_time"),
                 @Index(name = "idx_bank_account_transaction_document", columnList = "document_type, document_id"),
                 @Index(name = "idx_bank_account_transaction_datetime", columnList = "transaction_date_time"),
                 @Index(name = "idx_bank_account_transaction_created", columnList = "created_at")
