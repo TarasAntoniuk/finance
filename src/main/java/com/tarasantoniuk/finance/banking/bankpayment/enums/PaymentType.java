@@ -52,5 +52,13 @@ public enum PaymentType {
     /**
      * Other payment type
      */
-    OTHER
+    OTHER;
+
+    /**
+     * Payments to suppliers and contractors reduce what the organization owes them and are posted
+     * to counterparty settlements.
+     */
+    public boolean settlesSupplierDebt() {
+        return this == SUPPLIER_PAYMENT || this == CONTRACTOR_PAYMENT;
+    }
 }

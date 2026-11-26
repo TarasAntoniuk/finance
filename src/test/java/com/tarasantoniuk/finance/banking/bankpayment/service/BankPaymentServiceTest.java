@@ -1,5 +1,12 @@
 package com.tarasantoniuk.finance.banking.bankpayment.service;
 
+import com.tarasantoniuk.finance.settlement.model.SettlementKey;
+import com.tarasantoniuk.finance.settlement.model.SettlementDocumentTypes;
+import com.tarasantoniuk.finance.settlement.model.PaymentAllocation;
+import com.tarasantoniuk.finance.settlement.model.DocumentRef;
+import com.tarasantoniuk.finance.banking.bankpayment.enums.PaymentType;
+import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPaymentAllocation;
+import com.tarasantoniuk.finance.settlement.service.SettlementService;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.repository.BankAccountRepository;
 import com.tarasantoniuk.finance.banking.bankaccountbalance.service.BankAccountBalanceService;
@@ -73,6 +80,9 @@ class BankPaymentServiceTest {
     private BankAccountTransactionService transactionService;
 
     @Mock
+    private SettlementService settlementService;
+
+    @Mock
     private BankAccountBalanceService balanceService;
 
 
@@ -109,6 +119,7 @@ class BankPaymentServiceTest {
         requestDto.setAmount(BigDecimal.valueOf(1000.00));
         requestDto.setDescription("Test payment");
         requestDto.setExternalTransactionId("EXT-12345");
+        requestDto.setPaymentType(PaymentType.OTHER);
 
         // Entities
         account = new BankAccount();
@@ -138,6 +149,7 @@ class BankPaymentServiceTest {
         payment.setDescription("Test payment");
         payment.setStatus(DocumentStatus.DRAFT);
         payment.setExternalTransactionId("EXT-12345");
+        payment.setPaymentType(PaymentType.OTHER);
 
         // Response DTO
         responseDto = new BankPaymentResponseDto();
@@ -727,6 +739,60 @@ class BankPaymentServiceTest {
         }
 
         }
+
+    @Nested
+    @DisplayName("Supplier settlement Tests")
+    class SupplierSettlementTests {
+
+        private final SettlementKey key = new SettlementKey(5L, 2L, 4L);
+        private final DocumentRef paymentRef = new DocumentRef(SettlementDocumentTypes.BANK_PAYMENT, 10L);
+
+        @Test
+        @DisplayName("Supplier payment posts to settlements with its invoice allocations")
+        void supplierPaymentPostsToSettlements() {
+            payment.setPaymentType(PaymentType.SUPPLIER_PAYMENT);
+            payment.replaceAllocations(List.of(new BankPaymentAllocation(7L, new BigDecimal("400.00"))));
+            stubPosting();
+
+            bankPaymentService.post(10L);
+
+            verify(settlementService).postPayment(eq(key), eq(paymentRef), eq(payment.getTransactionDateTime()),
+                    eq(BigDecimal.valueOf(1000.00)), eq(List.of(new PaymentAllocation(
+                            new DocumentRef(SettlementDocumentTypes.PURCHASE_INVOICE, 7L), new BigDecimal("400.00")))));
+        }
+
+        @Test
+        @DisplayName("Payments of other types do not touch settlements")
+        void otherPaymentTypesSkipSettlements() {
+            payment.setPaymentType(PaymentType.SALARY);
+            stubPosting();
+
+            bankPaymentService.post(10L);
+
+            verify(settlementService, never()).postPayment(any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Unpost reverses the payment's settlements")
+        void unpostReversesSettlements() {
+            payment.setStatus(DocumentStatus.POSTED);
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+
+            bankPaymentService.unpost(10L);
+
+            verify(settlementService).reverse(paymentRef);
+        }
+
+        private void stubPosting() {
+            when(bankPaymentRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(payment));
+            when(bankPaymentRepository.save(any(BankPayment.class))).thenReturn(payment);
+            when(bankPaymentMapper.toResponseDto(payment)).thenReturn(responseDto);
+        }
+    }
 
     @Nested
     @DisplayName("Unpost Payment Tests")

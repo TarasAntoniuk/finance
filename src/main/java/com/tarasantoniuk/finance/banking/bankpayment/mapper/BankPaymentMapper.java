@@ -3,6 +3,8 @@ package com.tarasantoniuk.finance.banking.bankpayment.mapper;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentRequestDto;
 import com.tarasantoniuk.finance.banking.bankpayment.dto.BankPaymentResponseDto;
 import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPayment;
+import com.tarasantoniuk.finance.banking.bankpayment.dto.InvoiceAllocationDto;
+import com.tarasantoniuk.finance.banking.bankpayment.entity.BankPaymentAllocation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -25,6 +27,7 @@ public interface BankPaymentMapper {
     @Mapping(target = "cancelledAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "allocations", ignore = true)
     BankPayment toEntity(BankPaymentRequestDto requestDto);
 
     /**
@@ -46,5 +49,10 @@ public interface BankPaymentMapper {
     @Mapping(target = "cancelledAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "allocations", ignore = true)
     void updateEntityFromDto(BankPaymentRequestDto requestDto, @MappingTarget BankPayment payment);
+
+    default InvoiceAllocationDto toAllocationDto(BankPaymentAllocation allocation) {
+        return new InvoiceAllocationDto(allocation.getPurchaseInvoiceId(), allocation.getAmount());
+    }
 }

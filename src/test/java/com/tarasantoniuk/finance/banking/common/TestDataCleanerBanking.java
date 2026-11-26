@@ -8,6 +8,7 @@ import com.tarasantoniuk.finance.banking.bankpayment.repository.BankPaymentRepos
 import com.tarasantoniuk.finance.banking.bankreceipt.repository.BankReceiptRepository;
 import com.tarasantoniuk.finance.common.snapshot.repository.SnapshotValidityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,9 @@ public class TestDataCleanerBanking {
 
     @Autowired
     private BankPaymentRepository bankPaymentRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private BankReceiptRepository bankReceiptRepository;
@@ -57,6 +61,8 @@ public class TestDataCleanerBanking {
         transactionEventRepository.deleteAllInBatch();
         balanceSnapshotRepository.deleteAllInBatch();
         snapshotValidityRepository.deleteAllInBatch();
+        // Element collection rows are not removed by a batch delete of their owner
+        jdbcTemplate.update("DELETE FROM bank_payment_allocations");
         bankPaymentRepository.deleteAllInBatch();
         bankReceiptRepository.deleteAllInBatch();
         bankAccountRepository.deleteAllInBatch();
