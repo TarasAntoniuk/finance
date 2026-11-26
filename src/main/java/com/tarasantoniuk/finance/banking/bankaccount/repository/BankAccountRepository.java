@@ -1,5 +1,7 @@
 package com.tarasantoniuk.finance.banking.bankaccount.repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import com.tarasantoniuk.finance.banking.bankaccount.entity.BankAccount;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountHolderType;
 import com.tarasantoniuk.finance.banking.bankaccount.enums.AccountStatus;
@@ -263,4 +265,12 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
      */
     @Query("SELECT ba.id FROM BankAccount ba WHERE ba.status = 'ACTIVE' AND ba.holderType = 'ORGANIZATION'")
     List<Long> findAllActiveOrganizationAccountIds();
+
+    /**
+     * Load the bank account with a row lock held until the transaction ends.
+     * Serialises concurrent status changes and postings on the same row.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ba FROM BankAccount ba WHERE ba.id = :id")
+    Optional<BankAccount> findByIdForUpdate(@Param("id") Long id);
 }

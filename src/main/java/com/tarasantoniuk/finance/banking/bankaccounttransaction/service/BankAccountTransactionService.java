@@ -89,7 +89,8 @@ public class BankAccountTransactionService {
             Long documentId,
             String description) {
 
-        BankAccount bankAccount = bankAccountRepository.findById(bankAccountId)
+        // Row lock: events of one account are written one at a time, so the balance read below is stable
+        BankAccount bankAccount = bankAccountRepository.findByIdForUpdate(bankAccountId)
                 .orElseThrow(() -> new ResourceNotFoundException("Bank account not found with id: " + bankAccountId));
 
         Organization organization = organizationRepository.findById(organizationId)
