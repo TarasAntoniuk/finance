@@ -9,7 +9,7 @@
     - Modern LTS version
     - Records, pattern matching, virtual threads support
 
-- **Spring Boot 3.5.10**
+- **Spring Boot 3.5.11**
     - Enterprise-grade framework
     - Auto-configuration
     - Production-ready features
@@ -253,7 +253,7 @@ plantuml-generator-maven-plugin (1.6.0)
 
 ## Version Strategy
 
-- **Spring Boot**: Latest stable (3.5.10)
+- **Spring Boot**: Latest stable (3.5.11)
 - **Java**: LTS version (21)
 - **PostgreSQL**: Latest major (17)
 - **Dependencies**: Regular security updates

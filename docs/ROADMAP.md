@@ -6,6 +6,19 @@ Planned features and enhancements for the Financial Accounting System.
 
 ## Completed
 
+### v0.0.7 — Security Hardening ✅
+
+- **Cross-Tenant Access Closed (P1 IDOR)** — organization-scoped reads in organization, bank account, accounting policy, receipt, payment, balance and turnover services
+- **Defense in Depth** — organization checks repeated in the transaction and balance services
+- **Authorization Rules Tightened** — master data mutations restricted to ADMIN; operational data to USER/ADMIN; previously everything outside `/api/v1/**` fell through to `authenticated()`
+- **Google Sign-In** — Google ID token verification with GUEST auto-provisioning
+- **Correct Error Semantics** — service-layer denials return 403 and a missing refresh cookie returns 401, instead of both surfacing as 500 through the catch-all handler
+- **Refresh Flow Repaired** — client aligned with the HttpOnly cookie contract; expired sessions now end at the login page with a stated reason instead of a silently role-less UI
+- **Hardened Error Output** — stacktraces removed from fallback `/error` responses
+- **Persistence** — token blacklist and security audit entries moved to the database
+- **User Revocation** — revoked users rejected at the JWT filter
+- **Coverage** — 1230+ test methods across 74 test files
+
 ### v0.0.6 — Spring Security Implementation ✅
 
 - **JWT Authentication** — HMAC-SHA256 access tokens (15 min) + HttpOnly refresh cookies (7 days)
@@ -52,7 +65,7 @@ Planned features and enhancements for the Financial Accounting System.
 
 ---
 
-## Next Priority (v0.0.7)
+## Next Priority (v0.0.8)
 
 ### 📦 Services & Products Catalog
 - Catalog of IT consulting services with flexible pricing models:
@@ -61,11 +74,6 @@ Planned features and enhancements for the Financial Accounting System.
 - Price list management per service type
 - Order creation for information & consulting services
 - Service assignment to developers by skill level
-
-### 🔄 Enhanced Multi-Tenancy
-- Data isolation per organization
-- Organization-scoped queries across all modules
-- User invitation system
 
 ---
 
