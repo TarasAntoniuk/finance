@@ -138,12 +138,6 @@
             <version>${resilience4j.version}</version>
         </dependency>
 
-        <!-- AOP for Resilience4j annotations -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aspectj</artifactId>
-        </dependency>
-
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
