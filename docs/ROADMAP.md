@@ -17,7 +17,7 @@ Planned features and enhancements for the Financial Accounting System.
 - **Hardened Error Output** — stacktraces removed from fallback `/error` responses
 - **Persistence** — token blacklist and security audit entries moved to the database
 - **User Revocation** — revoked users rejected at the JWT filter
-- **Coverage** — 1227 test methods across 74 test files
+- **Coverage** — 1230+ test methods across 74 test files
 
 ### v0.0.6 — Spring Security Implementation ✅
 
@@ -65,7 +65,7 @@ Planned features and enhancements for the Financial Accounting System.
 
 ---
 
-## Next Priority (v0.0.7)
+## Next Priority (v0.0.8)
 
 ### 📦 Services & Products Catalog
 - Catalog of IT consulting services with flexible pricing models:
@@ -74,11 +74,6 @@ Planned features and enhancements for the Financial Accounting System.
 - Price list management per service type
 - Order creation for information & consulting services
 - Service assignment to developers by skill level
-
-### 🔄 Enhanced Multi-Tenancy
-- Data isolation per organization
-- Organization-scoped queries across all modules
-- User invitation system
 
 ---
 

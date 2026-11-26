@@ -10,7 +10,7 @@ The project follows modular development: **Core Module** (foundation), **Banking
 
 ### Security Module
 
-#### [0.0.7] - August 2026 ✅
+#### [0.0.7] - September 2026 ✅
 **Security Hardening**
 
 **Fixed:**
@@ -21,6 +21,8 @@ The project follows modular development: **Core Module** (foundation), **Banking
 - **Session renewal was broken end to end.** The client still expected a refresh token in the response body, stored the resulting `undefined` as a truthy string, and sent it as an `X-Refresh-Token` header — a header absent from the CORS allowlist, so Spring rejected the preflight with 403 and no `Access-Control-Allow-Origin`. Every refresh failed, tokens were cleared, and the UI degraded into a role-less state that looked like revoked permissions rather than an expired session.
 - Stacktraces removed from fallback `/error` responses.
 - `/error` permitted in the Swagger filter chain.
+- **Self-registered users had no organization** — `register` now attaches the default organization, the same one Google sign-in uses, so new users are not denied with 403 on every scoped endpoint.
+- **Unparsable token claims returned 500** — a signature-valid token with a non-numeric subject or an unknown role threw inside `JwtAuthenticationFilter`. The request now stays anonymous and gets the same 401 as any other rejected token.
 
 **Added:**
 - **Google Sign-In** — `POST /api/auth/google` verifies a Google ID token via `GoogleIdTokenVerifier`; unknown emails are auto-provisioned as GUEST.
@@ -33,7 +35,7 @@ The project follows modular development: **Core Module** (foundation), **Banking
 
 **Changed:**
 - Spring Boot 3.5.10 → 3.5.11.
-- Coverage: 1227 test methods across 74 test files.
+- Coverage: 1230+ test methods across 74 test files.
 
 **API Endpoints:**
 - `POST /api/auth/google` — Google sign-in (public)
